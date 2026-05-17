@@ -274,7 +274,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
 
   function add(){
     if(!form.name) return;
-    const obj={id:"obj"+Date.now(),...form,cost:+form.cost,progress:+form.progress,target:+form.target};
+    const obj={id:"obj"+Date.now(),icon:form.icon,name:form.name,cost:+form.cost,type:form.type,owner:form.owner};
     if(form.type==="common") setObjectives(p=>({...p,common:[...p.common,obj]}));
     else setObjectives(p=>({...p,personal:{...p.personal,[form.owner]:[...(p.personal[form.owner]||[]),obj]}}));
     setModal(false);
@@ -284,39 +284,78 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
     if(obj.type==="common") setObjectives(p=>({...p,common:p.common.filter(x=>x.id!==obj.id)}));
     else setObjectives(p=>({...p,personal:{...p.personal,[obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
   }
-  function updProg(obj,val){
-    const v=Math.min(obj.target,Math.max(0,+val));
-    if(obj.type==="common") setObjectives(p=>({...p,common:p.common.map(x=>x.id===obj.id?{...x,progress:v}:x)}));
-    else setObjectives(p=>({...p,personal:{...p.personal,[obj.owner]:p.personal[obj.owner].map(x=>x.id===obj.id?{...x,progress:v}:x)}}));
+  // Calcule la progression automatique depuis les aUEC
+  function getAutoProgress(obj) {
+    if (!obj.cost || obj.cost <= 0) return 0;
+    if (obj.type === "common") {
+      // Objectif commun : somme de tous les profils
+      const total = profiles.reduce((a, p) => a + (p.aUEC || 0), 0);
+      return Math.min(100, Math.round((total / obj.cost) * 100));
+    } else {
+      // Objectif personnel : aUEC du propriétaire
+      const owner = profiles.find(p => p.id === obj.owner);
+      const money = owner?.aUEC || 0;
+      return Math.min(100, Math.round((money / obj.cost) * 100));
+    }
   }
 
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
         <div style={S.sectionTitle}>🎯 OBJECTIFS</div>
-        <button onClick={()=>setModal(true)} style={{...S.primaryBtn,width:"auto",marginTop:0}}>+ Nouvel objectif</button>
+        <button onClick={()=>setModal(true)} style={{...S.primaryBtn,width:"auto",marginTop:0}}>+ Objectif</button>
       </div>
       {all.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Aucun objectif défini</div>}
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {all.map(obj=>{
           const owner=profiles.find(p=>p.id===obj.owner);
-          const pct=obj.target>0?Math.min(100,Math.round(obj.progress/obj.target*100)):0;
+          const pct = getAutoProgress(obj);
           const barColor=pct>=100?"#00ff9d":obj.type==="common"?"#ffcc00":(owner?.color||"#00d4ff");
+          const currentMoney = obj.type==="common"
+            ? profiles.reduce((a,p)=>a+(p.aUEC||0),0)
+            : (profiles.find(p=>p.id===obj.owner)?.aUEC||0);
           return (
             <div key={obj.id} style={{...S.objectiveCard,borderColor:obj.type==="common"?"#ffcc0055":(owner?.color+"55"||"#00d4ff55")}}>
-              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                <div style={{fontSize:28}}>{obj.icon}</div>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4,marginBottom:4}}>
+              <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{fontSize:26,flexShrink:0}}>{obj.icon}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
                     <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:600}}>{obj.name}</div>
-                    {obj.type==="common"?<span style={S.badgeCommon}>COMMUN</span>:<span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>}
+                    {obj.type==="common"
+                      ?<span style={S.badgeCommon}>COMMUN</span>
+                      :<span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>
+                    }
                   </div>
-                  {obj.cost>0&&<div style={{color:"#ffcc00",fontSize:12,fontFamily:"'Orbitron',sans-serif",marginBottom:6}}>{fmt(obj.cost)} aUEC</div>}
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}><span>Progression</span><span>{pct}% · {obj.progress}/{obj.target}</span></div>
-                  <div style={S.progressBar}><div style={{...S.progressFill,width:`${pct}%`,background:barColor}}/></div>
-                  <input type="range" min={0} max={obj.target} value={obj.progress} onChange={e=>updProg(obj,e.target.value)} style={{width:"100%",marginTop:4,accentColor:barColor}}/>
+                  {obj.cost>0&&(
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
+                      <div style={{color:"#ffcc00",fontSize:12,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
+                      {pct>=100
+                        ? <span style={{color:"#00ff9d",fontSize:11,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
+                        : <span style={{color:barColor,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pct}%</span>
+                      }
+                    </div>
+                  )}
+                  {/* Barre de progression animée */}
+                  <div style={{...S.progressBar,height:10,borderRadius:6,position:"relative",overflow:"hidden"}}>
+                    <div style={{
+                      ...S.progressFill,
+                      width:`${pct}%`,
+                      background:`linear-gradient(90deg, ${barColor}88, ${barColor})`,
+                      borderRadius:6,
+                      boxShadow:`0 0 10px ${barColor}88`,
+                      transition:"width 1s ease",
+                    }}/>
+                    {/* Shimmer animé */}
+                    <div style={{
+                      position:"absolute",top:0,left:0,right:0,bottom:0,
+                      background:"linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.15) 50%,transparent 100%)",
+                      animation:"shimmer 2s infinite",
+                      backgroundSize:"200% 100%",
+                    }}/>
+                  </div>
+                  {obj.cost<=0&&<div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginTop:4}}>Définis un coût pour voir la progression automatique</div>}
                 </div>
-                <button onClick={()=>del(obj)} style={S.closeBtn}>🗑</button>
+                <button onClick={()=>del(obj)} style={{...S.closeBtn,flexShrink:0}}>🗑</button>
               </div>
             </div>
           );
@@ -326,14 +365,17 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
         <Modal title="Nouvel objectif" onClose={()=>setModal(false)}>
           <label style={S.label}>Icône (emoji)</label>
           <input value={form.icon} onChange={e=>setForm(p=>({...p,icon:e.target.value}))} style={{...S.input,width:70}}/>
-          <label style={S.label}>Nom</label>
-          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Hercules Starlifter"/>
-          <label style={S.label}>Coût estimé (aUEC)</label>
-          <input type="number" value={form.cost} onChange={e=>setForm(p=>({...p,cost:e.target.value}))} style={S.input} placeholder="0"/>
+          <label style={S.label}>Nom de l'objectif</label>
+          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Hercules Starlifter, Armure Novikov..."/>
+          <label style={S.label}>Coût en aUEC</label>
+          <input type="number" value={form.cost} onChange={e=>setForm(p=>({...p,cost:e.target.value}))} style={S.input} placeholder="Ex: 5000000"/>
+          <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>
+            💡 La barre se remplit automatiquement selon l'argent disponible
+          </div>
           <label style={S.label}>Type</label>
           <select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} style={S.input}>
-            <option value="common">Commun</option>
-            <option value="personal">Personnel</option>
+            <option value="common">Commun (somme des deux joueurs)</option>
+            <option value="personal">Personnel (un seul joueur)</option>
           </select>
           {form.type==="personal"&&(<>
             <label style={S.label}>Propriétaire</label>
@@ -341,9 +383,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
               {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </>)}
-          <label style={S.label}>Objectif max (étapes)</label>
-          <input type="number" value={form.target} onChange={e=>setForm(p=>({...p,target:e.target.value}))} style={S.input}/>
-          <button onClick={add} style={S.primaryBtn}>✅ Créer</button>
+          <button onClick={add} style={S.primaryBtn}>✅ Créer l'objectif</button>
         </Modal>
       )}
     </div>
@@ -527,9 +567,13 @@ export default function App() {
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes glow{0%,100%{text-shadow:0 0 8px #00d4ff66}50%{text-shadow:0 0 20px #00d4ffcc}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        html,body{overflow-x:hidden;max-width:100vw;}
         .nav-tab{flex:1 0 60px;padding:10px 6px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8899bb;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all .2s;}
         .nav-tab.active{background:linear-gradient(135deg,#00d4ff22,#0a1628);border-bottom:2px solid #00d4ff;color:#00d4ff;}
         .nav-tab:hover{color:#00d4ffaa;}
+        .profiles-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;}
+        @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
 
@@ -569,7 +613,7 @@ export default function App() {
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .4s ease"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+            <div className="profiles-grid">
               {profiles.map(p=><ProfileCard key={p.id} profile={p} onEdit={()=>setEditProfile({...p})}/>)}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(115px,1fr))",gap:10,marginBottom:20}}>
@@ -667,12 +711,12 @@ export default function App() {
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S={
   header:{position:"sticky",top:0,zIndex:100,background:"rgba(3,7,15,0.95)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
-  headerInner:{maxWidth:900,margin:"0 auto",padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"},
-  nav:{display:"flex",overflowX:"auto",background:"rgba(3,7,15,0.9)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:65,zIndex:99,backdropFilter:"blur(12px)"},
-  content:{maxWidth:900,margin:"0 auto",padding:"20px 14px 80px"},
-  profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:16,transition:"all .3s",backdropFilter:"blur(12px)"},
-  statRow:{display:"flex",gap:8,flexWrap:"wrap"},
-  statItem:{flex:1,minWidth:80,background:"#0a1628",borderRadius:8,padding:"6px 8px"},
+  headerInner:{maxWidth:900,margin:"0 auto",padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
+  nav:{display:"flex",overflowX:"auto",background:"rgba(3,7,15,0.9)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:61,zIndex:99,backdropFilter:"blur(12px)"},
+  content:{maxWidth:900,margin:"0 auto",padding:"16px 12px 80px",overflowX:"hidden",boxSizing:"border-box"},
+  profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
+  statRow:{display:"flex",gap:6,flexWrap:"wrap"},
+  statItem:{flex:1,minWidth:70,background:"#0a1628",borderRadius:8,padding:"5px 7px",minWidth:0,overflow:"hidden"},
   statLabel:{color:"#8899bb",fontSize:9,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
