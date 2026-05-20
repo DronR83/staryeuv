@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fsGet, fsSet, fsListen } from "./firebase";
-
+ 
 // ─── DEFAULTS ─────────────────────────────────────────────────────────────────
 const DEFAULT_PROFILES = [
   { id: "p1", name: "Pilote Alpha", aUEC: 150000, location: "Lorville, Hurston",      ship: "Cutlass Black",  color: "#00d4ff", avatar: null },
@@ -15,13 +15,13 @@ const DEFAULT_SHIPS      = [
   { id: "s3", name: "Hull C",        capacity: 4608 },
   { id: "s4", name: "Prospector",    capacity: 32   },
 ];
-
+ 
 // ─── SYNC HOOK — lit Firestore au démarrage, écoute en temps réel ──────────
 function useFirestore(collection, defaultValue) {
   const [data,   setData]   = useState(defaultValue);
   const [loaded, setLoaded] = useState(false);
   const skipNext = useRef(false); // évite la boucle écriture → snapshot → setData
-
+ 
   // Écoute temps réel
   useEffect(() => {
     const unsub = fsListen(collection, (remote) => {
@@ -37,7 +37,7 @@ function useFirestore(collection, defaultValue) {
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection]);
-
+ 
   // Écriture debounced
   const save = useCallback(
     (val) => {
@@ -46,10 +46,10 @@ function useFirestore(collection, defaultValue) {
     },
     [collection]
   );
-
+ 
   return [data, setData, loaded, save];
 }
-
+ 
 // ─── COSMIC BACKGROUND ────────────────────────────────────────────────────────
 function CosmicBackground() {
   const canvasRef = useRef(null);
@@ -59,17 +59,17 @@ function CosmicBackground() {
     const ctx = canvas.getContext("2d");
     let raf, w, h, t = 0;
     const stars = [], shooters = [];
-
+ 
     function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
     resize();
     window.addEventListener("resize", resize);
     for (let i = 0; i < 220; i++) stars.push({ x: Math.random()*2000, y: Math.random()*2000, r: Math.random()*1.4+.2, speed: Math.random()*.008+.002, phase: Math.random()*Math.PI*2 });
-
+ 
     function spawnShooter() {
       if (shooters.length > 4) return;
       shooters.push({ x: Math.random()*w, y: Math.random()*h*.5, vx: (Math.random()*4+3)*(Math.random()<.5?1:-1), vy: Math.random()*2+1, life: 1, len: Math.random()*120+60 });
     }
-
+ 
     function draw() {
       t++; ctx.clearRect(0,0,w,h);
       // Black hole
@@ -93,10 +93,10 @@ function CosmicBackground() {
   }, []);
   return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none" }} />;
 }
-
+ 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const fmt = n => (n??0).toLocaleString("fr-FR");
-
+ 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }) {
   return (
@@ -111,7 +111,7 @@ function Modal({ title, onClose, children }) {
     </div>
   );
 }
-
+ 
 // ─── SYNC BADGE ───────────────────────────────────────────────────────────────
 function SyncBadge({ synced }) {
   return (
@@ -121,7 +121,7 @@ function SyncBadge({ synced }) {
     </div>
   );
 }
-
+ 
 // ─── HEX TILE ─────────────────────────────────────────────────────────────────
 function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse }) {
   const [hov,setHov]=useState(false);
@@ -135,7 +135,7 @@ function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse }) {
     </div>
   );
 }
-
+ 
 // ─── PROFILE CARD ─────────────────────────────────────────────────────────────
 function ProfileCard({ profile, onEdit }) {
   const [hov,setHov]=useState(false);
@@ -160,7 +160,7 @@ function ProfileCard({ profile, onEdit }) {
     </div>
   );
 }
-
+ 
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
 function MissionItem({ mission, profiles, onDelete }) {
   const [exp,setExp]=useState(false);
@@ -200,7 +200,7 @@ function MissionItem({ mission, profiles, onDelete }) {
     </div>
   );
 }
-
+ 
 // ─── MINING CALCULATOR ────────────────────────────────────────────────────────
 function MiningCalc({ ships, setShips }) {
   const [auecPerSCU,setAuecPerSCU]=useState(1000);
@@ -208,9 +208,9 @@ function MiningCalc({ ships, setShips }) {
   const [editShipModal,setEditShipModal]=useState(null);
   const ship=ships.find(s=>s.id===selShip);
   const profit=ship?auecPerSCU*ship.capacity:0;
-
+ 
   function saveShip(s){ setShips(prev=>prev.map(x=>x.id===s.id?s:x)); setEditShipModal(null); }
-
+ 
   return (
     <div style={S.calcBox}>
       <div style={S.sectionTitle}>⚙️ CALCULATEUR DE PROFITS MINIERS</div>
@@ -261,17 +261,17 @@ function MiningCalc({ ships, setShips }) {
     </div>
   );
 }
-
+ 
 // ─── OBJECTIVES TAB ───────────────────────────────────────────────────────────
 function ObjectivesTab({ objectives, setObjectives, profiles }) {
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState({name:"",cost:"",icon:"🎯",type:"common",owner:"p1",progress:0,target:100});
-
+ 
   const all=[
     ...objectives.common.map(o=>({...o,type:"common"})),
     ...Object.entries(objectives.personal).flatMap(([pid,arr])=>arr.map(o=>({...o,type:"personal",owner:pid})))
   ];
-
+ 
   function add(){
     if(!form.name) return;
     const obj={id:"obj"+Date.now(),icon:form.icon,name:form.name,cost:+form.cost,type:form.type,owner:form.owner};
@@ -298,7 +298,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
       return Math.min(100, Math.round((money / obj.cost) * 100));
     }
   }
-
+ 
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -389,59 +389,202 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
     </div>
   );
 }
-
+ 
 // ─── MINING TAB ───────────────────────────────────────────────────────────────
+// Utilise l'endpoint correct : commodities_raw_prices_all
+// Retourne tous les minerais minables avec prix par terminal et localisation
 function MiningTab({ ships, setShips }) {
-  const [loading,setLoading]=useState(false);
-  const [data,setData]=useState(null);
-  const [error,setError]=useState(null);
-  const [lastFetch,setLastFetch]=useState(null);
-
-  async function fetchData(){
+  const [loading,  setLoading]  = useState(false);
+  const [minerals, setMinerals] = useState([]);  // liste dédupliquée par nom
+  const [error,    setError]    = useState(null);
+  const [lastFetch,setLastFetch]= useState(null);
+  const [search,   setSearch]   = useState("");
+  const [selected, setSelected] = useState(null); // minerai sélectionné → voir terminaux
+ 
+  async function fetchData() {
     setLoading(true); setError(null);
     try {
-      const r=await fetch("https://api.uexcorp.space/2.0/commodities");
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      const j=await r.json();
-      setData(j.data||j); setLastFetch(new Date().toLocaleTimeString("fr-FR"));
-    } catch(e){ setError("Impossible de contacter l'API UEX Corp. "+e.message); }
+      // commodities_raw_prices_all = tous les prix bruts de minerais par terminal
+      const r = await fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      const rows = j.data || j || [];
+ 
+      // Dédupliquer par nom de minerai, garder le meilleur prix de vente
+      const map = {};
+      rows.forEach(row => {
+        const name = row.commodity_name || row.name;
+        if (!name) return;
+        // On ne garde que les lignes où on peut VENDRE (price_sell > 0)
+        if (!(row.price_sell > 0)) return;
+        if (!map[name]) {
+          map[name] = {
+            name,
+            code: row.commodity_code || row.code || "",
+            terminals: []
+          };
+        }
+        map[name].terminals.push({
+          terminal: row.terminal_name || row.terminal || "—",
+          system:   row.star_system_name || row.system || "",
+          planet:   row.planet_name || row.planet || "",
+          station:  row.space_station_name || row.station || "",
+          price:    Math.round(row.price_sell),
+          scu:      row.scu_sell_stock ?? null,
+          date:     row.date_modified || row.updated || null,
+        });
+      });
+ 
+      // Trier les terminaux de chaque minerai par prix décroissant
+      Object.values(map).forEach(m => {
+        m.terminals.sort((a,b) => b.price - a.price);
+        m.bestPrice = m.terminals[0]?.price || 0;
+        m.bestTerminal = m.terminals[0]?.terminal || "—";
+        m.bestLocation = [
+          m.terminals[0]?.system,
+          m.terminals[0]?.planet || m.terminals[0]?.station
+        ].filter(Boolean).join(" › ");
+      });
+ 
+      // Trier les minerais par meilleur prix décroissant
+      const sorted = Object.values(map).sort((a,b) => b.bestPrice - a.bestPrice);
+      setMinerals(sorted);
+      setLastFetch(new Date().toLocaleTimeString("fr-FR"));
+    } catch(e) {
+      setError("Erreur API UEX Corp : " + e.message);
+    }
     setLoading(false);
   }
-
-  const NAMES=["Quantanium","Bexalite","Borase","Agricium","Taranite","Laranite","Hephaestanite","Titanium","Copper","Iron","Gold","Corundum","Beryl","Diamond","Hadanite"];
-  const minerals=data?.filter(c=>NAMES.includes(c.name))||[];
-
+ 
+  // Chargement automatique au premier affichage
+  useEffect(() => { fetchData(); }, []); // eslint-disable-line
+ 
+  const filtered = minerals.filter(m =>
+    m.name.toLowerCase().includes(search.toLowerCase()) ||
+    m.code.toLowerCase().includes(search.toLowerCase())
+  );
+ 
+  // Couleur selon rang (prix)
+  function rankColor(i) {
+    if (i === 0) return "#ffd700"; // or - 1er
+    if (i === 1) return "#c0c0c0"; // argent - 2e
+    if (i === 2) return "#cd7f32"; // bronze - 3e
+    return "#00d4ff";
+  }
+ 
   return (
     <div>
-      <div style={S.sectionTitle}>⛏ DONNÉES MINERAIS — UEX CORP</div>
-      <p style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:12}}>
-        Données en temps réel depuis <span style={{color:"#00d4ff"}}>uexcorp.space</span>
+      {/* En-tête */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
+        <div style={S.sectionTitle}>⛏ MINERAIS — TEMPS RÉEL</div>
+        <button onClick={fetchData} style={{...S.primaryBtn,width:"auto",marginTop:0,padding:"7px 14px",fontSize:11}} disabled={loading}>
+          {loading?"⏳":"🔄"} {loading?"Chargement...":"Actualiser"}
+        </button>
+      </div>
+      <p style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>
+        Source : <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a> — prix communautaires en temps réel · Star Citizen {lastFetch && <span style={{color:"#8899bb"}}>· MàJ {lastFetch}</span>}
       </p>
-      <button onClick={fetchData} style={{...S.primaryBtn,width:"auto",marginTop:0,marginBottom:16}} disabled={loading}>
-        {loading?"⏳ Chargement...":"🔄 Actualiser les données"}
-      </button>
-      {lastFetch&&<div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginBottom:12}}>MàJ : {lastFetch}</div>}
-      {error&&<div style={{color:"#ff4466",background:"#ff446611",border:"1px solid #ff446633",borderRadius:8,padding:12,fontSize:13,fontFamily:"'Rajdhani',sans-serif",marginBottom:16}}>
-        {error}<br/><a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>→ Visiter UEX Corp</a>
-      </div>}
-      {minerals.length>0&&(
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:10,marginBottom:24}}>
-          {minerals.map(m=>(
-            <div key={m.id||m.name} style={{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:12,backdropFilter:"blur(8px)"}}>
-              <div style={{color:"#00d4ff",fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{m.name}</div>
-              {m.price_sell&&<div style={{color:"#00ff9d",fontSize:12,marginTop:4,fontFamily:"'Rajdhani',sans-serif"}}>{fmt(Math.round(m.price_sell))} aUEC/u</div>}
-              {m.trade_price_sell&&<div style={{color:"#ffcc00",fontSize:11,marginTop:2,fontFamily:"'Rajdhani',sans-serif"}}>{fmt(Math.round(m.trade_price_sell))} aUEC/SCU</div>}
-              {m.code&&<div style={{color:"#8899bb",fontSize:10,marginTop:2}}>{m.code}</div>}
-            </div>
+ 
+      {/* Barre de recherche */}
+      <input
+        value={search}
+        onChange={e=>setSearch(e.target.value)}
+        style={{...S.input,marginBottom:14}}
+        placeholder="🔍 Rechercher un minerai..."
+      />
+ 
+      {/* Erreur */}
+      {error && (
+        <div style={{color:"#ff4466",background:"#ff446611",border:"1px solid #ff446633",borderRadius:8,padding:12,fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:14}}>
+          {error}<br/>
+          <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>→ Voir les prix sur UEX Corp</a>
+        </div>
+      )}
+ 
+      {/* Loading skeleton */}
+      {loading && minerals.length === 0 && (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {[1,2,3,4,5].map(i=>(
+            <div key={i} style={{background:"#07111f88",borderRadius:10,height:64,animation:"pulse 1.5s ease-in-out infinite"}}/>
           ))}
         </div>
       )}
-      {!data&&!loading&&!error&&<div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Appuyez sur "Actualiser" pour charger les prix en temps réel.</div>}
-      <div style={{marginTop:24}}><MiningCalc ships={ships} setShips={setShips}/></div>
+ 
+      {/* Liste des minerais */}
+      {filtered.length > 0 && (
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>
+          {filtered.map((m,i)=>{
+            const isOpen = selected === m.name;
+            const color  = rankColor(i);
+            return (
+              <div key={m.name}>
+                {/* Ligne principale */}
+                <div
+                  onClick={()=>setSelected(isOpen ? null : m.name)}
+                  style={{
+                    background:"#07111fcc",border:`1px solid ${color}33`,borderRadius:isOpen?"10px 10px 0 0":10,
+                    padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,
+                    backdropFilter:"blur(8px)",transition:"all .2s",
+                  }}
+                >
+                  {/* Rang */}
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color,minWidth:22,textAlign:"center",fontWeight:700}}>
+                    #{i+1}
+                  </div>
+                  {/* Nom + localisation */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.name}</div>
+                    {m.code && <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>{m.code} · {m.bestLocation||"localisation inconnue"}</div>}
+                  </div>
+                  {/* Prix */}
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>{fmt(m.bestPrice)}</div>
+                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif"}}>aUEC/unité</div>
+                  </div>
+                  <div style={{color:"#8899bb",fontSize:12}}>{isOpen?"▲":"▼"}</div>
+                </div>
+ 
+                {/* Détail terminaux */}
+                {isOpen && (
+                  <div style={{background:"#04090fcc",border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:12,backdropFilter:"blur(8px)"}}>
+                    <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>TERMINAUX DE VENTE ({m.terminals.length})</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {m.terminals.slice(0,8).map((t,ti)=>(
+                        <div key={ti} style={{display:"flex",alignItems:"center",gap:8,background:"#07111f",borderRadius:7,padding:"7px 10px",border:"1px solid #1a2a4433"}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.terminal}</div>
+                            <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                              {[t.system, t.planet||t.station].filter(Boolean).join(" › ")}
+                            </div>
+                          </div>
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{color: ti===0?"#00ff9d":"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700}}>{fmt(t.price)}</div>
+                            {t.scu !== null && <div style={{color:"#8899bb",fontSize:9}}>{fmt(t.scu)} SCU</div>}
+                          </div>
+                        </div>
+                      ))}
+                      {m.terminals.length > 8 && (
+                        <div style={{color:"#8899bb",fontSize:10,textAlign:"center",fontFamily:"'Rajdhani',sans-serif"}}>+{m.terminals.length-8} autres terminaux sur <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a></div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+ 
+      {!loading && minerals.length === 0 && !error && (
+        <div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Chargement des minerais...</div>
+      )}
+ 
+      {/* Calculateur */}
+      <div style={{marginTop:16}}><MiningCalc ships={ships} setShips={setShips}/></div>
     </div>
   );
 }
-
+ 
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
@@ -454,7 +597,7 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         <button onClick={()=>setSettings(p=>({...p,appIcon:urlIcon}))} style={{...S.primaryBtn,width:"auto",marginTop:0}}>Appliquer</button>
       </div>
       {settings.appIcon&&<img src={settings.appIcon} alt="icon" style={{height:60,borderRadius:8,border:"1px solid #00d4ff44",marginBottom:16}}/>}
-
+ 
       <div style={{marginTop:24}}>
         <div style={S.sectionTitle}>👤 AVATARS PROFILS</div>
         {profiles.map(p=>(
@@ -468,14 +611,14 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
           </div>
         ))}
       </div>
-
+ 
       <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:16}}>
         <div style={S.sectionTitle}>🔗 LIENS UTILES</div>
         {[["🌐 UEX Corp","https://uexcorp.space"],["🗺 SC-Trade.Tools","https://sc-trade.tools"],["📖 Star Citizen Wiki","https://starcitizen.tools"],["💬 Spectrum","https://robertsspaceindustries.com/spectrum"],["🚀 RSI","https://robertsspaceindustries.com"]].map(([l,u])=>(
           <a key={u} href={u} target="_blank" rel="noreferrer" style={{display:"block",color:"#00d4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,marginBottom:10,textDecoration:"none"}}>{l} →</a>
         ))}
       </div>
-
+ 
       <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #ff446633",borderRadius:10,padding:16}}>
         <div style={{...S.sectionTitle,color:"#ff4466"}}>🗑 RÉINITIALISER</div>
         <p style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>Efface toutes les données Firebase. Irréversible.</p>
@@ -484,20 +627,20 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
     </div>
   );
 }
-
+ 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab,setTab]=useState("dashboard");
-
+ 
   // Chaque état est synchronisé avec sa propre collection Firestore
   const [profiles,  setProfiles,  profLoaded,  saveProfiles  ] = useFirestore("profiles",   DEFAULT_PROFILES);
   const [missions,  setMissions,  missLoaded,  saveMissions  ] = useFirestore("missions",   DEFAULT_MISSIONS);
   const [objectives,setObjectives,objLoaded,   saveObjectives] = useFirestore("objectives", DEFAULT_OBJECTIVES);
   const [ships,     setShips,     shipLoaded,  saveShips     ] = useFirestore("ships",      DEFAULT_SHIPS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
-
+ 
   const loaded = profLoaded && missLoaded && objLoaded && shipLoaded && settLoaded;
-
+ 
   // Sync vers Firebase à chaque changement (avec debounce 600ms)
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -510,22 +653,22 @@ export default function App() {
   const dSaveShips      = useCallback(debounce(saveShips,      600), [saveShips]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const dSaveSettings   = useCallback(debounce(saveSettings,   600), [saveSettings]);
-
+ 
   useEffect(() => { if (loaded) dSaveProfiles(profiles);     }, [profiles,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveMissions(missions);     }, [missions,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveObjectives(objectives); }, [objectives, loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveShips(ships);           }, [ships,      loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveSettings(settings);     }, [settings,   loaded]); // eslint-disable-line
-
+ 
   // Modals
   const [editProfile,    setEditProfile]    = useState(null);
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
-
+ 
   const totalEarned = missions.reduce((a,m)=>a+m.amount,0);
   const p1=profiles.find(p=>p.id==="p1");
   const p2=profiles.find(p=>p.id==="p2");
-
+ 
   function addMission(){
     if(!missionForm.name||!missionForm.amount) return;
     const m={id:"m"+Date.now(),name:missionForm.name,amount:+missionForm.amount,split:missionForm.split,assignee:missionForm.assignee,note:missionForm.note,date:new Date().toLocaleDateString("fr-FR")};
@@ -535,16 +678,16 @@ export default function App() {
     setAddMissionModal(false);
     setMissionForm({name:"",amount:"",split:true,assignee:"p1",note:""});
   }
-
+ 
   function deleteMission(id){
     const m=missions.find(x=>x.id===id); if(!m) return;
     const half=Math.floor(m.amount/2);
     setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; }));
     setMissions(prev=>prev.filter(x=>x.id!==id));
   }
-
+ 
   const TABS=[{id:"dashboard",icon:"🏠",label:"BORD"},{id:"missions",icon:"📋",label:"MISSIONS"},{id:"objectives",icon:"🎯",label:"OBJECTIFS"},{id:"mining",icon:"⛏",label:"MINERAIS"},{id:"settings",icon:"⚙️",label:"RÉGLAGES"}];
-
+ 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <CosmicBackground/>
@@ -554,7 +697,7 @@ export default function App() {
       </div>
     </div>
   );
-
+ 
   return (
     <div style={{background:"#03070f",minHeight:"100vh",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",position:"relative"}}>
       <style>{`
@@ -576,7 +719,7 @@ export default function App() {
         @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
-
+ 
       {/* Header */}
       <div style={S.header}>
         <div style={S.headerInner}>
@@ -596,7 +739,7 @@ export default function App() {
           </div>
         </div>
       </div>
-
+ 
       {/* Nav */}
       <div style={S.nav}>
         {TABS.map(t=>(
@@ -606,10 +749,10 @@ export default function App() {
           </button>
         ))}
       </div>
-
+ 
       {/* Content */}
       <div style={S.content}>
-
+ 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .4s ease"}}>
@@ -631,7 +774,7 @@ export default function App() {
             {missions.length>5&&<button onClick={()=>setTab("missions")} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
         )}
-
+ 
         {tab==="missions"&&(
           <div style={{animation:"fadeIn .4s ease"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -642,12 +785,12 @@ export default function App() {
             {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
           </div>
         )}
-
+ 
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
         {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab ships={ships} setShips={setShips}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>
-
+ 
       {/* Edit Profile Modal */}
       {editProfile&&(
         <Modal title={`Modifier — ${editProfile.name}`} onClose={()=>setEditProfile(null)}>
@@ -664,7 +807,7 @@ export default function App() {
           <button onClick={()=>{setProfiles(prev=>prev.map(x=>x.id===editProfile.id?editProfile:x));setEditProfile(null);}} style={S.primaryBtn}>💾 Sauvegarder</button>
         </Modal>
       )}
-
+ 
       {/* Add Mission Modal */}
       {addMissionModal&&(
         <Modal title="Nouvelle Mission" onClose={()=>setAddMissionModal(false)}>
@@ -707,7 +850,7 @@ export default function App() {
     </div>
   );
 }
-
+ 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S={
   header:{position:"sticky",top:0,zIndex:100,background:"rgba(3,7,15,0.95)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
