@@ -424,11 +424,7 @@ function MiningTab({ ships, setShips }) {
   async function fetchData() {
     setLoading(true); setError(null);
     try {
-      // Fetch vente (raw prices)
-      const [rSell, rBuy] = await Promise.all([
-        fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all"),
-        fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all")
-      ]);
+      const rSell = await fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all");
       if (!rSell.ok) throw new Error("HTTP " + rSell.status);
       const jSell = await rSell.json();
       const rows = jSell.data || jSell || [];
@@ -867,8 +863,7 @@ function HangarBackground({ color }) {
 }
 
 function HangarPage({ profile, ships, setShips, onClose }) {
-  const [editModal, setEditModal] = useState(false);
-  const [editShip,  setEditShip]  = useState(null);
+  const [editShip, setEditShip] = useState(null);
 
   // Couleurs hologramme par vaisseau (générées)
   const shipColors = [
