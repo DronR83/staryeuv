@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fsGet, fsSet, fsListen } from "./firebase";
- 
+
 // ─── DEFAULTS ─────────────────────────────────────────────────────────────────
 const DEFAULT_PROFILES = [
   { id: "p1", name: "Pilote Alpha", aUEC: 150000, location: "Lorville, Hurston",      ship: "Cutlass Black",  color: "#00d4ff", avatar: null },
@@ -15,13 +15,13 @@ const DEFAULT_SHIPS      = [
   { id: "s3", name: "Hull C",        capacity: 4608 },
   { id: "s4", name: "Prospector",    capacity: 32   },
 ];
- 
+
 // ─── SYNC HOOK — lit Firestore au démarrage, écoute en temps réel ──────────
 function useFirestore(collection, defaultValue) {
   const [data,   setData]   = useState(defaultValue);
   const [loaded, setLoaded] = useState(false);
   const skipNext = useRef(false); // évite la boucle écriture → snapshot → setData
- 
+
   // Écoute temps réel
   useEffect(() => {
     const unsub = fsListen(collection, (remote) => {
@@ -37,7 +37,7 @@ function useFirestore(collection, defaultValue) {
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection]);
- 
+
   // Écriture debounced
   const save = useCallback(
     (val) => {
@@ -46,10 +46,10 @@ function useFirestore(collection, defaultValue) {
     },
     [collection]
   );
- 
+
   return [data, setData, loaded, save];
 }
- 
+
 // ─── COSMIC BACKGROUND ────────────────────────────────────────────────────────
 function CosmicBackground() {
   const canvasRef = useRef(null);
@@ -59,17 +59,17 @@ function CosmicBackground() {
     const ctx = canvas.getContext("2d");
     let raf, w, h, t = 0;
     const stars = [], shooters = [];
- 
+
     function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
     resize();
     window.addEventListener("resize", resize);
     for (let i = 0; i < 220; i++) stars.push({ x: Math.random()*2000, y: Math.random()*2000, r: Math.random()*1.4+.2, speed: Math.random()*.008+.002, phase: Math.random()*Math.PI*2 });
- 
+
     function spawnShooter() {
       if (shooters.length > 4) return;
       shooters.push({ x: Math.random()*w, y: Math.random()*h*.5, vx: (Math.random()*4+3)*(Math.random()<.5?1:-1), vy: Math.random()*2+1, life: 1, len: Math.random()*120+60 });
     }
- 
+
     function draw() {
       t++; ctx.clearRect(0,0,w,h);
       // Black hole
@@ -93,10 +93,10 @@ function CosmicBackground() {
   }, []);
   return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none" }} />;
 }
- 
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const fmt = n => (n??0).toLocaleString("fr-FR");
- 
+
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }) {
   return (
@@ -111,7 +111,7 @@ function Modal({ title, onClose, children }) {
     </div>
   );
 }
- 
+
 // ─── SYNC BADGE ───────────────────────────────────────────────────────────────
 function SyncBadge({ synced }) {
   return (
@@ -121,7 +121,7 @@ function SyncBadge({ synced }) {
     </div>
   );
 }
- 
+
 // ─── HEX TILE ─────────────────────────────────────────────────────────────────
 function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse }) {
   const [hov,setHov]=useState(false);
@@ -135,20 +135,24 @@ function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse }) {
     </div>
   );
 }
- 
+
 // ─── PROFILE CARD ─────────────────────────────────────────────────────────────
-function ProfileCard({ profile, onEdit }) {
+function ProfileCard({ profile, onEdit, onHangar }) {
   const [hov,setHov]=useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{ ...S.profileCard, borderColor:hov?profile.color:profile.color+"55", boxShadow:hov?`0 0 40px ${profile.color}44`:`0 0 16px ${profile.color}22`, transform:hov?"translateY(-4px)":"none" }}>
       <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
-        <div style={{ width:56,height:56,borderRadius:"50%",border:`2px solid ${profile.color}`,background:profile.avatar?`url(${profile.avatar}) center/cover no-repeat`:`radial-gradient(circle,${profile.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:`0 0 16px ${profile.color}66`,flexShrink:0 }}>
+        <div
+          onClick={onHangar}
+          style={{ width:56,height:56,borderRadius:"50%",border:`2px solid ${profile.color}`,background:profile.avatar?`url(${profile.avatar}) center/cover no-repeat`:`radial-gradient(circle,${profile.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:`0 0 16px ${profile.color}66`,flexShrink:0,cursor:"pointer",transition:"transform .2s" }}
+          title="Ouvrir le hangar"
+        >
           {!profile.avatar&&"👤"}
         </div>
-        <div style={{flex:1}}>
+        <div style={{flex:1}} onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
           <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{profile.name}</div>
-          <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>CITOYEN STAR</div>
+          <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color}}>✏️</button>
       </div>
@@ -160,7 +164,7 @@ function ProfileCard({ profile, onEdit }) {
     </div>
   );
 }
- 
+
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
 function MissionItem({ mission, profiles, onDelete }) {
   const [exp,setExp]=useState(false);
@@ -200,47 +204,63 @@ function MissionItem({ mission, profiles, onDelete }) {
     </div>
   );
 }
- 
-// ─── MINING CALCULATOR ────────────────────────────────────────────────────────
-function MiningCalc({ ships, setShips }) {
-  const [auecPerSCU,setAuecPerSCU]=useState(1000);
-  const [selShip,setSelShip]=useState(ships[0]?.id||"");
+
+// ─── MINING CALCULATOR (prix réel minerai) ────────────────────────────────────
+function MiningCalc({ ships, setShips, minerals }) {
+  const [selShip,     setSelShip]     = useState(ships[0]?.id||"");
+  const [selMineral,  setSelMineral]  = useState("");
   const [editShipModal,setEditShipModal]=useState(null);
-  const ship=ships.find(s=>s.id===selShip);
-  const profit=ship?auecPerSCU*ship.capacity:0;
- 
+  const ship    = ships.find(s=>s.id===selShip);
+  const mineral = minerals.find(m=>m.name===selMineral);
+  const price   = mineral?.bestPrice || 0;
+  // 1 SCU = 100 unités (standard Star Citizen)
+  const profitPerSCU = price * 100;
+  const totalProfit  = ship ? profitPerSCU * ship.capacity : 0;
+
   function saveShip(s){ setShips(prev=>prev.map(x=>x.id===s.id?s:x)); setEditShipModal(null); }
- 
+
   return (
     <div style={S.calcBox}>
       <div style={S.sectionTitle}>⚙️ CALCULATEUR DE PROFITS MINIERS</div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:14}}>
-        <div style={{flex:1,minWidth:140}}>
-          <label style={S.label}>Prix/SCU (aUEC)</label>
-          <input type="number" value={auecPerSCU} onChange={e=>setAuecPerSCU(+e.target.value)} style={S.input}/>
+        <div style={{flex:1,minWidth:130}}>
+          <label style={S.label}>Minerai</label>
+          <select value={selMineral} onChange={e=>setSelMineral(e.target.value)} style={S.input}>
+            <option value="">— Choisir un minerai —</option>
+            {minerals.map(m=>(
+              <option key={m.name} value={m.name}>{m.name} — {fmt(m.bestPrice)} aUEC/u</option>
+            ))}
+          </select>
         </div>
-        <div style={{flex:1,minWidth:140}}>
+        <div style={{flex:1,minWidth:130}}>
           <label style={S.label}>Vaisseau</label>
           <select value={selShip} onChange={e=>setSelShip(e.target.value)} style={S.input}>
-            {ships.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+            {ships.map(s=><option key={s.id} value={s.id}>{s.name} ({s.capacity} SCU)</option>)}
           </select>
         </div>
       </div>
-      {ship&&(
-        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-          <div style={{...S.resultBox,flex:1}}>
-            <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>CAPACITÉ</div>
-            <div style={{color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:700}}>{ship.capacity} SCU</div>
+      {ship && mineral && (
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+          <div style={{...S.resultBox,flex:1,minWidth:90}}>
+            <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"}}>PRIX/UNITÉ</div>
+            <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{fmt(price)}</div>
           </div>
-          <div style={{color:"#00ff9d",fontSize:24}}>→</div>
-          <div style={{...S.resultBox,flex:1,borderColor:"#00ff9d55"}}>
-            <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>PROFIT MAX</div>
-            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:700}}>{fmt(profit)} aUEC</div>
+          <div style={{...S.resultBox,flex:1,minWidth:90}}>
+            <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"}}>PROFIT/SCU</div>
+            <div style={{color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{fmt(profitPerSCU)}</div>
           </div>
-          <button onClick={()=>setEditShipModal({...ship})} style={{...S.editBtn,color:"#00d4ff",borderColor:"#00d4ff66",alignSelf:"flex-end"}}>✏️ Modifier</button>
+          <div style={{...S.resultBox,flex:1,minWidth:90,borderColor:"#00ff9d55"}}>
+            <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"}}>PROFIT TOTAL</div>
+            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{fmt(totalProfit)}</div>
+          </div>
         </div>
       )}
-      <div style={{marginTop:14}}>
+      {ship && mineral && (
+        <div style={{background:"#0a1628",borderRadius:8,padding:10,marginBottom:12,fontSize:11,fontFamily:"'Rajdhani',sans-serif",color:"#8899bb"}}>
+          💡 <span style={{color:"#e8f4ff"}}>{ship.name}</span> ({ship.capacity} SCU) chargé de <span style={{color:"#ffcc00"}}>{mineral.name}</span> vendu à <span style={{color:"#00ff9d"}}>{mineral.bestTerminal}</span> = <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif"}}>{fmt(totalProfit)} aUEC</span>
+        </div>
+      )}
+      <div style={{marginTop:8}}>
         <div style={S.label}>Flotte</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
           {ships.map(s=>(
@@ -261,17 +281,17 @@ function MiningCalc({ ships, setShips }) {
     </div>
   );
 }
- 
+
 // ─── OBJECTIVES TAB ───────────────────────────────────────────────────────────
 function ObjectivesTab({ objectives, setObjectives, profiles }) {
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState({name:"",cost:"",icon:"🎯",type:"common",owner:"p1",progress:0,target:100});
- 
+
   const all=[
     ...objectives.common.map(o=>({...o,type:"common"})),
     ...Object.entries(objectives.personal).flatMap(([pid,arr])=>arr.map(o=>({...o,type:"personal",owner:pid})))
   ];
- 
+
   function add(){
     if(!form.name) return;
     const obj={id:"obj"+Date.now(),icon:form.icon,name:form.name,cost:+form.cost,type:form.type,owner:form.owner};
@@ -298,7 +318,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
       return Math.min(100, Math.round((money / obj.cost) * 100));
     }
   }
- 
+
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -389,202 +409,566 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
     </div>
   );
 }
- 
+
 // ─── MINING TAB ───────────────────────────────────────────────────────────────
-// Utilise l'endpoint correct : commodities_raw_prices_all
-// Retourne tous les minerais minables avec prix par terminal et localisation
 function MiningTab({ ships, setShips }) {
   const [loading,  setLoading]  = useState(false);
-  const [minerals, setMinerals] = useState([]);  // liste dédupliquée par nom
+  const [minerals, setMinerals] = useState([]);
+  const [routes,   setRoutes]   = useState([]);
   const [error,    setError]    = useState(null);
   const [lastFetch,setLastFetch]= useState(null);
   const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState(null); // minerai sélectionné → voir terminaux
- 
+  const [selected, setSelected] = useState(null);
+  const [viewMode, setViewMode] = useState("sell"); // sell | buy | routes
+
   async function fetchData() {
     setLoading(true); setError(null);
     try {
-      // commodities_raw_prices_all = tous les prix bruts de minerais par terminal
-      const r = await fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all");
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const j = await r.json();
-      const rows = j.data || j || [];
- 
-      // Dédupliquer par nom de minerai, garder le meilleur prix de vente
-      const map = {};
+      // Fetch vente (raw prices)
+      const [rSell, rBuy] = await Promise.all([
+        fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all"),
+        fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all")
+      ]);
+      if (!rSell.ok) throw new Error("HTTP " + rSell.status);
+      const jSell = await rSell.json();
+      const rows = jSell.data || jSell || [];
+
+      // ── Construire map vente ──
+      const sellMap = {}, buyMap = {};
       rows.forEach(row => {
         const name = row.commodity_name || row.name;
         if (!name) return;
-        // On ne garde que les lignes où on peut VENDRE (price_sell > 0)
-        if (!(row.price_sell > 0)) return;
-        if (!map[name]) {
-          map[name] = {
-            name,
-            code: row.commodity_code || row.code || "",
-            terminals: []
-          };
+        const terminal = row.terminal_name || "—";
+        const system   = row.star_system_name || "";
+        const planet   = row.planet_name || row.space_station_name || "";
+        const loc      = [system, planet].filter(Boolean).join(" › ");
+
+        // VENTE
+        if (row.price_sell > 0) {
+          if (!sellMap[name]) sellMap[name] = { name, code: row.commodity_code||"", terminals: [] };
+          sellMap[name].terminals.push({ terminal, loc, price: Math.round(row.price_sell), scu: row.scu_sell_stock??null });
         }
-        map[name].terminals.push({
-          terminal: row.terminal_name || row.terminal || "—",
-          system:   row.star_system_name || row.system || "",
-          planet:   row.planet_name || row.planet || "",
-          station:  row.space_station_name || row.station || "",
-          price:    Math.round(row.price_sell),
-          scu:      row.scu_sell_stock ?? null,
-          date:     row.date_modified || row.updated || null,
+        // ACHAT (si disponible)
+        if (row.price_buy > 0) {
+          if (!buyMap[name]) buyMap[name] = { name, code: row.commodity_code||"", terminals: [] };
+          buyMap[name].terminals.push({ terminal, loc, price: Math.round(row.price_buy), scu: row.scu_buy_stock??null });
+        }
+      });
+
+      // Trier terminaux
+      const finalizeSell = map => Object.values(map).map(m => {
+        m.terminals.sort((a,b)=>b.price-a.price);
+        m.bestPrice    = m.terminals[0]?.price||0;
+        m.bestTerminal = m.terminals[0]?.terminal||"—";
+        m.bestLocation = m.terminals[0]?.loc||"";
+        return m;
+      }).sort((a,b)=>b.bestPrice-a.bestPrice);
+
+      const finalizeBuy = map => Object.values(map).map(m => {
+        m.terminals.sort((a,b)=>a.price-b.price); // achat = prix le plus bas en premier
+        m.bestPrice    = m.terminals[0]?.price||0;
+        m.bestTerminal = m.terminals[0]?.terminal||"—";
+        m.bestLocation = m.terminals[0]?.loc||"";
+        return m;
+      }).sort((a,b)=>a.bestPrice-b.bestPrice);
+
+      const sellList = finalizeSell(sellMap);
+      const buyList  = finalizeBuy(buyMap);
+
+      // ── Meilleures routes : minéraux avec achat ET vente ──
+      const routeList = [];
+      sellList.forEach(s => {
+        const b = buyList.find(x=>x.name===s.name);
+        if (!b || !b.bestPrice || !s.bestPrice) return;
+        const margin = s.bestPrice - b.bestPrice;
+        if (margin <= 0) return;
+        routeList.push({
+          name: s.name,
+          code: s.code,
+          buyAt:     b.bestTerminal,
+          buyLoc:    b.bestLocation,
+          buyPrice:  b.bestPrice,
+          sellAt:    s.bestTerminal,
+          sellLoc:   s.bestLocation,
+          sellPrice: s.bestPrice,
+          margin,
+          marginPct: Math.round((margin/b.bestPrice)*100),
         });
       });
- 
-      // Trier les terminaux de chaque minerai par prix décroissant
-      Object.values(map).forEach(m => {
-        m.terminals.sort((a,b) => b.price - a.price);
-        m.bestPrice = m.terminals[0]?.price || 0;
-        m.bestTerminal = m.terminals[0]?.terminal || "—";
-        m.bestLocation = [
-          m.terminals[0]?.system,
-          m.terminals[0]?.planet || m.terminals[0]?.station
-        ].filter(Boolean).join(" › ");
-      });
- 
-      // Trier les minerais par meilleur prix décroissant
-      const sorted = Object.values(map).sort((a,b) => b.bestPrice - a.bestPrice);
-      setMinerals(sorted);
+      routeList.sort((a,b)=>b.margin-a.margin);
+
+      setMinerals(sellList); // vente par défaut
+      setRoutes(routeList);
       setLastFetch(new Date().toLocaleTimeString("fr-FR"));
     } catch(e) {
       setError("Erreur API UEX Corp : " + e.message);
     }
     setLoading(false);
   }
- 
-  // Chargement automatique au premier affichage
+
   useEffect(() => { fetchData(); }, []); // eslint-disable-line
- 
-  const filtered = minerals.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.code.toLowerCase().includes(search.toLowerCase())
-  );
- 
-  // Couleur selon rang (prix)
+
+  // liste selon mode
+  const displayList = viewMode === "sell" ? minerals
+    : viewMode === "buy"  ? [...minerals].sort((a,b)=>a.bestPrice-b.bestPrice)
+    : routes;
+
+  const filtered = viewMode !== "routes"
+    ? displayList.filter(m=>m.name?.toLowerCase().includes(search.toLowerCase())||m.code?.toLowerCase().includes(search.toLowerCase()))
+    : displayList.filter(r=>r.name?.toLowerCase().includes(search.toLowerCase()));
+
   function rankColor(i) {
-    if (i === 0) return "#ffd700"; // or - 1er
-    if (i === 1) return "#c0c0c0"; // argent - 2e
-    if (i === 2) return "#cd7f32"; // bronze - 3e
-    return "#00d4ff";
+    if(i===0) return "#ffd700"; if(i===1) return "#c0c0c0"; if(i===2) return "#cd7f32"; return "#00d4ff";
   }
- 
+
   return (
     <div>
-      {/* En-tête */}
+      {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
-        <div style={S.sectionTitle}>⛏ MINERAIS — TEMPS RÉEL</div>
+        <div style={S.sectionTitle}>⛏ MINERAIS TEMPS RÉEL</div>
         <button onClick={fetchData} style={{...S.primaryBtn,width:"auto",marginTop:0,padding:"7px 14px",fontSize:11}} disabled={loading}>
-          {loading?"⏳":"🔄"} {loading?"Chargement...":"Actualiser"}
+          {loading?"⏳":"🔄"} {loading?"...":"Actualiser"}
         </button>
       </div>
-      <p style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>
-        Source : <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a> — prix communautaires en temps réel · Star Citizen {lastFetch && <span style={{color:"#8899bb"}}>· MàJ {lastFetch}</span>}
+      <p style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>
+        <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a>
+        {lastFetch&&<span> · MàJ {lastFetch}</span>}
       </p>
- 
-      {/* Barre de recherche */}
-      <input
-        value={search}
-        onChange={e=>setSearch(e.target.value)}
-        style={{...S.input,marginBottom:14}}
-        placeholder="🔍 Rechercher un minerai..."
-      />
- 
-      {/* Erreur */}
-      {error && (
-        <div style={{color:"#ff4466",background:"#ff446611",border:"1px solid #ff446633",borderRadius:8,padding:12,fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:14}}>
-          {error}<br/>
-          <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>→ Voir les prix sur UEX Corp</a>
-        </div>
-      )}
- 
-      {/* Loading skeleton */}
-      {loading && minerals.length === 0 && (
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {[1,2,3,4,5].map(i=>(
-            <div key={i} style={{background:"#07111f88",borderRadius:10,height:64,animation:"pulse 1.5s ease-in-out infinite"}}/>
-          ))}
-        </div>
-      )}
- 
-      {/* Liste des minerais */}
-      {filtered.length > 0 && (
-        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>
-          {filtered.map((m,i)=>{
-            const isOpen = selected === m.name;
-            const color  = rankColor(i);
+
+      {/* Mode selector */}
+      <div style={{display:"flex",gap:6,marginBottom:12}}>
+        {[["sell","💰 VENTE"],["buy","🛒 ACHAT"],["routes","🗺 ROUTES"]].map(([mode,label])=>(
+          <button key={mode} onClick={()=>setViewMode(mode)} style={{
+            flex:1,padding:"8px 4px",border:`1px solid ${viewMode===mode?"#00d4ff":"#1a2a44"}`,
+            borderRadius:8,background:viewMode===mode?"#00d4ff22":"transparent",
+            color:viewMode===mode?"#00d4ff":"#8899bb",fontFamily:"'Rajdhani',sans-serif",
+            fontSize:11,fontWeight:700,letterSpacing:1,cursor:"pointer"
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <input value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:12}} placeholder="🔍 Rechercher..."/>
+
+      {/* Error */}
+      {error&&<div style={{color:"#ff4466",background:"#ff446611",border:"1px solid #ff446633",borderRadius:8,padding:10,fontSize:11,marginBottom:12}}>
+        {error} — <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a>
+      </div>}
+
+      {/* Loading */}
+      {loading&&minerals.length===0&&[1,2,3,4].map(i=>(
+        <div key={i} style={{background:"#07111f88",borderRadius:10,height:56,marginBottom:6,animation:"pulse 1.5s ease-in-out infinite"}}/>
+      ))}
+
+      {/* ROUTES VIEW */}
+      {viewMode==="routes" && (
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {filtered.slice(0,20).map((r,i)=>{
+            const isOpen = selected===r.name+"_route";
             return (
-              <div key={m.name}>
-                {/* Ligne principale */}
-                <div
-                  onClick={()=>setSelected(isOpen ? null : m.name)}
-                  style={{
-                    background:"#07111fcc",border:`1px solid ${color}33`,borderRadius:isOpen?"10px 10px 0 0":10,
-                    padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,
-                    backdropFilter:"blur(8px)",transition:"all .2s",
-                  }}
-                >
-                  {/* Rang */}
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color,minWidth:22,textAlign:"center",fontWeight:700}}>
-                    #{i+1}
-                  </div>
-                  {/* Nom + localisation */}
+              <div key={r.name} onClick={()=>setSelected(isOpen?null:r.name+"_route")}
+                style={{background:"#07111fcc",border:`1px solid ${rankColor(i)}33`,borderRadius:10,padding:"10px 12px",cursor:"pointer",backdropFilter:"blur(8px)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:rankColor(i),minWidth:24,fontWeight:700}}>#{i+1}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.name}</div>
-                    {m.code && <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>{m.code} · {m.bestLocation||"localisation inconnue"}</div>}
+                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700}}>{r.name}</div>
+                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif"}}>{r.buyAt} → {r.sellAt}</div>
                   </div>
-                  {/* Prix */}
                   <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>{fmt(m.bestPrice)}</div>
-                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif"}}>aUEC/unité</div>
+                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>+{fmt(r.margin)}</div>
+                    <div style={{color:"#8899bb",fontSize:9}}>marge/unité · {r.marginPct}%</div>
                   </div>
-                  <div style={{color:"#8899bb",fontSize:12}}>{isOpen?"▲":"▼"}</div>
+                  <div style={{color:"#8899bb",fontSize:11}}>{isOpen?"▲":"▼"}</div>
                 </div>
- 
-                {/* Détail terminaux */}
-                {isOpen && (
-                  <div style={{background:"#04090fcc",border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:12,backdropFilter:"blur(8px)"}}>
-                    <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>TERMINAUX DE VENTE ({m.terminals.length})</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                      {m.terminals.slice(0,8).map((t,ti)=>(
-                        <div key={ti} style={{display:"flex",alignItems:"center",gap:8,background:"#07111f",borderRadius:7,padding:"7px 10px",border:"1px solid #1a2a4433"}}>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.terminal}</div>
-                            <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                              {[t.system, t.planet||t.station].filter(Boolean).join(" › ")}
-                            </div>
-                          </div>
-                          <div style={{textAlign:"right",flexShrink:0}}>
-                            <div style={{color: ti===0?"#00ff9d":"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700}}>{fmt(t.price)}</div>
-                            {t.scu !== null && <div style={{color:"#8899bb",fontSize:9}}>{fmt(t.scu)} SCU</div>}
-                          </div>
-                        </div>
-                      ))}
-                      {m.terminals.length > 8 && (
-                        <div style={{color:"#8899bb",fontSize:10,textAlign:"center",fontFamily:"'Rajdhani',sans-serif"}}>+{m.terminals.length-8} autres terminaux sur <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a></div>
-                      )}
+                {isOpen&&(
+                  <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1a2a44",display:"flex",gap:8,flexWrap:"wrap"}}>
+                    <div style={{flex:1,background:"#0a1628",borderRadius:7,padding:"8px 10px",border:"1px solid #ff446633"}}>
+                      <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif",marginBottom:3}}>🛒 ACHETER</div>
+                      <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{r.buyAt}</div>
+                      <div style={{color:"#8899bb",fontSize:9}}>{r.buyLoc}</div>
+                      <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,marginTop:3}}>{fmt(r.buyPrice)} aUEC</div>
+                    </div>
+                    <div style={{flex:1,background:"#0a1628",borderRadius:7,padding:"8px 10px",border:"1px solid #00ff9d33"}}>
+                      <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif",marginBottom:3}}>💰 VENDRE</div>
+                      <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{r.sellAt}</div>
+                      <div style={{color:"#8899bb",fontSize:9}}>{r.sellLoc}</div>
+                      <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,marginTop:3}}>{fmt(r.sellPrice)} aUEC</div>
                     </div>
                   </div>
                 )}
               </div>
             );
           })}
+          {filtered.length===0&&!loading&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucune route trouvée</div>}
         </div>
       )}
- 
-      {!loading && minerals.length === 0 && !error && (
-        <div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Chargement des minerais...</div>
+
+      {/* SELL / BUY VIEW */}
+      {viewMode!=="routes" && (
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+          {filtered.map((m,i)=>{
+            const isOpen = selected===m.name+"_"+viewMode;
+            const color  = rankColor(i);
+            return (
+              <div key={m.name}>
+                <div onClick={()=>setSelected(isOpen?null:m.name+"_"+viewMode)}
+                  style={{background:"#07111fcc",border:`1px solid ${color}33`,borderRadius:isOpen?"10px 10px 0 0":10,
+                    padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,backdropFilter:"blur(8px)"}}>
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color,minWidth:24,fontWeight:700}}>#{i+1}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.name}</div>
+                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.bestLocation}</div>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{color: viewMode==="sell"?"#00ff9d":"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>{fmt(m.bestPrice)}</div>
+                    <div style={{color:"#8899bb",fontSize:9}}>aUEC/unité</div>
+                  </div>
+                  <div style={{color:"#8899bb",fontSize:11}}>{isOpen?"▲":"▼"}</div>
+                </div>
+                {isOpen&&(
+                  <div style={{background:"#04090fcc",border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:10}}>
+                    <div style={{color:"#8899bb",fontSize:9,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>
+                      {viewMode==="sell"?"MEILLEURS PRIX DE VENTE":"MEILLEURS PRIX D'ACHAT"} ({m.terminals?.length||0})
+                    </div>
+                    {(m.terminals||[]).slice(0,6).map((t,ti)=>(
+                      <div key={ti} style={{display:"flex",alignItems:"center",gap:8,background:"#07111f",borderRadius:7,padding:"6px 10px",marginBottom:4,border:"1px solid #1a2a4433"}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{color:"#e8f4ff",fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.terminal}</div>
+                          <div style={{color:"#8899bb",fontSize:9,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.loc}</div>
+                        </div>
+                        <div style={{color:ti===0?(viewMode==="sell"?"#00ff9d":"#ff6b35"):"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,flexShrink:0}}>{fmt(t.price)}</div>
+                      </div>
+                    ))}
+                    {(m.terminals||[]).length>6&&<div style={{color:"#8899bb",fontSize:9,textAlign:"center",fontFamily:"'Rajdhani',sans-serif"}}>+{m.terminals.length-6} sur <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a></div>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {filtered.length===0&&!loading&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Chargement...</div>}
+        </div>
       )}
- 
-      {/* Calculateur */}
-      <div style={{marginTop:16}}><MiningCalc ships={ships} setShips={setShips}/></div>
+
+      {/* Calculateur connecté */}
+      <MiningCalc ships={ships} setShips={setShips} minerals={minerals}/>
     </div>
   );
 }
- 
+
+// ─── HANGAR PAGE ──────────────────────────────────────────────────────────────
+function HangarShip({ ship, color, index }) {
+  const canvasRef = useRef(null);
+  const [hov, setHov] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, t = 0;
+    const W = canvas.width = 180, H = canvas.height = 100;
+
+    // Génère une forme de vaisseau unique basée sur l'index
+    const seed = index * 137.5;
+    const r = (n) => ((Math.sin(seed + n) + 1) / 2);
+
+    function drawShip(t) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(W/2, H/2);
+
+      // Rotation lente
+      const rot = Math.sin(t * 0.02) * 0.15;
+      ctx.rotate(rot);
+
+      // Halo glow
+      const halo = ctx.createRadialGradient(0, 0, 10, 0, 0, 60);
+      halo.addColorStop(0, color + "22");
+      halo.addColorStop(1, "transparent");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.ellipse(0, 5, 70, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Corps principal
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 12 + 6 * Math.sin(t * 0.05);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = color + "33";
+
+      // Forme vaisseau générique paramétrique
+      const w1 = 30 + r(1) * 20, w2 = 18 + r(2) * 12;
+      const h1 = 8 + r(3) * 6;
+      ctx.beginPath();
+      ctx.moveTo(-w1, 0);
+      ctx.bezierCurveTo(-w1 * 0.5, -h1 * 1.5, w1 * 0.3, -h1, w1, 0);
+      ctx.bezierCurveTo(w1 * 0.3, h1, -w1 * 0.5, h1 * 1.5, -w1, 0);
+      ctx.fill(); ctx.stroke();
+
+      // Cockpit
+      ctx.fillStyle = color + "88";
+      ctx.beginPath();
+      ctx.ellipse(w1 * 0.25, -h1 * 0.3, w2 * 0.35, h1 * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Aile
+      ctx.fillStyle = color + "22";
+      ctx.strokeStyle = color + "aa";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-w1 * 0.4, -(h1 * 1.5 + r(4) * 12));
+      ctx.lineTo(-w1 * 0.8, -h1 * 0.5);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-w1 * 0.4, (h1 * 1.5 + r(4) * 12));
+      ctx.lineTo(-w1 * 0.8, h1 * 0.5);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Réacteurs
+      for (let i = 0; i < 2; i++) {
+        const ry = (i === 0 ? -1 : 1) * (h1 * 0.6 + r(5 + i) * 4);
+        const flicker = 0.7 + 0.3 * Math.sin(t * 0.15 + i * 2);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15 * flicker;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(-w1 * 0.85, ry, 4, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Jet
+        const jetGrad = ctx.createLinearGradient(-w1 * 0.85, ry, -w1 * 0.85 - 20 * flicker, ry);
+        jetGrad.addColorStop(0, color + "cc");
+        jetGrad.addColorStop(1, "transparent");
+        ctx.fillStyle = jetGrad;
+        ctx.beginPath();
+        ctx.ellipse(-w1 * 0.85 - 10 * flicker, ry, 10 * flicker, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function loop() { t++; drawShip(t); raf = requestAnimationFrame(loop); }
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [color, index]);
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? "#0a1628" : "#07111fcc",
+        border: `1px solid ${color}${hov ? "99" : "44"}`,
+        borderRadius: 14,
+        padding: "14px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        transition: "all .3s",
+        boxShadow: hov ? `0 0 24px ${color}44` : `0 0 8px ${color}22`,
+        transform: hov ? "translateY(-2px)" : "none",
+        cursor: "default",
+      }}
+    >
+      <canvas ref={canvasRef} style={{ width: 120, height: 66, flexShrink: 0 }} width={180} height={100} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color, fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{ship.name}</div>
+        <div style={{ color: "#8899bb", fontSize: 10, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 1 }}>CAPACITÉ</div>
+        <div style={{ color: "#e8f4ff", fontFamily: "'Orbitron',sans-serif", fontSize: 15, fontWeight: 700 }}>{ship.capacity} SCU</div>
+      </div>
+    </div>
+  );
+}
+
+function HangarBackground({ color }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, t = 0;
+
+    function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    resize();
+
+    function draw() {
+      t++;
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Sol de hangar avec grille
+      ctx.strokeStyle = color + "22";
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      const vanishX = W / 2, vanishY = H * 0.45;
+
+      for (let x = -W; x < W * 2; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(vanishX, vanishY);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 8; i++) {
+        const y = vanishY + (H - vanishY) * (i / 8);
+        const spread = (y - vanishY) / (H - vanishY);
+        ctx.beginPath();
+        ctx.moveTo(vanishX - W * spread, y);
+        ctx.lineTo(vanishX + W * spread, y);
+        ctx.stroke();
+      }
+
+      // Portails latéraux
+      ctx.strokeStyle = color + "44";
+      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8 + 4 * Math.sin(t * 0.03);
+      for (let side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(vanishX + side * W * 0.3, vanishY);
+        ctx.lineTo(vanishX + side * W * 0.5, H * 0.7);
+        ctx.stroke();
+      }
+
+      // Lumières du plafond
+      for (let i = 0; i < 5; i++) {
+        const lx = W * 0.2 + (W * 0.6 / 4) * i;
+        const flicker = 0.5 + 0.5 * Math.abs(Math.sin(t * 0.04 + i));
+        ctx.shadowBlur = 20 * flicker;
+        ctx.fillStyle = color + "88";
+        ctx.beginPath();
+        ctx.arc(lx, 8, 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Halo lumière vers le bas
+        const lg = ctx.createRadialGradient(lx, 8, 0, lx, 8, 80);
+        lg.addColorStop(0, color + "22");
+        lg.addColorStop(1, "transparent");
+        ctx.fillStyle = lg;
+        ctx.beginPath();
+        ctx.ellipse(lx, 60, 50, 80, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [color]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+    />
+  );
+}
+
+function HangarPage({ profile, ships, setShips, onClose }) {
+  const [editModal, setEditModal] = useState(false);
+  const [editShip,  setEditShip]  = useState(null);
+
+  // Couleurs hologramme par vaisseau (générées)
+  const shipColors = [
+    "#00d4ff","#00ff9d","#ff6b35","#bf5fff","#ffcc00","#ff4466","#00ffcc","#ff88aa"
+  ];
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.95)",
+      display: "flex", flexDirection: "column",
+      overflowY: "auto",
+    }}>
+      {/* Fond hangar animé */}
+      <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
+        <HangarBackground color={profile.color} />
+      </div>
+
+      {/* Header */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 10,
+        background: "rgba(3,7,15,0.92)", borderBottom: `1px solid ${profile.color}44`,
+        backdropFilter: "blur(16px)", padding: "12px 16px",
+        display: "flex", alignItems: "center", gap: 12
+      }}>
+        <button onClick={onClose} style={{ ...S.closeBtn, fontSize: 22, color: profile.color }}>←</button>
+        <div style={{
+          width: 44, height: 44, borderRadius: "50%",
+          border: `2px solid ${profile.color}`,
+          background: profile.avatar ? `url(${profile.avatar}) center/cover` : `radial-gradient(circle,${profile.color}44,#0a1628)`,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+          boxShadow: `0 0 16px ${profile.color}66`, flexShrink: 0
+        }}>
+          {!profile.avatar && "👤"}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: profile.color, fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 900 }}>{profile.name}</div>
+          <div style={{ color: "#8899bb", fontSize: 10, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2 }}>HANGAR PERSONNEL</div>
+        </div>
+        <button onClick={() => { const ns = { id: "s"+Date.now(), name: "Nouveau Vaisseau", capacity: 100 }; setShips(p=>[...p,ns]); setEditShip(ns); }} style={{ ...S.primaryBtn, width: "auto", marginTop: 0, padding: "8px 14px", fontSize: 11 }}>+ Ajouter</button>
+      </div>
+
+      {/* Hologramme nom */}
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "24px 16px 8px" }}>
+        <div style={{
+          fontFamily: "'Orbitron',sans-serif", fontSize: 11, letterSpacing: 6,
+          color: profile.color + "88", textTransform: "uppercase", marginBottom: 4
+        }}>HANGAR · {ships.length} VAISSEAU{ships.length > 1 ? "X" : ""}</div>
+        <div style={{
+          fontFamily: "'Orbitron',sans-serif", fontSize: 22, fontWeight: 900,
+          color: profile.color, letterSpacing: 4,
+          textShadow: `0 0 20px ${profile.color}88, 0 0 40px ${profile.color}44`,
+          animation: "glow 3s ease-in-out infinite"
+        }}>{profile.name.toUpperCase()}</div>
+        <div style={{
+          width: 80, height: 1, background: `linear-gradient(90deg,transparent,${profile.color},transparent)`,
+          margin: "8px auto"
+        }}/>
+      </div>
+
+      {/* Liste vaisseaux */}
+      <div style={{ position: "relative", zIndex: 1, padding: "8px 16px 32px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {ships.length === 0 && (
+          <div style={{ color: "#8899bb", textAlign: "center", padding: 40, fontFamily: "'Rajdhani',sans-serif" }}>
+            Aucun vaisseau — Ajoute ta flotte !
+          </div>
+        )}
+        {ships.map((ship, i) => (
+          <div key={ship.id} style={{ position: "relative" }}>
+            <HangarShip ship={ship} color={shipColors[i % shipColors.length]} index={i} />
+            <button
+              onClick={() => setEditShip({ ...ship })}
+              style={{
+                position: "absolute", top: 10, right: 10,
+                background: "transparent", border: `1px solid ${shipColors[i % shipColors.length]}66`,
+                color: shipColors[i % shipColors.length], borderRadius: 6,
+                padding: "3px 8px", cursor: "pointer", fontSize: 11
+              }}
+            >✏️</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal édition vaisseau */}
+      {editShip && (
+        <Modal title="Modifier le vaisseau" onClose={() => setEditShip(null)}>
+          <label style={S.label}>Nom du vaisseau</label>
+          <input value={editShip.name} onChange={e => setEditShip(p => ({ ...p, name: e.target.value }))} style={S.input} placeholder="Ex: Prospector, Mole, Caterpillar..." />
+          <label style={S.label}>Capacité de cargo (SCU)</label>
+          <input type="number" value={editShip.capacity} onChange={e => setEditShip(p => ({ ...p, capacity: +e.target.value }))} style={S.input} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => { setShips(prev => prev.map(x => x.id === editShip.id ? editShip : x)); setEditShip(null); }} style={{ ...S.primaryBtn, flex: 2 }}>💾 Sauvegarder</button>
+            <button onClick={() => { if (window.confirm("Supprimer ce vaisseau ?")) { setShips(prev => prev.filter(x => x.id !== editShip.id)); setEditShip(null); } }} style={{ ...S.dangerBtn, flex: 1, padding: "10px 8px" }}>🗑 Suppr.</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
@@ -597,7 +981,7 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         <button onClick={()=>setSettings(p=>({...p,appIcon:urlIcon}))} style={{...S.primaryBtn,width:"auto",marginTop:0}}>Appliquer</button>
       </div>
       {settings.appIcon&&<img src={settings.appIcon} alt="icon" style={{height:60,borderRadius:8,border:"1px solid #00d4ff44",marginBottom:16}}/>}
- 
+
       <div style={{marginTop:24}}>
         <div style={S.sectionTitle}>👤 AVATARS PROFILS</div>
         {profiles.map(p=>(
@@ -611,14 +995,14 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
           </div>
         ))}
       </div>
- 
+
       <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:16}}>
         <div style={S.sectionTitle}>🔗 LIENS UTILES</div>
         {[["🌐 UEX Corp","https://uexcorp.space"],["🗺 SC-Trade.Tools","https://sc-trade.tools"],["📖 Star Citizen Wiki","https://starcitizen.tools"],["💬 Spectrum","https://robertsspaceindustries.com/spectrum"],["🚀 RSI","https://robertsspaceindustries.com"]].map(([l,u])=>(
           <a key={u} href={u} target="_blank" rel="noreferrer" style={{display:"block",color:"#00d4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,marginBottom:10,textDecoration:"none"}}>{l} →</a>
         ))}
       </div>
- 
+
       <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #ff446633",borderRadius:10,padding:16}}>
         <div style={{...S.sectionTitle,color:"#ff4466"}}>🗑 RÉINITIALISER</div>
         <p style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>Efface toutes les données Firebase. Irréversible.</p>
@@ -627,20 +1011,20 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
     </div>
   );
 }
- 
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab,setTab]=useState("dashboard");
- 
+
   // Chaque état est synchronisé avec sa propre collection Firestore
   const [profiles,  setProfiles,  profLoaded,  saveProfiles  ] = useFirestore("profiles",   DEFAULT_PROFILES);
   const [missions,  setMissions,  missLoaded,  saveMissions  ] = useFirestore("missions",   DEFAULT_MISSIONS);
   const [objectives,setObjectives,objLoaded,   saveObjectives] = useFirestore("objectives", DEFAULT_OBJECTIVES);
   const [ships,     setShips,     shipLoaded,  saveShips     ] = useFirestore("ships",      DEFAULT_SHIPS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
- 
+
   const loaded = profLoaded && missLoaded && objLoaded && shipLoaded && settLoaded;
- 
+
   // Sync vers Firebase à chaque changement (avec debounce 600ms)
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -653,22 +1037,23 @@ export default function App() {
   const dSaveShips      = useCallback(debounce(saveShips,      600), [saveShips]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const dSaveSettings   = useCallback(debounce(saveSettings,   600), [saveSettings]);
- 
+
   useEffect(() => { if (loaded) dSaveProfiles(profiles);     }, [profiles,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveMissions(missions);     }, [missions,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveObjectives(objectives); }, [objectives, loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveShips(ships);           }, [ships,      loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveSettings(settings);     }, [settings,   loaded]); // eslint-disable-line
- 
+
   // Modals
   const [editProfile,    setEditProfile]    = useState(null);
+  const [hangarProfile,  setHangarProfile]  = useState(null); // profil hangar ouvert
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
- 
+
   const totalEarned = missions.reduce((a,m)=>a+m.amount,0);
   const p1=profiles.find(p=>p.id==="p1");
   const p2=profiles.find(p=>p.id==="p2");
- 
+
   function addMission(){
     if(!missionForm.name||!missionForm.amount) return;
     const m={id:"m"+Date.now(),name:missionForm.name,amount:+missionForm.amount,split:missionForm.split,assignee:missionForm.assignee,note:missionForm.note,date:new Date().toLocaleDateString("fr-FR")};
@@ -678,16 +1063,16 @@ export default function App() {
     setAddMissionModal(false);
     setMissionForm({name:"",amount:"",split:true,assignee:"p1",note:""});
   }
- 
+
   function deleteMission(id){
     const m=missions.find(x=>x.id===id); if(!m) return;
     const half=Math.floor(m.amount/2);
     setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; }));
     setMissions(prev=>prev.filter(x=>x.id!==id));
   }
- 
+
   const TABS=[{id:"dashboard",icon:"🏠",label:"BORD"},{id:"missions",icon:"📋",label:"MISSIONS"},{id:"objectives",icon:"🎯",label:"OBJECTIFS"},{id:"mining",icon:"⛏",label:"MINERAIS"},{id:"settings",icon:"⚙️",label:"RÉGLAGES"}];
- 
+
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <CosmicBackground/>
@@ -697,7 +1082,7 @@ export default function App() {
       </div>
     </div>
   );
- 
+
   return (
     <div style={{background:"#03070f",minHeight:"100vh",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",position:"relative"}}>
       <style>{`
@@ -719,7 +1104,7 @@ export default function App() {
         @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
- 
+
       {/* Header */}
       <div style={S.header}>
         <div style={S.headerInner}>
@@ -739,7 +1124,7 @@ export default function App() {
           </div>
         </div>
       </div>
- 
+
       {/* Nav */}
       <div style={S.nav}>
         {TABS.map(t=>(
@@ -749,15 +1134,22 @@ export default function App() {
           </button>
         ))}
       </div>
- 
+
       {/* Content */}
       <div style={S.content}>
- 
+
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
           <div style={{animation:"fadeIn .4s ease"}}>
             <div className="profiles-grid">
-              {profiles.map(p=><ProfileCard key={p.id} profile={p} onEdit={()=>setEditProfile({...p})}/>)}
+              {profiles.map(p=>(
+                <ProfileCard
+                  key={p.id}
+                  profile={p}
+                  onEdit={()=>setEditProfile({...p})}
+                  onHangar={()=>setHangarProfile(p)}
+                />
+              ))}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(115px,1fr))",gap:10,marginBottom:20}}>
               <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00"/>
@@ -774,7 +1166,7 @@ export default function App() {
             {missions.length>5&&<button onClick={()=>setTab("missions")} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
         )}
- 
+
         {tab==="missions"&&(
           <div style={{animation:"fadeIn .4s ease"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -785,12 +1177,22 @@ export default function App() {
             {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
           </div>
         )}
- 
+
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
         {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab ships={ships} setShips={setShips}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>
- 
+
+      {/* HANGAR OVERLAY */}
+      {hangarProfile && (
+        <HangarPage
+          profile={hangarProfile}
+          ships={ships}
+          setShips={setShips}
+          onClose={()=>setHangarProfile(null)}
+        />
+      )}
+
       {/* Edit Profile Modal */}
       {editProfile&&(
         <Modal title={`Modifier — ${editProfile.name}`} onClose={()=>setEditProfile(null)}>
@@ -807,7 +1209,7 @@ export default function App() {
           <button onClick={()=>{setProfiles(prev=>prev.map(x=>x.id===editProfile.id?editProfile:x));setEditProfile(null);}} style={S.primaryBtn}>💾 Sauvegarder</button>
         </Modal>
       )}
- 
+
       {/* Add Mission Modal */}
       {addMissionModal&&(
         <Modal title="Nouvelle Mission" onClose={()=>setAddMissionModal(false)}>
@@ -850,7 +1252,7 @@ export default function App() {
     </div>
   );
 }
- 
+
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S={
   header:{position:"sticky",top:0,zIndex:100,background:"rgba(3,7,15,0.95)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
