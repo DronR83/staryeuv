@@ -150,7 +150,7 @@ function ProfileCard({ profile, onEdit, onHangar }) {
         >
           {!profile.avatar&&"👤"}
         </div>
-        <div style={{flex:1}} onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
+        <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
           <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{profile.name}</div>
           <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
