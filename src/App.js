@@ -419,12 +419,11 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
 function MiningTab({ fleets, setFleets, profiles }) {
   const [loading,  setLoading]  = useState(false);
   const [minerals, setMinerals] = useState([]);
-  const [routes,   setRoutes]   = useState([]);
   const [error,    setError]    = useState(null);
   const [lastFetch,setLastFetch]= useState(null);
   const [search,   setSearch]   = useState("");
   const [selected, setSelected] = useState(null);
-  const [viewMode, setViewMode] = useState("sell"); // sell | buy | routes
+  const [viewMode, setViewMode] = useState("sell"); // sell | buy
 
   async function fetchData() {
     setLoading(true); setError(null);
@@ -434,8 +433,7 @@ function MiningTab({ fleets, setFleets, profiles }) {
       const jSell = await rSell.json();
       const rows = jSell.data || jSell || [];
 
-      // ── Construire map vente ──
-      const sellMap = {}, buyMap = {};
+      const sellMap = {};
       rows.forEach(row => {
         const name = row.commodity_name || row.name;
         if (!name) return;
@@ -443,16 +441,9 @@ function MiningTab({ fleets, setFleets, profiles }) {
         const system   = row.star_system_name || "";
         const planet   = row.planet_name || row.space_station_name || "";
         const loc      = [system, planet].filter(Boolean).join(" › ");
-
-        // VENTE
         if (row.price_sell > 0) {
           if (!sellMap[name]) sellMap[name] = { name, code: row.commodity_code||"", terminals: [] };
           sellMap[name].terminals.push({ terminal, loc, price: Math.round(row.price_sell), scu: row.scu_sell_stock??null });
-        }
-        // ACHAT (si disponible)
-        if (row.price_buy > 0) {
-          if (!buyMap[name]) buyMap[name] = { name, code: row.commodity_code||"", terminals: [] };
-          buyMap[name].terminals.push({ terminal, loc, price: Math.round(row.price_buy), scu: row.scu_buy_stock??null });
         }
       });
 
@@ -465,41 +456,9 @@ function MiningTab({ fleets, setFleets, profiles }) {
         return m;
       }).sort((a,b)=>b.bestPrice-a.bestPrice);
 
-      const finalizeBuy = map => Object.values(map).map(m => {
-        m.terminals.sort((a,b)=>a.price-b.price); // achat = prix le plus bas en premier
-        m.bestPrice    = m.terminals[0]?.price||0;
-        m.bestTerminal = m.terminals[0]?.terminal||"—";
-        m.bestLocation = m.terminals[0]?.loc||"";
-        return m;
-      }).sort((a,b)=>a.bestPrice-b.bestPrice);
-
       const sellList = finalizeSell(sellMap);
-      const buyList  = finalizeBuy(buyMap);
 
-      // ── Meilleures routes : minéraux avec achat ET vente ──
-      const routeList = [];
-      sellList.forEach(s => {
-        const b = buyList.find(x=>x.name===s.name);
-        if (!b || !b.bestPrice || !s.bestPrice) return;
-        const margin = s.bestPrice - b.bestPrice;
-        if (margin <= 0) return;
-        routeList.push({
-          name: s.name,
-          code: s.code,
-          buyAt:     b.bestTerminal,
-          buyLoc:    b.bestLocation,
-          buyPrice:  b.bestPrice,
-          sellAt:    s.bestTerminal,
-          sellLoc:   s.bestLocation,
-          sellPrice: s.bestPrice,
-          margin,
-          marginPct: Math.round((margin/b.bestPrice)*100),
-        });
-      });
-      routeList.sort((a,b)=>b.margin-a.margin);
-
-      setMinerals(sellList); // vente par défaut
-      setRoutes(routeList);
+      setMinerals(sellList);
       setLastFetch(new Date().toLocaleTimeString("fr-FR"));
     } catch(e) {
       setError("Erreur API UEX Corp : " + e.message);
@@ -510,13 +469,8 @@ function MiningTab({ fleets, setFleets, profiles }) {
   useEffect(() => { fetchData(); }, []); // eslint-disable-line
 
   // liste selon mode
-  const displayList = viewMode === "sell" ? minerals
-    : viewMode === "buy"  ? [...minerals].sort((a,b)=>a.bestPrice-b.bestPrice)
-    : routes;
-
-  const filtered = viewMode !== "routes"
-    ? displayList.filter(m=>m.name?.toLowerCase().includes(search.toLowerCase())||m.code?.toLowerCase().includes(search.toLowerCase()))
-    : displayList.filter(r=>r.name?.toLowerCase().includes(search.toLowerCase()));
+  const displayList = viewMode === "sell" ? minerals : [...minerals].sort((a,b)=>a.bestPrice-b.bestPrice);
+  const filtered = displayList.filter(m=>m.name?.toLowerCase().includes(search.toLowerCase())||m.code?.toLowerCase().includes(search.toLowerCase()));
 
   function rankColor(i) {
     if(i===0) return "#ffd700"; if(i===1) return "#c0c0c0"; if(i===2) return "#cd7f32"; return "#00d4ff";
@@ -536,14 +490,17 @@ function MiningTab({ fleets, setFleets, profiles }) {
         {lastFetch&&<span> · MàJ {lastFetch}</span>}
       </p>
 
-      {/* Mode selector */}
-      <div style={{display:"flex",gap:6,marginBottom:12}}>
-        {[["sell","💰 VENTE"],["buy","🛒 ACHAT"],["routes","🗺 ROUTES"]].map(([mode,label])=>(
+      {/* Mode selector — opaque */}
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        {[["sell","💰 VENTE"],["buy","🛒 ACHAT"]].map(([mode,label])=>(
           <button key={mode} onClick={()=>setViewMode(mode)} style={{
-            flex:1,padding:"8px 4px",border:`1px solid ${viewMode===mode?"#00d4ff":"#1a2a44"}`,
-            borderRadius:8,background:viewMode===mode?"#00d4ff22":"transparent",
-            color:viewMode===mode?"#00d4ff":"#8899bb",fontFamily:"'Rajdhani',sans-serif",
-            fontSize:11,fontWeight:700,letterSpacing:1,cursor:"pointer"
+            flex:1, padding:"10px 4px",
+            border:`1px solid ${viewMode===mode?"#00d4ff":"#1a2a44"}`,
+            borderRadius:8,
+            background: viewMode===mode ? "#00d4ff33" : "#0a1628",
+            color: viewMode===mode ? "#00d4ff" : "#8899bb",
+            fontFamily:"'Rajdhani',sans-serif",
+            fontSize:13, fontWeight:700, letterSpacing:1, cursor:"pointer"
           }}>{label}</button>
         ))}
       </div>
@@ -561,52 +518,8 @@ function MiningTab({ fleets, setFleets, profiles }) {
         <div key={i} style={{background:"#07111f88",borderRadius:10,height:56,marginBottom:6,animation:"pulse 1.5s ease-in-out infinite"}}/>
       ))}
 
-      {/* ROUTES VIEW */}
-      {viewMode==="routes" && (
-        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
-          {filtered.slice(0,20).map((r,i)=>{
-            const isOpen = selected===r.name+"_route";
-            return (
-              <div key={r.name} onClick={()=>setSelected(isOpen?null:r.name+"_route")}
-                style={{background:"#07111fcc",border:`1px solid ${rankColor(i)}33`,borderRadius:10,padding:"10px 12px",cursor:"pointer",backdropFilter:"blur(8px)"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:rankColor(i),minWidth:24,fontWeight:700}}>#{i+1}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700}}>{r.name}</div>
-                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif"}}>{r.buyAt} → {r.sellAt}</div>
-                  </div>
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>+{fmt(r.margin)}</div>
-                    <div style={{color:"#8899bb",fontSize:9}}>marge/unité · {r.marginPct}%</div>
-                  </div>
-                  <div style={{color:"#8899bb",fontSize:11}}>{isOpen?"▲":"▼"}</div>
-                </div>
-                {isOpen&&(
-                  <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1a2a44",display:"flex",gap:8,flexWrap:"wrap"}}>
-                    <div style={{flex:1,background:"#0a1628",borderRadius:7,padding:"8px 10px",border:"1px solid #ff446633"}}>
-                      <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif",marginBottom:3}}>🛒 ACHETER</div>
-                      <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{r.buyAt}</div>
-                      <div style={{color:"#8899bb",fontSize:9}}>{r.buyLoc}</div>
-                      <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,marginTop:3}}>{fmt(r.buyPrice)} aUEC</div>
-                    </div>
-                    <div style={{flex:1,background:"#0a1628",borderRadius:7,padding:"8px 10px",border:"1px solid #00ff9d33"}}>
-                      <div style={{color:"#8899bb",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif",marginBottom:3}}>💰 VENDRE</div>
-                      <div style={{color:"#e8f4ff",fontSize:12,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{r.sellAt}</div>
-                      <div style={{color:"#8899bb",fontSize:9}}>{r.sellLoc}</div>
-                      <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,marginTop:3}}>{fmt(r.sellPrice)} aUEC</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {filtered.length===0&&!loading&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucune route trouvée</div>}
-        </div>
-      )}
-
-      {/* SELL / BUY VIEW */}
-      {viewMode!=="routes" && (
-        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+      {/* SELL / BUY VIEW uniquement */}
+      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
           {filtered.map((m,i)=>{
             const isOpen = selected===m.name+"_"+viewMode;
             const color  = rankColor(i);
@@ -648,7 +561,6 @@ function MiningTab({ fleets, setFleets, profiles }) {
           })}
           {filtered.length===0&&!loading&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Chargement...</div>}
         </div>
-      )}
 
       {/* Calculateur connecté — tous les vaisseaux de tous les joueurs */}
       <MiningCalc
@@ -975,6 +887,211 @@ function HangarPage({ profile, ships, setShips, onClose }) {
   );
 }
 
+// ─── SHIPS TAB ────────────────────────────────────────────────────────────────
+// Catalogue de vaisseaux RSI classés par taille avec prix USD + aUEC estimé
+const SHIP_CATALOG = [
+  // SMALL
+  { name:"Aurora MR",       usd:25,    aUEC:200000,    cat:"small",  maker:"RSI"  },
+  { name:"Mustang Alpha",   usd:35,    aUEC:280000,    cat:"small",  maker:"CNOU" },
+  { name:"Avenger Titan",   usd:55,    aUEC:440000,    cat:"small",  maker:"AEGS" },
+  { name:"Nomad",           usd:55,    aUEC:440000,    cat:"small",  maker:"CNOU" },
+  { name:"Cutter",          usd:55,    aUEC:440000,    cat:"small",  maker:"DRAK" },
+  { name:"Pisces",          usd:45,    aUEC:360000,    cat:"small",  maker:"AEGS" },
+  { name:"Buccaneer",       usd:95,    aUEC:760000,    cat:"small",  maker:"DRAK" },
+  { name:"Arrow",           usd:75,    aUEC:600000,    cat:"small",  maker:"AEGS" },
+  { name:"Gladius",         usd:75,    aUEC:600000,    cat:"small",  maker:"AEGS" },
+  { name:"Sabre",           usd:170,   aUEC:1360000,   cat:"small",  maker:"AEGS" },
+  { name:"Razor",           usd:135,   aUEC:1080000,   cat:"small",  maker:"MRAI" },
+  // MEDIUM
+  { name:"Cutlass Black",   usd:100,   aUEC:800000,    cat:"medium", maker:"DRAK" },
+  { name:"Cutlass Blue",    usd:130,   aUEC:1040000,   cat:"medium", maker:"DRAK" },
+  { name:"Cutlass Red",     usd:130,   aUEC:1040000,   cat:"medium", maker:"DRAK" },
+  { name:"Freelancer",      usd:110,   aUEC:880000,    cat:"medium", maker:"MRAI" },
+  { name:"Freelancer MAX",  usd:130,   aUEC:1040000,   cat:"medium", maker:"MRAI" },
+  { name:"Prospector",      usd:140,   aUEC:1120000,   cat:"medium", maker:"MRAI" },
+  { name:"Vulture",         usd:110,   aUEC:880000,    cat:"medium", maker:"DRAK" },
+  { name:"Constellation Andromeda", usd:225, aUEC:1800000, cat:"medium", maker:"RSI" },
+  { name:"Constellation Taurus",   usd:195, aUEC:1560000, cat:"medium", maker:"RSI" },
+  { name:"Constellation Aquila",   usd:250, aUEC:2000000, cat:"medium", maker:"RSI" },
+  { name:"Vanguard Warden", usd:225,   aUEC:1800000,   cat:"medium", maker:"AEGS" },
+  { name:"Hurricane",       usd:175,   aUEC:1400000,   cat:"medium", maker:"AEGS" },
+  { name:"Redeemer",        usd:250,   aUEC:2000000,   cat:"medium", maker:"AEGS" },
+  { name:"Valkyrie",        usd:375,   aUEC:3000000,   cat:"medium", maker:"AEGS" },
+  { name:"Terrapin",        usd:195,   aUEC:1560000,   cat:"medium", maker:"AEGS" },
+  { name:"Mole",            usd:315,   aUEC:2520000,   cat:"medium", maker:"ARGO" },
+  { name:"SRV",             usd:95,    aUEC:760000,    cat:"medium", maker:"ARGO" },
+  // LARGE
+  { name:"Caterpillar",     usd:330,   aUEC:2640000,   cat:"large",  maker:"DRAK" },
+  { name:"Hercules C2",     usd:500,   aUEC:4000000,   cat:"large",  maker:"MISC" },
+  { name:"Hercules M2",     usd:600,   aUEC:4800000,   cat:"large",  maker:"MISC" },
+  { name:"Hercules A2",     usd:700,   aUEC:5600000,   cat:"large",  maker:"MISC" },
+  { name:"Hull C",          usd:350,   aUEC:2800000,   cat:"large",  maker:"MISC" },
+  { name:"Hull D",          usd:435,   aUEC:3480000,   cat:"large",  maker:"MISC" },
+  { name:"Starfarer",       usd:300,   aUEC:2400000,   cat:"large",  maker:"MISC" },
+  { name:"Reclaimer",       usd:400,   aUEC:3200000,   cat:"large",  maker:"AEGS" },
+  { name:"Carrack",         usd:600,   aUEC:4800000,   cat:"large",  maker:"AEGS" },
+  { name:"Odyssey",         usd:600,   aUEC:4800000,   cat:"large",  maker:"MISC" },
+  { name:"Liberator",       usd:500,   aUEC:4000000,   cat:"large",  maker:"AEGS" },
+  { name:"Perseus",         usd:600,   aUEC:4800000,   cat:"large",  maker:"RSI"  },
+  { name:"Hammerhead",      usd:725,   aUEC:5800000,   cat:"large",  maker:"AEGS" },
+  { name:"Polaris",         usd:750,   aUEC:6000000,   cat:"large",  maker:"RSI"  },
+  // CAPITAL
+  { name:"Javelin",         usd:2750,  aUEC:22000000,  cat:"capital",maker:"AEGS" },
+  { name:"Idris-P",         usd:1500,  aUEC:12000000,  cat:"capital",maker:"AEGS" },
+  { name:"Idris-M",         usd:1650,  aUEC:13200000,  cat:"capital",maker:"AEGS" },
+  { name:"Kraken",          usd:1650,  aUEC:13200000,  cat:"capital",maker:"DRAK" },
+  { name:"Hull E",          usd:600,   aUEC:4800000,   cat:"capital",maker:"MISC" },
+  { name:"Bengal",          usd:0,     aUEC:0,         cat:"capital",maker:"AEGS" },
+];
+
+const CAT_CONFIG = {
+  small:   { label:"SMALL",   icon:"🛸", color:"#00d4ff" },
+  medium:  { label:"MEDIUM",  icon:"🚀", color:"#00ff9d" },
+  large:   { label:"LARGE",   icon:"🛳", color:"#ffcc00" },
+  capital: { label:"CAPITAL", icon:"🌌", color:"#ff6b35" },
+};
+
+function ShipsTab({ objectives, setObjectives, profiles }) {
+  const [selCat,   setSelCat]   = useState("small");
+  const [search,   setSearch]   = useState("");
+  const [addModal, setAddModal] = useState(null); // ship sélectionné
+  const [objForm,  setObjForm]  = useState({ type:"common", owner:"p1", currency:"aUEC" });
+
+  const filtered = SHIP_CATALOG
+    .filter(s => s.cat === selCat)
+    .filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.maker.toLowerCase().includes(search.toLowerCase()));
+
+  function addToObjective() {
+    if (!addModal) return;
+    const cost = objForm.currency === "usd" ? addModal.usd : addModal.aUEC;
+    const label = objForm.currency === "usd" ? `$${addModal.usd} USD` : `${fmt(addModal.aUEC)} aUEC`;
+    const obj = {
+      id: "obj" + Date.now(),
+      icon: CAT_CONFIG[addModal.cat].icon,
+      name: addModal.name,
+      cost,
+      costLabel: label,
+      currency: objForm.currency,
+      type: objForm.type,
+      owner: objForm.owner,
+    };
+    if (objForm.type === "common") {
+      setObjectives(p => ({ ...p, common: [...p.common, obj] }));
+    } else {
+      setObjectives(p => ({ ...p, personal: { ...p.personal, [objForm.owner]: [...(p.personal[objForm.owner]||[]), obj] } }));
+    }
+    setAddModal(null);
+  }
+
+  return (
+    <div>
+      <div style={S.sectionTitle}>🚀 CATALOGUE VAISSEAUX RSI</div>
+      <p style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:12 }}>
+        Prix officiels RSI · Clique sur un vaisseau pour l'ajouter à tes objectifs
+      </p>
+
+      {/* Catégories */}
+      <div style={{ display:"flex", gap:6, marginBottom:12, overflowX:"auto" }}>
+        {Object.entries(CAT_CONFIG).map(([cat,cfg])=>(
+          <button key={cat} onClick={()=>setSelCat(cat)} style={{
+            flexShrink:0, padding:"8px 14px",
+            border:`1px solid ${selCat===cat?cfg.color:"#1a2a44"}`,
+            borderRadius:20, background:selCat===cat?cfg.color+"22":"transparent",
+            color:selCat===cat?cfg.color:"#8899bb",
+            fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:700,
+            letterSpacing:1, cursor:"pointer"
+          }}>{cfg.icon} {cfg.label}</button>
+        ))}
+      </div>
+
+      {/* Recherche */}
+      <input value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:12}} placeholder="🔍 Rechercher un vaisseau..."/>
+
+      {/* Liste */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:20 }}>
+        {filtered.map(ship=>{
+          const cfg = CAT_CONFIG[ship.cat];
+          return (
+            <div key={ship.name}
+              onClick={()=>{ setAddModal(ship); setObjForm({type:"common",owner:"p1",currency:"aUEC"}); }}
+              style={{
+                background:"#07111fcc", border:`1px solid ${cfg.color}33`,
+                borderRadius:12, padding:"12px 14px", cursor:"pointer",
+                display:"flex", alignItems:"center", gap:12,
+                backdropFilter:"blur(8px)", transition:"all .2s",
+              }}
+            >
+              <div style={{ fontSize:24, flexShrink:0 }}>{cfg.icon}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ color:"#e8f4ff", fontFamily:"'Orbitron',sans-serif", fontSize:13, fontWeight:700 }}>{ship.name}</div>
+                <div style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif" }}>{ship.maker} · {cfg.label}</div>
+              </div>
+              <div style={{ textAlign:"right", flexShrink:0 }}>
+                {ship.usd > 0 && <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>${ship.usd}</div>}
+                {ship.aUEC > 0 && <div style={{ color:"#00ff9d", fontFamily:"'Rajdhani',sans-serif", fontSize:11 }}>{fmt(ship.aUEC)} aUEC</div>}
+                {ship.usd === 0 && <div style={{ color:"#8899bb", fontSize:10 }}>Pas encore dispo</div>}
+              </div>
+              <div style={{ color:cfg.color, fontSize:16, flexShrink:0 }}>＋</div>
+            </div>
+          );
+        })}
+        {filtered.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucun vaisseau trouvé</div>}
+      </div>
+
+      {/* Modal ajout objectif */}
+      {addModal && (
+        <Modal title={`Ajouter — ${addModal.name}`} onClose={()=>setAddModal(null)}>
+          <div style={{ background:"#0a1628", borderRadius:10, padding:12, marginBottom:16, textAlign:"center" }}>
+            <div style={{ fontSize:32, marginBottom:4 }}>{CAT_CONFIG[addModal.cat].icon}</div>
+            <div style={{ color:CAT_CONFIG[addModal.cat].color, fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{addModal.name}</div>
+            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>{addModal.maker} · {CAT_CONFIG[addModal.cat].label}</div>
+          </div>
+
+          <label style={S.label}>Devise</label>
+          <div style={{ display:"flex", gap:8, marginBottom:4 }}>
+            <button onClick={()=>setObjForm(p=>({...p,currency:"aUEC"}))} style={{...S.toggleBtn,...(objForm.currency==="aUEC"?S.toggleActive:{}),flex:1}}>
+              aUEC — {fmt(addModal.aUEC)}
+            </button>
+            <button onClick={()=>setObjForm(p=>({...p,currency:"usd"}))} style={{...S.toggleBtn,...(objForm.currency==="usd"?{...S.toggleActive,borderColor:"#ffcc0066",color:"#ffcc00",background:"#ffcc0022"}:{}),flex:1}}
+              disabled={addModal.usd===0}
+            >
+              USD — ${addModal.usd}
+            </button>
+          </div>
+
+          <label style={S.label}>Type d'objectif</label>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={()=>setObjForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,...(objForm.type==="common"?S.toggleActive:{}),flex:1}}>🤝 Commun</button>
+            <button onClick={()=>setObjForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,...(objForm.type==="personal"?S.toggleActive:{}),flex:1}}>👤 Personnel</button>
+          </div>
+
+          {objForm.type==="personal"&&(
+            <>
+              <label style={S.label}>Pour qui ?</label>
+              <div style={{ display:"flex", gap:8 }}>
+                {profiles.map(p=>(
+                  <button key={p.id} onClick={()=>setObjForm(prev=>({...prev,owner:p.id}))}
+                    style={{...S.toggleBtn,flex:1,...(objForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div style={{ background:"#0a1628", borderRadius:8, padding:10, marginTop:12, marginBottom:4 }}>
+            <div style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif" }}>Objectif ajouté</div>
+            <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>
+              {objForm.currency==="usd" ? `$${addModal.usd} USD` : `${fmt(addModal.aUEC)} aUEC`}
+            </div>
+          </div>
+          <button onClick={addToObjective} style={S.primaryBtn}>🎯 Ajouter à mes objectifs</button>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
@@ -1072,7 +1189,7 @@ export default function App() {
     setMissions(prev=>prev.filter(x=>x.id!==id));
   }
 
-  const TABS=[{id:"dashboard",icon:"🏠",label:"BORD"},{id:"missions",icon:"📋",label:"MISSIONS"},{id:"objectives",icon:"🎯",label:"OBJECTIFS"},{id:"mining",icon:"⛏",label:"MINERAIS"},{id:"settings",icon:"⚙️",label:"RÉGLAGES"}];
+  const TABS=[{id:"dashboard",icon:"🏠",label:"BORD"},{id:"missions",icon:"📋",label:"MISSIONS"},{id:"objectives",icon:"🎯",label:"OBJECTIFS"},{id:"ships",icon:"🚀",label:"VAISSEAUX"},{id:"mining",icon:"⛏",label:"MINERAIS"},{id:"settings",icon:"⚙️",label:"RÉGLAGES"}];
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1180,6 +1297,7 @@ export default function App() {
         )}
 
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
+        {tab==="ships"&&<div style={{animation:"fadeIn .4s ease"}}><ShipsTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
         {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab fleets={fleets} setFleets={setFleets} profiles={profiles}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>
