@@ -9,12 +9,17 @@ const DEFAULT_PROFILES = [
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
 const DEFAULT_SETTINGS   = { appIcon: null };
-const DEFAULT_SHIPS      = [
-  { id: "s1", name: "Cutlass Black", capacity: 46   },
-  { id: "s2", name: "Caterpillar",   capacity: 576  },
-  { id: "s3", name: "Hull C",        capacity: 4608 },
-  { id: "s4", name: "Prospector",    capacity: 32   },
-];
+// Flotte par joueur : { p1: [...], p2: [...] }
+const DEFAULT_FLEETS = {
+  p1: [
+    { id: "s1", name: "Cutlass Black", capacity: 46  },
+    { id: "s2", name: "Prospector",    capacity: 32  },
+  ],
+  p2: [
+    { id: "s3", name: "Avenger Titan", capacity: 8   },
+    { id: "s4", name: "Caterpillar",   capacity: 576 },
+  ],
+};
 
 // ─── SYNC HOOK — lit Firestore au démarrage, écoute en temps réel ──────────
 function useFirestore(collection, defaultValue) {
@@ -411,7 +416,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
 }
 
 // ─── MINING TAB ───────────────────────────────────────────────────────────────
-function MiningTab({ ships, setShips }) {
+function MiningTab({ fleets, setFleets, profiles }) {
   const [loading,  setLoading]  = useState(false);
   const [minerals, setMinerals] = useState([]);
   const [routes,   setRoutes]   = useState([]);
@@ -645,8 +650,14 @@ function MiningTab({ ships, setShips }) {
         </div>
       )}
 
-      {/* Calculateur connecté */}
-      <MiningCalc ships={ships} setShips={setShips} minerals={minerals}/>
+      {/* Calculateur connecté — tous les vaisseaux de tous les joueurs */}
+      <MiningCalc
+        ships={Object.values(fleets).flat()}
+        setShips={(updater) => {
+          // pas d'édition globale ici — édition dans le hangar de chaque joueur
+        }}
+        minerals={minerals}
+      />
     </div>
   );
 }
@@ -1015,28 +1026,23 @@ export default function App() {
   const [profiles,  setProfiles,  profLoaded,  saveProfiles  ] = useFirestore("profiles",   DEFAULT_PROFILES);
   const [missions,  setMissions,  missLoaded,  saveMissions  ] = useFirestore("missions",   DEFAULT_MISSIONS);
   const [objectives,setObjectives,objLoaded,   saveObjectives] = useFirestore("objectives", DEFAULT_OBJECTIVES);
-  const [ships,     setShips,     shipLoaded,  saveShips     ] = useFirestore("ships",      DEFAULT_SHIPS);
+  const [fleets,    setFleets,    fleetLoaded, saveFleets    ] = useFirestore("fleets",     DEFAULT_FLEETS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
 
-  const loaded = profLoaded && missLoaded && objLoaded && shipLoaded && settLoaded;
+  const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
   // Sync vers Firebase à chaque changement (avec debounce 600ms)
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dSaveProfiles   = useCallback(debounce(saveProfiles,   600), [saveProfiles]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dSaveMissions   = useCallback(debounce(saveMissions,   600), [saveMissions]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dSaveObjectives = useCallback(debounce(saveObjectives, 600), [saveObjectives]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dSaveShips      = useCallback(debounce(saveShips,      600), [saveShips]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dSaveSettings   = useCallback(debounce(saveSettings,   600), [saveSettings]);
+  const dSaveProfiles   = useCallback(debounce(saveProfiles,   600), [saveProfiles]);   // eslint-disable-line
+  const dSaveMissions   = useCallback(debounce(saveMissions,   600), [saveMissions]);   // eslint-disable-line
+  const dSaveObjectives = useCallback(debounce(saveObjectives, 600), [saveObjectives]); // eslint-disable-line
+  const dSaveFleets     = useCallback(debounce(saveFleets,     600), [saveFleets]);     // eslint-disable-line
+  const dSaveSettings   = useCallback(debounce(saveSettings,   600), [saveSettings]);   // eslint-disable-line
 
   useEffect(() => { if (loaded) dSaveProfiles(profiles);     }, [profiles,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveMissions(missions);     }, [missions,   loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveObjectives(objectives); }, [objectives, loaded]); // eslint-disable-line
-  useEffect(() => { if (loaded) dSaveShips(ships);           }, [ships,      loaded]); // eslint-disable-line
+  useEffect(() => { if (loaded) dSaveFleets(fleets);         }, [fleets,     loaded]); // eslint-disable-line
   useEffect(() => { if (loaded) dSaveSettings(settings);     }, [settings,   loaded]); // eslint-disable-line
 
   // Modals
@@ -1174,7 +1180,7 @@ export default function App() {
         )}
 
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
-        {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab ships={ships} setShips={setShips}/></div>}
+        {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab fleets={fleets} setFleets={setFleets} profiles={profiles}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>
 
@@ -1182,8 +1188,11 @@ export default function App() {
       {hangarProfile && (
         <HangarPage
           profile={hangarProfile}
-          ships={ships}
-          setShips={setShips}
+          ships={fleets[hangarProfile.id] || []}
+          setShips={(updater) => setFleets(prev => ({
+            ...prev,
+            [hangarProfile.id]: typeof updater === "function" ? updater(prev[hangarProfile.id] || []) : updater
+          }))}
           onClose={()=>setHangarProfile(null)}
         />
       )}
