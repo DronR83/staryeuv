@@ -889,121 +889,162 @@ function HangarPage({ profile, ships, setShips, onClose }) {
 
 // ─── SHIPS TAB ────────────────────────────────────────────────────────────────
 // Catalogue de vaisseaux RSI classés par taille avec prix USD + aUEC estimé
+// Taille pad RSI → catégorie : XS/S = small, M = medium, L = large, XL/capital = capital
 const SHIP_CATALOG = [
-  // ── SMALL ──────────────────────────────────────────────────────────────────
-  { name:"Aurora MR",               usd:35,    aUEC:634440,    cat:"small",  maker:"RSI"  },
-  { name:"Aurora LN",               usd:45,    aUEC:849600,    cat:"small",  maker:"RSI"  },
-  { name:"Aurora CL",               usd:50,    aUEC:944160,    cat:"small",  maker:"RSI"  },
-  { name:"Aurora ES",               usd:30,    aUEC:527055,    cat:"small",  maker:"RSI"  },
-  { name:"Mustang Alpha",           usd:35,    aUEC:610080,    cat:"small",  maker:"CNOU" },
-  { name:"Mustang Beta",            usd:55,    aUEC:975420,    cat:"small",  maker:"CNOU" },
-  { name:"Mustang Delta",           usd:65,    aUEC:1156920,   cat:"small",  maker:"CNOU" },
-  { name:"Mustang Gamma",           usd:60,    aUEC:1066440,   cat:"small",  maker:"CNOU" },
-  { name:"Avenger Titan",           usd:60,    aUEC:1358280,   cat:"small",  maker:"AEGS" },
-  { name:"Avenger Stalker",         usd:60,    aUEC:1508220,   cat:"small",  maker:"AEGS" },
-  { name:"Avenger Warlock",         usd:85,    aUEC:2136645,   cat:"small",  maker:"AEGS" },
-  { name:"Arrow",                   usd:75,    aUEC:1700000,   cat:"small",  maker:"AEGS" },
-  { name:"Gladius",                 usd:90,    aUEC:2381400,   cat:"small",  maker:"AEGS" },
-  { name:"Gladius Valiant",         usd:110,   aUEC:2765070,   cat:"small",  maker:"AEGS" },
-  { name:"Eclipse",                 usd:300,   aUEC:7541100,   cat:"small",  maker:"AEGS" },
-  { name:"Nomad",                   usd:55,    aUEC:1015470,   cat:"small",  maker:"CNOU" },
-  { name:"Cutter",                  usd:55,    aUEC:980000,    cat:"small",  maker:"DRAK" },
-  { name:"Cutter Scout",            usd:70,    aUEC:1250000,   cat:"small",  maker:"DRAK" },
-  { name:"Cutter Rambler",          usd:65,    aUEC:1150000,   cat:"small",  maker:"DRAK" },
-  { name:"Buccaneer",               usd:110,   aUEC:2469645,   cat:"small",  maker:"DRAK" },
-  { name:"Razor",                   usd:135,   aUEC:3027600,   cat:"small",  maker:"MRAI" },
-  { name:"Razor EX",                usd:155,   aUEC:3470000,   cat:"small",  maker:"MRAI" },
-  { name:"Razor LX",                usd:150,   aUEC:3360000,   cat:"small",  maker:"MRAI" },
-  { name:"Pisces",                  usd:45,    aUEC:802620,    cat:"small",  maker:"AEGS" },
-  { name:"Pisces Expedition",       usd:55,    aUEC:980000,    cat:"small",  maker:"AEGS" },
-  { name:"125a",                    usd:50,    aUEC:890000,    cat:"small",  maker:"ORIG" },
-  { name:"135c",                    usd:70,    aUEC:1250000,   cat:"small",  maker:"ORIG" },
-  { name:"300i",                    usd:65,    aUEC:1158840,   cat:"small",  maker:"ORIG" },
-  { name:"315p",                    usd:75,    aUEC:1334430,   cat:"small",  maker:"ORIG" },
-  { name:"325a",                    usd:85,    aUEC:1511730,   cat:"small",  maker:"ORIG" },
-  { name:"350r",                    usd:125,   aUEC:2224620,   cat:"small",  maker:"ORIG" },
-  { name:"85X",                     usd:50,    aUEC:890000,    cat:"small",  maker:"ORIG" },
-  { name:"100i",                    usd:55,    aUEC:980000,    cat:"small",  maker:"ORIG" },
-  { name:"SRV",                     usd:95,    aUEC:1700000,   cat:"small",  maker:"ARGO" },
-  { name:"MOLE",                    usd:45,    aUEC:800000,    cat:"small",  maker:"ARGO" },
-  { name:"Sabre",                   usd:185,   aUEC:4143060,   cat:"small",  maker:"AEGS" },
-  { name:"Sabre Comet",             usd:205,   aUEC:4591620,   cat:"small",  maker:"AEGS" },
-  { name:"F7C Hornet Mk II",        usd:110,   aUEC:2465910,   cat:"small",  maker:"ANVL" },
-  { name:"F7C-R Hornet Tracker",    usd:140,   aUEC:3136890,   cat:"small",  maker:"ANVL" },
-  { name:"F7C-S Hornet Ghost",      usd:130,   aUEC:2912970,   cat:"small",  maker:"ANVL" },
-  { name:"F7C-M Super Hornet",      usd:195,   aUEC:4369680,   cat:"small",  maker:"ANVL" },
-  { name:"Hawk",                    usd:90,    aUEC:2016000,   cat:"small",  maker:"ANVL" },
-  { name:"Hurricane",               usd:195,   aUEC:4369680,   cat:"small",  maker:"ANVL" },
-  { name:"Terrapin",                usd:220,   aUEC:4928400,   cat:"small",  maker:"AEGS" },
-  // ── MEDIUM ─────────────────────────────────────────────────────────────────
-  { name:"Cutlass Black",           usd:100,   aUEC:1735050,   cat:"medium", maker:"DRAK" },
-  { name:"Cutlass Blue",            usd:145,   aUEC:3247560,   cat:"medium", maker:"DRAK" },
-  { name:"Cutlass Red",             usd:130,   aUEC:2913750,   cat:"medium", maker:"DRAK" },
-  { name:"Cutlass Steel",           usd:175,   aUEC:3921750,   cat:"medium", maker:"DRAK" },
-  { name:"Freelancer",              usd:110,   aUEC:2465910,   cat:"medium", maker:"MRAI" },
-  { name:"Freelancer MAX",          usd:135,   aUEC:3027600,   cat:"medium", maker:"MRAI" },
-  { name:"Freelancer MIS",          usd:165,   aUEC:3698580,   cat:"medium", maker:"MRAI" },
-  { name:"Freelancer DUR",          usd:130,   aUEC:2912970,   cat:"medium", maker:"MRAI" },
-  { name:"Prospector",              usd:155,   aUEC:3474720,   cat:"medium", maker:"MRAI" },
-  { name:"Vulture",                 usd:130,   aUEC:2912970,   cat:"medium", maker:"DRAK" },
-  { name:"Herald",                  usd:85,    aUEC:1904040,   cat:"medium", maker:"DRAK" },
-  { name:"Vanguard Warden",         usd:250,   aUEC:5602500,   cat:"medium", maker:"AEGS" },
-  { name:"Vanguard Harbinger",      usd:310,   aUEC:6945300,   cat:"medium", maker:"AEGS" },
-  { name:"Vanguard Sentinel",       usd:290,   aUEC:6497700,   cat:"medium", maker:"AEGS" },
-  { name:"Vanguard Hoplite",        usd:270,   aUEC:6048000,   cat:"medium", maker:"AEGS" },
-  { name:"Redeemer",                usd:310,   aUEC:6945300,   cat:"medium", maker:"AEGS" },
-  { name:"Valkyrie",                usd:425,   aUEC:9517500,   cat:"medium", maker:"AEGS" },
-  { name:"Constellation Andromeda", usd:250,   aUEC:5601510,   cat:"medium", maker:"RSI"  },
-  { name:"Constellation Taurus",    usd:210,   aUEC:4704840,   cat:"medium", maker:"RSI"  },
-  { name:"Constellation Aquila",    usd:325,   aUEC:7281900,   cat:"medium", maker:"RSI"  },
-  { name:"Constellation Phoenix",   usd:350,   aUEC:7841400,   cat:"medium", maker:"RSI"  },
-  { name:"600i Explorer",           usd:500,   aUEC:11200500,  cat:"medium", maker:"ORIG" },
-  { name:"600i Touring",            usd:450,   aUEC:10080450,  cat:"medium", maker:"ORIG" },
-  { name:"400i",                    usd:330,   aUEC:7395330,   cat:"medium", maker:"ORIG" },
-  { name:"Carrack",                 usd:600,   aUEC:13440600,  cat:"medium", maker:"AEGS" },
-  { name:"Carrack Expedition",      usd:700,   aUEC:15680700,  cat:"medium", maker:"AEGS" },
-  { name:"Mole",                    usd:350,   aUEC:7841400,   cat:"medium", maker:"ARGO" },
-  { name:"Raft",                    usd:175,   aUEC:3920700,   cat:"medium", maker:"ARGO" },
-  { name:"Scorpius",                usd:250,   aUEC:5601510,   cat:"medium", maker:"RSI"  },
-  { name:"Scorpius Antares",        usd:275,   aUEC:6161661,   cat:"medium", maker:"RSI"  },
-  { name:"Mantis",                  usd:150,   aUEC:3360300,   cat:"medium", maker:"RSI"  },
-  { name:"Apollo Triage",           usd:225,   aUEC:5041350,   cat:"medium", maker:"RSI"  },
-  { name:"Apollo Medivac",          usd:275,   aUEC:6161475,   cat:"medium", maker:"RSI"  },
-  { name:"Zeus MK II CL",           usd:200,   aUEC:4480400,   cat:"medium", maker:"RSI"  },
-  { name:"Zeus MK II ES",           usd:185,   aUEC:4144185,   cat:"medium", maker:"RSI"  },
-  { name:"Zeus MK II MR",           usd:175,   aUEC:3920175,   cat:"medium", maker:"RSI"  },
-  { name:"Ironclad",                usd:250,   aUEC:5600250,   cat:"medium", maker:"AEGS" },
-  { name:"Ironclad Assault",        usd:300,   aUEC:6720300,   cat:"medium", maker:"AEGS" },
-  // ── LARGE ──────────────────────────────────────────────────────────────────
-  { name:"Caterpillar",             usd:330,   aUEC:7392330,   cat:"large",  maker:"DRAK" },
-  { name:"Caterpillar Pirate",      usd:365,   aUEC:8176365,   cat:"large",  maker:"DRAK" },
-  { name:"Hercules C2",             usd:500,   aUEC:11200500,  cat:"large",  maker:"MISC" },
-  { name:"Hercules M2",             usd:600,   aUEC:13440600,  cat:"large",  maker:"MISC" },
-  { name:"Hercules A2",             usd:750,   aUEC:16800750,  cat:"large",  maker:"MISC" },
-  { name:"Hull C",                  usd:350,   aUEC:7841400,   cat:"large",  maker:"MISC" },
-  { name:"Hull D",                  usd:450,   aUEC:10080450,  cat:"large",  maker:"MISC" },
-  { name:"Starfarer",               usd:300,   aUEC:6720300,   cat:"large",  maker:"MISC" },
-  { name:"Starfarer Gemini",        usd:350,   aUEC:7841400,   cat:"large",  maker:"MISC" },
-  { name:"Reclaimer",               usd:450,   aUEC:10080450,  cat:"large",  maker:"AEGS" },
-  { name:"Hammerhead",              usd:725,   aUEC:34466568,  cat:"large",  maker:"AEGS" },
-  { name:"Perseus",                 usd:600,   aUEC:13440600,  cat:"large",  maker:"RSI"  },
-  { name:"890 Jump",                usd:950,   aUEC:63722296,  cat:"large",  maker:"ORIG" },
-  { name:"Endeavour",               usd:500,   aUEC:11200500,  cat:"large",  maker:"MISC" },
-  { name:"Genesis Starliner",       usd:425,   aUEC:9520425,   cat:"large",  maker:"CRUS" },
-  { name:"C1 Spirit",               usd:165,   aUEC:3698165,   cat:"large",  maker:"MISC" },
-  { name:"E1 Spirit",               usd:185,   aUEC:4144185,   cat:"large",  maker:"MISC" },
-  { name:"A1 Spirit",               usd:225,   aUEC:5041225,   cat:"large",  maker:"MISC" },
-  { name:"Liberator",               usd:500,   aUEC:11200500,  cat:"large",  maker:"AEGS" },
-  { name:"Pioneer",                 usd:925,   aUEC:20720925,  cat:"large",  maker:"CNOU" },
-  // ── CAPITAL ────────────────────────────────────────────────────────────────
-  { name:"Javelin",                 usd:3000,  aUEC:0,         cat:"capital",maker:"AEGS" },
-  { name:"Idris-P",                 usd:1900,  aUEC:0,         cat:"capital",maker:"AEGS" },
-  { name:"Idris-M",                 usd:1000,  aUEC:0,         cat:"capital",maker:"AEGS" },
-  { name:"Kraken",                  usd:1650,  aUEC:0,         cat:"capital",maker:"DRAK" },
-  { name:"Kraken Privateer",        usd:2000,  aUEC:0,         cat:"capital",maker:"DRAK" },
-  { name:"Polaris",                 usd:975,   aUEC:0,         cat:"capital",maker:"RSI"  },
-  { name:"Hull E",                  usd:600,   aUEC:0,         cat:"capital",maker:"MISC" },
-  { name:"Bengal",                  usd:0,     aUEC:0,         cat:"capital",maker:"AEGS" },
+  // ── SMALL (XS / S pad) ──────────────────────────────────────────────────────
+  { name:"Aurora ES",                 usd:30,   aUEC:527055,    cat:"small",  maker:"RSI"  },
+  { name:"Aurora MR",                 usd:35,   aUEC:634440,    cat:"small",  maker:"RSI"  },
+  { name:"Aurora LN",                 usd:45,   aUEC:805950,    cat:"small",  maker:"RSI"  },
+  { name:"Aurora CL",                 usd:50,   aUEC:895320,    cat:"small",  maker:"RSI"  },
+  { name:"Mustang Alpha",             usd:35,   aUEC:610080,    cat:"small",  maker:"CNOU" },
+  { name:"Mustang Beta",              usd:55,   aUEC:975420,    cat:"small",  maker:"CNOU" },
+  { name:"Mustang Delta",             usd:65,   aUEC:1156920,   cat:"small",  maker:"CNOU" },
+  { name:"Mustang Gamma",             usd:60,   aUEC:1066440,   cat:"small",  maker:"CNOU" },
+  { name:"Avenger Titan",             usd:60,   aUEC:1358280,   cat:"small",  maker:"AEGS" },
+  { name:"Avenger Titan Renegade",    usd:75,   aUEC:1759590,   cat:"small",  maker:"AEGS" },
+  { name:"Avenger Stalker",           usd:60,   aUEC:1508220,   cat:"small",  maker:"AEGS" },
+  { name:"Avenger Warlock",           usd:85,   aUEC:2136645,   cat:"small",  maker:"AEGS" },
+  { name:"Arrow",                     usd:75,   aUEC:1984500,   cat:"small",  maker:"ANVL" },
+  { name:"Gladius",                   usd:90,   aUEC:2381400,   cat:"small",  maker:"AEGS" },
+  { name:"Gladius Pirate",            usd:110,  aUEC:0,         cat:"small",  maker:"AEGS" },
+  { name:"Gladius Valiant",           usd:110,  aUEC:2765070,   cat:"small",  maker:"AEGS" },
+  { name:"Eclipse",                   usd:300,  aUEC:7541100,   cat:"small",  maker:"AEGS" },
+  { name:"Sabre",                     usd:170,  aUEC:4273290,   cat:"small",  maker:"AEGS" },
+  { name:"Sabre Comet",               usd:185,  aUEC:4650345,   cat:"small",  maker:"AEGS" },
+  { name:"Sabre Firebird",            usd:185,  aUEC:5580414,   cat:"small",  maker:"AEGS" },
+  { name:"Sabre Peregrine",           usd:185,  aUEC:3845961,   cat:"small",  maker:"AEGS" },
+  { name:"Terrapin",                  usd:220,  aUEC:4928400,   cat:"small",  maker:"AEGS" },
+  { name:"Nomad",                     usd:55,   aUEC:1015470,   cat:"small",  maker:"CNOU" },
+  { name:"Cutter",                    usd:55,   aUEC:980000,    cat:"small",  maker:"DRAK" },
+  { name:"Cutter Scout",              usd:70,   aUEC:1250000,   cat:"small",  maker:"DRAK" },
+  { name:"Cutter Rambler",            usd:65,   aUEC:1150000,   cat:"small",  maker:"DRAK" },
+  { name:"Buccaneer",                 usd:110,  aUEC:2469645,   cat:"small",  maker:"DRAK" },
+  { name:"Herald",                    usd:85,   aUEC:1904040,   cat:"small",  maker:"DRAK" },
+  { name:"Razor",                     usd:135,  aUEC:3027600,   cat:"small",  maker:"MRAI" },
+  { name:"Razor EX",                  usd:155,  aUEC:3470000,   cat:"small",  maker:"MRAI" },
+  { name:"Razor LX",                  usd:150,  aUEC:3360000,   cat:"small",  maker:"MRAI" },
+  { name:"Pisces C8",                 usd:0,    aUEC:745290,    cat:"small",  maker:"ANVL" },
+  { name:"Pisces C8R",                usd:65,   aUEC:555660,    cat:"small",  maker:"ANVL" },
+  { name:"Pisces C8X Expedition",     usd:45,   aUEC:515970,    cat:"small",  maker:"ANVL" },
+  { name:"125a",                      usd:50,   aUEC:890000,    cat:"small",  maker:"ORIG" },
+  { name:"135c",                      usd:70,   aUEC:1250000,   cat:"small",  maker:"ORIG" },
+  { name:"100i",                      usd:55,   aUEC:980000,    cat:"small",  maker:"ORIG" },
+  { name:"300i",                      usd:65,   aUEC:1158840,   cat:"small",  maker:"ORIG" },
+  { name:"315p",                      usd:75,   aUEC:1334430,   cat:"small",  maker:"ORIG" },
+  { name:"325a",                      usd:85,   aUEC:1511730,   cat:"small",  maker:"ORIG" },
+  { name:"350r",                      usd:125,  aUEC:2224620,   cat:"small",  maker:"ORIG" },
+  { name:"85X",                       usd:50,   aUEC:890000,    cat:"small",  maker:"ORIG" },
+  { name:"F7C Hornet Mk I",           usd:125,  aUEC:2910600,   cat:"small",  maker:"ANVL" },
+  { name:"F7C Hornet Mk II",          usd:175,  aUEC:4650345,   cat:"small",  maker:"ANVL" },
+  { name:"F7C Hornet Wildfire Mk I",  usd:175,  aUEC:4630500,   cat:"small",  maker:"ANVL" },
+  { name:"F7A Hornet Mk II",          usd:175,  aUEC:0,         cat:"small",  maker:"ANVL" },
+  { name:"F7C-R Hornet Tracker Mk I", usd:145,  aUEC:3247560,   cat:"small",  maker:"ANVL" },
+  { name:"F7C-S Hornet Ghost Mk I",   usd:130,  aUEC:2912970,   cat:"small",  maker:"ANVL" },
+  { name:"F7C-M Super Hornet Mk I",   usd:195,  aUEC:4369680,   cat:"small",  maker:"ANVL" },
+  { name:"F7C-M Super Hornet Mk II",  usd:230,  aUEC:5154030,   cat:"small",  maker:"ANVL" },
+  { name:"Hawk",                      usd:90,   aUEC:2016000,   cat:"small",  maker:"ANVL" },
+  { name:"Hurricane",                 usd:195,  aUEC:4369680,   cat:"small",  maker:"ANVL" },
+  { name:"Centurion",                 usd:110,  aUEC:1106028,   cat:"small",  maker:"ANVL" },
+  { name:"SRV",                       usd:95,   aUEC:2128000,   cat:"small",  maker:"ARGO" },
+  { name:"MPUV Cargo",                usd:35,   aUEC:626220,    cat:"small",  maker:"ARGO" },
+  { name:"MPUV Personnel",            usd:35,   aUEC:626220,    cat:"small",  maker:"ARGO" },
+  { name:"Mantis",                    usd:150,  aUEC:3360300,   cat:"small",  maker:"RSI"  },
+  { name:"Scorpius",                  usd:250,  aUEC:5601510,   cat:"small",  maker:"RSI"  },
+  { name:"Scorpius Antares",          usd:275,  aUEC:6161661,   cat:"small",  maker:"RSI"  },
+  { name:"Talon",                     usd:75,   aUEC:1680000,   cat:"small",  maker:"ESPR" },
+  { name:"Talon Shrike",              usd:75,   aUEC:1680000,   cat:"small",  maker:"ESPR" },
+  { name:"Glaive",                    usd:250,  aUEC:0,         cat:"small",  maker:"ESPR" },
+  { name:"Scythe",                    usd:250,  aUEC:0,         cat:"small",  maker:"VAND" },
+  { name:"Khartu-Al",                 usd:175,  aUEC:0,         cat:"small",  maker:"XIAN" },
+  { name:"Blade",                     usd:250,  aUEC:0,         cat:"small",  maker:"ESPR" },
+  { name:"Nox",                       usd:40,   aUEC:712800,    cat:"small",  maker:"AOPO" },
+  { name:"Nox Kue",                   usd:50,   aUEC:891000,    cat:"small",  maker:"AOPO" },
+  { name:"X1 Baseline",               usd:40,   aUEC:712800,    cat:"small",  maker:"ORIG" },
+  { name:"X1 Force",                  usd:55,   aUEC:979350,    cat:"small",  maker:"ORIG" },
+  { name:"X1 Velocity",               usd:55,   aUEC:979350,    cat:"small",  maker:"ORIG" },
+  { name:"P-72 Archimedes",           usd:45,   aUEC:801900,    cat:"small",  maker:"KRIG" },
+  { name:"P-52 Merlin",               usd:0,    aUEC:0,         cat:"small",  maker:"KRIG" },
+  { name:"Fury",                      usd:50,   aUEC:891000,    cat:"small",  maker:"MRAI" },
+  { name:"Fury MX",                   usd:60,   aUEC:1069200,   cat:"small",  maker:"MRAI" },
+  { name:"Fury LX",                   usd:65,   aUEC:1157850,   cat:"small",  maker:"MRAI" },
+  { name:"L-21 Wolf",                 usd:110,  aUEC:0,         cat:"small",  maker:"GATA" },
+  // ── MEDIUM (M pad) ──────────────────────────────────────────────────────────
+  { name:"Cutlass Black",             usd:100,  aUEC:1735050,   cat:"medium", maker:"DRAK" },
+  { name:"Cutlass Blue",              usd:145,  aUEC:3247560,   cat:"medium", maker:"DRAK" },
+  { name:"Cutlass Red",               usd:130,  aUEC:2913750,   cat:"medium", maker:"DRAK" },
+  { name:"Cutlass Steel",             usd:175,  aUEC:3921750,   cat:"medium", maker:"DRAK" },
+  { name:"Corsair",                   usd:215,  aUEC:4816350,   cat:"medium", maker:"DRAK" },
+  { name:"Freelancer",                usd:110,  aUEC:2465910,   cat:"medium", maker:"MRAI" },
+  { name:"Freelancer MAX",            usd:135,  aUEC:3027600,   cat:"medium", maker:"MRAI" },
+  { name:"Freelancer MIS",            usd:165,  aUEC:3698580,   cat:"medium", maker:"MRAI" },
+  { name:"Freelancer DUR",            usd:130,  aUEC:2912970,   cat:"medium", maker:"MRAI" },
+  { name:"Prospector",                usd:155,  aUEC:3474720,   cat:"medium", maker:"MRAI" },
+  { name:"Vulture",                   usd:130,  aUEC:2912970,   cat:"medium", maker:"DRAK" },
+  { name:"Vanguard Warden",           usd:260,  aUEC:9803430,   cat:"medium", maker:"AEGS" },
+  { name:"Vanguard Harbinger",        usd:290,  aUEC:10934595,  cat:"medium", maker:"AEGS" },
+  { name:"Vanguard Sentinel",         usd:275,  aUEC:10369012,  cat:"medium", maker:"AEGS" },
+  { name:"Vanguard Hoplite",          usd:240,  aUEC:8860792,   cat:"medium", maker:"AEGS" },
+  { name:"Redeemer",                  usd:330,  aUEC:9803430,   cat:"medium", maker:"AEGS" },
+  { name:"Valkyrie",                  usd:425,  aUEC:0,         cat:"medium", maker:"AEGS" },
+  { name:"Constellation Andromeda",   usd:250,  aUEC:5601510,   cat:"medium", maker:"RSI"  },
+  { name:"Constellation Taurus",      usd:210,  aUEC:4704840,   cat:"medium", maker:"RSI"  },
+  { name:"Constellation Aquila",      usd:325,  aUEC:7281900,   cat:"medium", maker:"RSI"  },
+  { name:"Constellation Phoenix",     usd:350,  aUEC:7841400,   cat:"medium", maker:"RSI"  },
+  { name:"600i Explorer",             usd:500,  aUEC:11200500,  cat:"medium", maker:"ORIG" },
+  { name:"600i Touring",              usd:450,  aUEC:10080450,  cat:"medium", maker:"ORIG" },
+  { name:"400i",                      usd:330,  aUEC:7395330,   cat:"medium", maker:"ORIG" },
+  { name:"Mole",                      usd:350,  aUEC:7841400,   cat:"medium", maker:"ARGO" },
+  { name:"Raft",                      usd:175,  aUEC:3920700,   cat:"medium", maker:"ARGO" },
+  { name:"RAFT",                      usd:175,  aUEC:3920700,   cat:"medium", maker:"ARGO" },
+  { name:"Apollo Triage",             usd:225,  aUEC:5041350,   cat:"medium", maker:"RSI"  },
+  { name:"Apollo Medivac",            usd:275,  aUEC:6161475,   cat:"medium", maker:"RSI"  },
+  { name:"Zeus MK II CL",             usd:200,  aUEC:4480400,   cat:"medium", maker:"RSI"  },
+  { name:"Zeus MK II ES",             usd:185,  aUEC:4144185,   cat:"medium", maker:"RSI"  },
+  { name:"Zeus MK II MR",             usd:175,  aUEC:3920175,   cat:"medium", maker:"RSI"  },
+  { name:"Retaliator Base",           usd:175,  aUEC:0,         cat:"medium", maker:"AEGS" },
+  { name:"Retaliator Bomber",         usd:275,  aUEC:7541100,   cat:"medium", maker:"AEGS" },
+  { name:"Vulcan",                    usd:200,  aUEC:0,         cat:"medium", maker:"AEGS" },
+  { name:"Spirit C1",                 usd:165,  aUEC:3698165,   cat:"medium", maker:"MISC" },
+  { name:"Spirit E1",                 usd:185,  aUEC:4144185,   cat:"medium", maker:"MISC" },
+  { name:"Spirit A1",                 usd:225,  aUEC:5041225,   cat:"medium", maker:"MISC" },
+  { name:"Expanse",                   usd:175,  aUEC:3920000,   cat:"medium", maker:"MISC" },
+  { name:"Razor EX",                  usd:155,  aUEC:3470000,   cat:"medium", maker:"MRAI" },
+  // ── LARGE (L pad) ───────────────────────────────────────────────────────────
+  { name:"Caterpillar",               usd:330,  aUEC:7392330,   cat:"large",  maker:"DRAK" },
+  { name:"Caterpillar Pirate",        usd:365,  aUEC:8176365,   cat:"large",  maker:"DRAK" },
+  { name:"Ironclad",                  usd:500,  aUEC:0,         cat:"large",  maker:"AEGS" },
+  { name:"Ironclad Assault",          usd:600,  aUEC:0,         cat:"large",  maker:"AEGS" },
+  { name:"Asgard",                    usd:350,  aUEC:17860500,  cat:"large",  maker:"ANVL" },
+  { name:"Hercules C2",               usd:500,  aUEC:11200500,  cat:"large",  maker:"MISC" },
+  { name:"Hercules M2",               usd:600,  aUEC:13440600,  cat:"large",  maker:"MISC" },
+  { name:"Hercules A2",               usd:750,  aUEC:16800750,  cat:"large",  maker:"MISC" },
+  { name:"Hull C",                    usd:350,  aUEC:7841400,   cat:"large",  maker:"MISC" },
+  { name:"Hull D",                    usd:450,  aUEC:10080450,  cat:"large",  maker:"MISC" },
+  { name:"Starfarer",                 usd:300,  aUEC:6720300,   cat:"large",  maker:"MISC" },
+  { name:"Starfarer Gemini",          usd:350,  aUEC:7841400,   cat:"large",  maker:"MISC" },
+  { name:"Odyssey",                   usd:600,  aUEC:0,         cat:"large",  maker:"MISC" },
+  { name:"Reclaimer",                 usd:400,  aUEC:33339600,  cat:"large",  maker:"AEGS" },
+  { name:"Hammerhead",                usd:725,  aUEC:34466568,  cat:"large",  maker:"AEGS" },
+  { name:"Nautilus",                  usd:725,  aUEC:0,         cat:"large",  maker:"AEGS" },
+  { name:"Perseus",                   usd:600,  aUEC:0,         cat:"large",  maker:"RSI"  },
+  { name:"890 Jump",                  usd:950,  aUEC:63722296,  cat:"large",  maker:"ORIG" },
+  { name:"Endeavour",                 usd:500,  aUEC:0,         cat:"large",  maker:"MISC" },
+  { name:"Genesis Starliner",         usd:425,  aUEC:0,         cat:"large",  maker:"CRUS" },
+  { name:"Liberator",                 usd:500,  aUEC:0,         cat:"large",  maker:"ANVL" },
+  { name:"Crucible",                  usd:350,  aUEC:0,         cat:"large",  maker:"ANVL" },
+  { name:"Carrack",                   usd:600,  aUEC:34398000,  cat:"large",  maker:"ANVL" },
+  { name:"Carrack Expedition",        usd:625,  aUEC:0,         cat:"large",  maker:"ANVL" },
+  { name:"Pioneer",                   usd:925,  aUEC:0,         cat:"large",  maker:"CNOU" },
+  // ── CAPITAL (XL pad) ────────────────────────────────────────────────────────
+  { name:"Javelin",                   usd:3000, aUEC:0,         cat:"capital",maker:"AEGS" },
+  { name:"Idris-P",                   usd:1900, aUEC:0,         cat:"capital",maker:"AEGS" },
+  { name:"Idris-M",                   usd:1000, aUEC:0,         cat:"capital",maker:"AEGS" },
+  { name:"Kraken",                    usd:1650, aUEC:0,         cat:"capital",maker:"DRAK" },
+  { name:"Kraken Privateer",          usd:2000, aUEC:0,         cat:"capital",maker:"DRAK" },
+  { name:"Polaris",                   usd:975,  aUEC:0,         cat:"capital",maker:"RSI"  },
+  { name:"Hull E",                    usd:600,  aUEC:0,         cat:"capital",maker:"MISC" },
+  { name:"Orion",                     usd:325,  aUEC:0,         cat:"capital",maker:"RSI"  },
+  { name:"Bengal",                    usd:0,    aUEC:0,         cat:"capital",maker:"AEGS" },
 ];
 
 const CAT_CONFIG = {
@@ -1014,45 +1055,74 @@ const CAT_CONFIG = {
 };
 
 function ShipsTab({ objectives, setObjectives, profiles }) {
-  const [selCat,   setSelCat]   = useState("small");
-  const [search,   setSearch]   = useState("");
-  const [addModal, setAddModal] = useState(null); // ship sélectionné
-  const [objForm,  setObjForm]  = useState({ type:"common", owner:"p1", currency:"aUEC" });
+  const [selCat,    setSelCat]    = useState("small");
+  const [search,    setSearch]    = useState("");
+  const [addModal,  setAddModal]  = useState(null);  // ship → ajouter à objectif
+  const [editModal, setEditModal] = useState(null);  // ship → éditer prix/nom
+  const [newModal,  setNewModal]  = useState(false); // créer nouveau vaisseau
+  const [objForm,   setObjForm]   = useState({ type:"common", owner:"p1", currency:"aUEC" });
 
-  const filtered = SHIP_CATALOG
+  // Catalogue local modifiable (copie du catalogue par défaut)
+  const [catalog, setCatalog] = useState(() => SHIP_CATALOG.map(s => ({ ...s, id: s.name })));
+
+  const filtered = catalog
     .filter(s => s.cat === selCat)
     .filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || s.maker.toLowerCase().includes(search.toLowerCase()));
 
+  // Ajouter à objectif
   function addToObjective() {
     if (!addModal) return;
     const cost = objForm.currency === "usd" ? addModal.usd : addModal.aUEC;
-    const label = objForm.currency === "usd" ? `$${addModal.usd} USD` : `${fmt(addModal.aUEC)} aUEC`;
     const obj = {
       id: "obj" + Date.now(),
-      icon: CAT_CONFIG[addModal.cat].icon,
+      icon: CAT_CONFIG[addModal.cat]?.icon || "🚀",
       name: addModal.name,
       cost,
-      costLabel: label,
       currency: objForm.currency,
       type: objForm.type,
       owner: objForm.owner,
     };
-    if (objForm.type === "common") {
-      setObjectives(p => ({ ...p, common: [...p.common, obj] }));
-    } else {
-      setObjectives(p => ({ ...p, personal: { ...p.personal, [objForm.owner]: [...(p.personal[objForm.owner]||[]), obj] } }));
-    }
+    if (objForm.type === "common") setObjectives(p => ({ ...p, common: [...p.common, obj] }));
+    else setObjectives(p => ({ ...p, personal: { ...p.personal, [objForm.owner]: [...(p.personal[objForm.owner]||[]), obj] } }));
     setAddModal(null);
+  }
+
+  // Sauvegarder édition
+  function saveEdit() {
+    setCatalog(prev => prev.map(s => s.id === editModal.id ? editModal : s));
+    setEditModal(null);
+  }
+
+  // Supprimer vaisseau
+  function deleteShip(id) {
+    if (window.confirm("Supprimer ce vaisseau du catalogue ?")) {
+      setCatalog(prev => prev.filter(s => s.id !== id));
+      setEditModal(null);
+    }
+  }
+
+  // Ajouter nouveau vaisseau
+  const [newShip, setNewShip] = useState({ name:"", usd:0, aUEC:0, cat:"small", maker:"" });
+  function createShip() {
+    if (!newShip.name) return;
+    const s = { ...newShip, id: "custom_" + Date.now() };
+    setCatalog(prev => [...prev, s]);
+    setNewShip({ name:"", usd:0, aUEC:0, cat:"small", maker:"" });
+    setNewModal(false);
   }
 
   return (
     <div>
-      <div style={S.sectionTitle}>🚀 CATALOGUE VAISSEAUX RSI</div>
-      <p style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:12 }}>
-        Prix officiels RSI · Clique sur un vaisseau pour l'ajouter à tes objectifs
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8, gap:8 }}>
+        <div style={S.sectionTitle}>🚀 CATALOGUE VAISSEAUX</div>
+        <button onClick={()=>setNewModal(true)} style={{ ...S.primaryBtn, width:"auto", marginTop:0, padding:"8px 14px", fontSize:11 }}>+ Ajouter</button>
+      </div>
+      <p style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif", marginBottom:12 }}>
+        Source UEX Corp / RSI · Clique <span style={{color:"#00d4ff"}}>＋</span> pour objectif · <span style={{color:"#ffcc00"}}>✏️</span> pour modifier
       </p>
 
-      {/* Catégories — fond opaque */}
+      {/* Catégories */}
       <div style={{ display:"flex", gap:6, marginBottom:12, overflowX:"auto", paddingBottom:4 }}>
         {Object.entries(CAT_CONFIG).map(([cat,cfg])=>(
           <button key={cat} onClick={()=>setSelCat(cat)} style={{
@@ -1064,89 +1134,127 @@ function ShipsTab({ objectives, setObjectives, profiles }) {
             fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:700,
             letterSpacing:1, cursor:"pointer",
             boxShadow: selCat===cat ? `0 0 12px ${cfg.color}44` : "none",
-          }}>{cfg.icon} {cfg.label}</button>
+          }}>{cfg.icon} {cfg.label} <span style={{fontSize:10,opacity:.7}}>({catalog.filter(s=>s.cat===cat).length})</span></button>
         ))}
       </div>
 
       {/* Recherche */}
-      <input value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:12}} placeholder="🔍 Rechercher un vaisseau..."/>
+      <input value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:12}} placeholder="🔍 Rechercher..."/>
 
       {/* Liste */}
       <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:20 }}>
         {filtered.map(ship=>{
-          const cfg = CAT_CONFIG[ship.cat];
+          const cfg = CAT_CONFIG[ship.cat] || CAT_CONFIG.small;
           return (
-            <div key={ship.name}
-              onClick={()=>{ setAddModal(ship); setObjForm({type:"common",owner:"p1",currency:"aUEC"}); }}
-              style={{
-                background:"#07111fcc", border:`1px solid ${cfg.color}33`,
-                borderRadius:12, padding:"12px 14px", cursor:"pointer",
-                display:"flex", alignItems:"center", gap:12,
-                backdropFilter:"blur(8px)", transition:"all .2s",
-              }}
-            >
-              <div style={{ fontSize:24, flexShrink:0 }}>{cfg.icon}</div>
+            <div key={ship.id||ship.name} style={{
+              background:"#07111fcc", border:`1px solid ${cfg.color}33`,
+              borderRadius:12, padding:"10px 12px",
+              display:"flex", alignItems:"center", gap:10,
+              backdropFilter:"blur(8px)",
+            }}>
+              <div style={{ fontSize:22, flexShrink:0 }}>{cfg.icon}</div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color:"#e8f4ff", fontFamily:"'Orbitron',sans-serif", fontSize:13, fontWeight:700 }}>{ship.name}</div>
-                <div style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif" }}>{ship.maker} · {cfg.label}</div>
+                <div style={{ color:"#e8f4ff", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ship.name}</div>
+                <div style={{ color:"#8899bb", fontSize:9, fontFamily:"'Rajdhani',sans-serif" }}>{ship.maker} · {cfg.label}</div>
               </div>
-              <div style={{ textAlign:"right", flexShrink:0 }}>
-                {ship.usd > 0 && <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>${ship.usd}</div>}
-                {ship.aUEC > 0 && <div style={{ color:"#00ff9d", fontFamily:"'Rajdhani',sans-serif", fontSize:11 }}>{fmt(ship.aUEC)} aUEC</div>}
-                {ship.usd === 0 && <div style={{ color:"#8899bb", fontSize:10 }}>Pas encore dispo</div>}
+              <div style={{ textAlign:"right", flexShrink:0, minWidth:70 }}>
+                {ship.usd > 0 && <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:11, fontWeight:700 }}>${ship.usd}</div>}
+                {ship.aUEC > 0 && <div style={{ color:"#00ff9d", fontSize:10 }}>{fmt(ship.aUEC)}</div>}
+                {!ship.usd && !ship.aUEC && <div style={{ color:"#8899bb", fontSize:9 }}>N/A</div>}
               </div>
-              <div style={{ color:cfg.color, fontSize:16, flexShrink:0 }}>＋</div>
+              {/* Bouton éditer */}
+              <button onClick={e=>{ e.stopPropagation(); setEditModal({...ship}); }} style={{ ...S.editBtn, color:"#ffcc00", borderColor:"#ffcc0044", flexShrink:0, fontSize:13 }}>✏️</button>
+              {/* Bouton ajouter objectif */}
+              <button onClick={()=>{ setAddModal(ship); setObjForm({type:"common",owner:"p1",currency:"aUEC"}); }} style={{ ...S.editBtn, color:cfg.color, borderColor:cfg.color+"44", flexShrink:0, fontSize:15, fontWeight:700 }}>＋</button>
             </div>
           );
         })}
         {filtered.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucun vaisseau trouvé</div>}
       </div>
 
-      {/* Modal ajout objectif */}
-      {addModal && (
-        <Modal title={`Ajouter — ${addModal.name}`} onClose={()=>setAddModal(null)}>
-          <div style={{ background:"#0a1628", borderRadius:10, padding:12, marginBottom:16, textAlign:"center" }}>
-            <div style={{ fontSize:32, marginBottom:4 }}>{CAT_CONFIG[addModal.cat].icon}</div>
-            <div style={{ color:CAT_CONFIG[addModal.cat].color, fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{addModal.name}</div>
-            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>{addModal.maker} · {CAT_CONFIG[addModal.cat].label}</div>
+      {/* ── MODAL ÉDITION ── */}
+      {editModal && (
+        <Modal title={`✏️ Modifier — ${editModal.name}`} onClose={()=>setEditModal(null)}>
+          <label style={S.label}>Nom du vaisseau</label>
+          <input value={editModal.name} onChange={e=>setEditModal(p=>({...p,name:e.target.value}))} style={S.input}/>
+          <label style={S.label}>Fabricant</label>
+          <input value={editModal.maker} onChange={e=>setEditModal(p=>({...p,maker:e.target.value}))} style={S.input}/>
+          <label style={S.label}>Prix USD ($)</label>
+          <input type="number" value={editModal.usd} onChange={e=>setEditModal(p=>({...p,usd:+e.target.value}))} style={S.input}/>
+          <label style={S.label}>Prix aUEC (in-game)</label>
+          <input type="number" value={editModal.aUEC} onChange={e=>setEditModal(p=>({...p,aUEC:+e.target.value}))} style={S.input}/>
+          <label style={S.label}>Catégorie</label>
+          <select value={editModal.cat} onChange={e=>setEditModal(p=>({...p,cat:e.target.value}))} style={S.input}>
+            <option value="small">🛸 Small</option>
+            <option value="medium">🚀 Medium</option>
+            <option value="large">🛳 Large</option>
+            <option value="capital">🌌 Capital</option>
+          </select>
+          <div style={{ display:"flex", gap:8, marginTop:12 }}>
+            <button onClick={saveEdit} style={{ ...S.primaryBtn, flex:2 }}>💾 Sauvegarder</button>
+            <button onClick={()=>deleteShip(editModal.id)} style={{ ...S.dangerBtn, flex:1, padding:"10px 8px" }}>🗑 Suppr.</button>
           </div>
+        </Modal>
+      )}
 
+      {/* ── MODAL NOUVEAU VAISSEAU ── */}
+      {newModal && (
+        <Modal title="➕ Nouveau vaisseau" onClose={()=>setNewModal(false)}>
+          <label style={S.label}>Nom du vaisseau</label>
+          <input value={newShip.name} onChange={e=>setNewShip(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Polaris, Orion..."/>
+          <label style={S.label}>Fabricant</label>
+          <input value={newShip.maker} onChange={e=>setNewShip(p=>({...p,maker:e.target.value}))} style={S.input} placeholder="Ex: RSI, AEGS, MISC..."/>
+          <label style={S.label}>Prix USD ($)</label>
+          <input type="number" value={newShip.usd} onChange={e=>setNewShip(p=>({...p,usd:+e.target.value}))} style={S.input}/>
+          <label style={S.label}>Prix aUEC (in-game)</label>
+          <input type="number" value={newShip.aUEC} onChange={e=>setNewShip(p=>({...p,aUEC:+e.target.value}))} style={S.input}/>
+          <label style={S.label}>Catégorie</label>
+          <select value={newShip.cat} onChange={e=>setNewShip(p=>({...p,cat:e.target.value}))} style={S.input}>
+            <option value="small">🛸 Small</option>
+            <option value="medium">🚀 Medium</option>
+            <option value="large">🛳 Large</option>
+            <option value="capital">🌌 Capital</option>
+          </select>
+          <button onClick={createShip} style={S.primaryBtn}>✅ Créer le vaisseau</button>
+        </Modal>
+      )}
+
+      {/* ── MODAL AJOUTER À OBJECTIF ── */}
+      {addModal && (
+        <Modal title={`🎯 Objectif — ${addModal.name}`} onClose={()=>setAddModal(null)}>
+          <div style={{ background:"#0a1628", borderRadius:10, padding:12, marginBottom:16, textAlign:"center" }}>
+            <div style={{ fontSize:32, marginBottom:4 }}>{CAT_CONFIG[addModal.cat]?.icon || "🚀"}</div>
+            <div style={{ color:CAT_CONFIG[addModal.cat]?.color||"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{addModal.name}</div>
+            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>{addModal.maker}</div>
+          </div>
           <label style={S.label}>Devise</label>
           <div style={{ display:"flex", gap:8, marginBottom:4 }}>
             <button onClick={()=>setObjForm(p=>({...p,currency:"aUEC"}))} style={{...S.toggleBtn,...(objForm.currency==="aUEC"?S.toggleActive:{}),flex:1}}>
-              aUEC — {fmt(addModal.aUEC)}
+              aUEC — {fmt(addModal.aUEC)||"N/A"}
             </button>
-            <button onClick={()=>setObjForm(p=>({...p,currency:"usd"}))} style={{...S.toggleBtn,...(objForm.currency==="usd"?{...S.toggleActive,borderColor:"#ffcc0066",color:"#ffcc00",background:"#ffcc0022"}:{}),flex:1}}
-              disabled={addModal.usd===0}
-            >
-              USD — ${addModal.usd}
+            <button onClick={()=>setObjForm(p=>({...p,currency:"usd"}))} style={{...S.toggleBtn,...(objForm.currency==="usd"?{...S.toggleActive,borderColor:"#ffcc0066",color:"#ffcc00",background:"#ffcc0022"}:{}),flex:1}} disabled={!addModal.usd}>
+              USD — ${addModal.usd||"N/A"}
             </button>
           </div>
-
           <label style={S.label}>Type d'objectif</label>
           <div style={{ display:"flex", gap:8 }}>
             <button onClick={()=>setObjForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,...(objForm.type==="common"?S.toggleActive:{}),flex:1}}>🤝 Commun</button>
             <button onClick={()=>setObjForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,...(objForm.type==="personal"?S.toggleActive:{}),flex:1}}>👤 Personnel</button>
           </div>
-
           {objForm.type==="personal"&&(
-            <>
-              <label style={S.label}>Pour qui ?</label>
-              <div style={{ display:"flex", gap:8 }}>
-                {profiles.map(p=>(
-                  <button key={p.id} onClick={()=>setObjForm(prev=>({...prev,owner:p.id}))}
-                    style={{...S.toggleBtn,flex:1,...(objForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            </>
+            <div style={{ display:"flex", gap:8, marginTop:8 }}>
+              {profiles.map(p=>(
+                <button key={p.id} onClick={()=>setObjForm(prev=>({...prev,owner:p.id}))}
+                  style={{...S.toggleBtn,flex:1,...(objForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
           )}
-
           <div style={{ background:"#0a1628", borderRadius:8, padding:10, marginTop:12, marginBottom:4 }}>
-            <div style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif" }}>Objectif ajouté</div>
+            <div style={{ color:"#8899bb", fontSize:10 }}>Coût de l'objectif</div>
             <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>
-              {objForm.currency==="usd" ? `$${addModal.usd} USD` : `${fmt(addModal.aUEC)} aUEC`}
+              {objForm.currency==="usd" ? `$${addModal.usd}` : `${fmt(addModal.aUEC)} aUEC`}
             </div>
           </div>
           <button onClick={addToObjective} style={S.primaryBtn}>🎯 Ajouter à mes objectifs</button>
