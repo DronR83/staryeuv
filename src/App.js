@@ -63,40 +63,194 @@ function CosmicBackground() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     let raf, w, h, t = 0;
-    const stars = [], shooters = [];
+    const stars = [], shooters = [], dustParticles = [];
 
     function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
     resize();
     window.addEventListener("resize", resize);
-    for (let i = 0; i < 220; i++) stars.push({ x: Math.random()*2000, y: Math.random()*2000, r: Math.random()*1.4+.2, speed: Math.random()*.008+.002, phase: Math.random()*Math.PI*2 });
+
+    // Étoiles
+    for (let i = 0; i < 280; i++) stars.push({
+      x: Math.random()*3000, y: Math.random()*3000,
+      r: Math.random()*1.2+.15,
+      speed: Math.random()*.006+.001,
+      phase: Math.random()*Math.PI*2,
+      brightness: Math.random()*.5+.5
+    });
+
+    // Poussière cosmique autour du trou noir
+    for (let i = 0; i < 60; i++) dustParticles.push({
+      angle: Math.random()*Math.PI*2,
+      radius: Math.random()*.3+.7,
+      speed: (Math.random()*.003+.001)*(Math.random()<.5?1:-1),
+      size: Math.random()*1.5+.5,
+      alpha: Math.random()*.6+.2,
+    });
 
     function spawnShooter() {
-      if (shooters.length > 4) return;
-      shooters.push({ x: Math.random()*w, y: Math.random()*h*.5, vx: (Math.random()*4+3)*(Math.random()<.5?1:-1), vy: Math.random()*2+1, life: 1, len: Math.random()*120+60 });
+      if (shooters.length > 3) return;
+      shooters.push({
+        x: Math.random()*w, y: Math.random()*h*.4,
+        vx: (Math.random()*5+3)*(Math.random()<.5?1:-1),
+        vy: Math.random()*1.5+.5,
+        life: 1, len: Math.random()*140+80
+      });
     }
 
     function draw() {
-      t++; ctx.clearRect(0,0,w,h);
-      // Black hole
-      const cx=w*.72, cy=h*.28, bhR=Math.min(w,h)*.18;
-      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,bhR*2.5);
-      g.addColorStop(0,"rgba(0,0,0,1)"); g.addColorStop(.25,"rgba(0,0,0,.97)"); g.addColorStop(.5,"rgba(10,0,30,.7)"); g.addColorStop(.72,"rgba(0,100,200,.18)"); g.addColorStop(.85,"rgba(80,0,180,.1)"); g.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(cx,cy,bhR*2.5,bhR*2.5,0,0,Math.PI*2); ctx.fill();
-      // Accretion
-      const dg=ctx.createRadialGradient(cx,cy,bhR*.9,cx,cy,bhR*1.7);
-      dg.addColorStop(0,"rgba(0,160,255,.55)"); dg.addColorStop(.4,"rgba(255,120,0,.32)"); dg.addColorStop(.75,"rgba(100,0,200,.15)"); dg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.globalAlpha=.85+.08*Math.sin(t*.018); ctx.fillStyle=dg; ctx.beginPath(); ctx.ellipse(cx,cy,bhR*1.7,bhR*.38,Math.PI*.08+t*.003,0,Math.PI*2); ctx.fill();
-      // Stars
-      stars.forEach(s => { ctx.globalAlpha=.4+.6*Math.abs(Math.sin(t*s.speed+s.phase)); ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(s.x%w,s.y%h,s.r,0,Math.PI*2); ctx.fill(); });
-      // Shooters
-      if(t%90===0) spawnShooter();
-      for(let i=shooters.length-1;i>=0;i--){ const s=shooters[i]; s.x+=s.vx; s.y+=s.vy; s.life-=.012; if(s.life<=0||s.x<-200||s.x>w+200||s.y>h+100){shooters.splice(i,1);continue;} const mag=Math.hypot(s.vx,s.vy); const sg=ctx.createLinearGradient(s.x-s.vx*(s.len/mag),s.y-s.vy*(s.len/mag),s.x,s.y); sg.addColorStop(0,"rgba(255,255,255,0)"); sg.addColorStop(1,`rgba(180,230,255,${s.life*.9})`); ctx.globalAlpha=1; ctx.strokeStyle=sg; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(s.x-s.vx*(s.len/mag),s.y-s.vy*(s.len/mag)); ctx.lineTo(s.x,s.y); ctx.stroke(); }
-      ctx.globalAlpha=1; raf=requestAnimationFrame(draw);
+      t++;
+      ctx.clearRect(0,0,w,h);
+
+      // ── Fond dégradé spatial ──────────────────────────────────────────────
+      const bgGrad = ctx.createLinearGradient(0,0,0,h);
+      bgGrad.addColorStop(0, "#020510");
+      bgGrad.addColorStop(.5,"#030814");
+      bgGrad.addColorStop(1, "#020510");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0,0,w,h);
+
+      // ── Trou noir ── positionné en haut à droite, plus petit ─────────────
+      const cx = w * 0.78;
+      const cy = h * 0.18;
+      const bhR = Math.min(w,h) * 0.10; // plus petit = moins gênant
+
+      // Lentille gravitationnelle — halo extérieur subtil
+      for (let ring = 5; ring >= 1; ring--) {
+        const rr = bhR*(1.2+ring*.5);
+        const alpha = 0.04/ring;
+        const lensGrad = ctx.createRadialGradient(cx,cy,bhR,cx,cy,rr);
+        lensGrad.addColorStop(0, `rgba(60,120,255,${alpha*2})`);
+        lensGrad.addColorStop(.5,`rgba(140,60,255,${alpha})`);
+        lensGrad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = lensGrad;
+        ctx.beginPath();
+        ctx.arc(cx,cy,rr,0,Math.PI*2);
+        ctx.fill();
+      }
+
+      // Disque d'accrétion — anneau elliptique lumineux rotatif
+      ctx.save();
+      ctx.translate(cx, cy);
+      const diskAngle = t * 0.004;
+      ctx.rotate(diskAngle);
+
+      // Anneau avant (en dessous du trou noir)
+      for (let layer = 0; layer < 3; layer++) {
+        const stretch = 2.2 + layer*0.3;
+        const squeeze = 0.32 - layer*0.04;
+        const diskR   = bhR*(1.1+layer*0.18);
+        const alphaD  = (0.7-layer*0.2)*(0.85+0.15*Math.sin(t*0.025+layer));
+        const diskGrad = ctx.createRadialGradient(0,0,diskR*0.6,0,0,diskR*stretch);
+        if (layer===0) {
+          diskGrad.addColorStop(0,   `rgba(255,200,100,${alphaD})`);
+          diskGrad.addColorStop(0.3, `rgba(255,120,40,${alphaD*.8})`);
+          diskGrad.addColorStop(0.6, `rgba(100,60,255,${alphaD*.4})`);
+          diskGrad.addColorStop(1,   "rgba(0,0,0,0)");
+        } else {
+          diskGrad.addColorStop(0,   `rgba(0,180,255,${alphaD*.6})`);
+          diskGrad.addColorStop(0.5, `rgba(80,0,200,${alphaD*.3})`);
+          diskGrad.addColorStop(1,   "rgba(0,0,0,0)");
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = diskGrad;
+        ctx.beginPath();
+        ctx.ellipse(0,0,diskR*stretch,diskR*squeeze,0,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Singularité — trou noir central (pur noir)
+      const singGrad = ctx.createRadialGradient(cx,cy,0,cx,cy,bhR*1.05);
+      singGrad.addColorStop(0,   "rgba(0,0,0,1)");
+      singGrad.addColorStop(0.7, "rgba(0,0,0,1)");
+      singGrad.addColorStop(0.85,"rgba(0,0,0,.96)");
+      singGrad.addColorStop(1,   "rgba(0,0,0,.7)");
+      ctx.fillStyle = singGrad;
+      ctx.beginPath();
+      ctx.arc(cx,cy,bhR*1.05,0,Math.PI*2);
+      ctx.fill();
+
+      // Photon ring — anneau lumineux autour de la singularité
+      ctx.save();
+      ctx.shadowColor = "#ffaa44";
+      ctx.shadowBlur = 12+5*Math.sin(t*0.03);
+      ctx.strokeStyle = `rgba(255,180,80,${0.6+0.2*Math.sin(t*0.03)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(cx,cy,bhR*0.98,0,Math.PI*2);
+      ctx.stroke();
+      ctx.shadowColor = "#4488ff";
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = `rgba(80,160,255,${0.3+0.1*Math.sin(t*0.05)})`;
+      ctx.lineWidth = .7;
+      ctx.beginPath();
+      ctx.arc(cx,cy,bhR*1.06,0,Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Poussière orbitale
+      dustParticles.forEach(d => {
+        d.angle += d.speed;
+        const dx = cx + Math.cos(d.angle)*bhR*(d.radius+1.2);
+        const dy = cy + Math.sin(d.angle)*bhR*(d.radius*.35+.2);
+        ctx.globalAlpha = d.alpha*(0.5+0.5*Math.sin(t*.02+d.angle));
+        ctx.fillStyle = "#ffcc88";
+        ctx.beginPath();
+        ctx.arc(dx,dy,d.size*.6,0,Math.PI*2);
+        ctx.fill();
+      });
+
+      // ── Étoiles scintillantes ─────────────────────────────────────────────
+      ctx.globalAlpha = 1;
+      stars.forEach(s => {
+        const flicker = s.brightness*(0.5+0.5*Math.abs(Math.sin(t*s.speed+s.phase)));
+        // Étoiles loin du trou noir = plus visibles
+        const dist = Math.hypot((s.x%w)-cx,(s.y%h)-cy);
+        const obscure = dist < bhR*2.5 ? Math.max(0,(dist-bhR*1.1)/(bhR*1.4)) : 1;
+        ctx.globalAlpha = flicker*obscure;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(s.x%w,s.y%h,s.r,0,Math.PI*2);
+        ctx.fill();
+        // Petite croix pour les grosses étoiles
+        if (s.r > 1.0 && flicker > 0.8) {
+          ctx.globalAlpha = flicker*obscure*.4;
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = .5;
+          ctx.beginPath();
+          ctx.moveTo(s.x%w-s.r*3,s.y%h); ctx.lineTo(s.x%w+s.r*3,s.y%h);
+          ctx.moveTo(s.x%w,s.y%h-s.r*3); ctx.lineTo(s.x%w,s.y%h+s.r*3);
+          ctx.stroke();
+        }
+      });
+
+      // ── Étoiles filantes ─────────────────────────────────────────────────
+      if(t%100===0) spawnShooter();
+      for(let i=shooters.length-1;i>=0;i--){
+        const s=shooters[i]; s.x+=s.vx; s.y+=s.vy; s.life-=.01;
+        if(s.life<=0||s.x<-300||s.x>w+300||s.y>h+200){shooters.splice(i,1);continue;}
+        const mag=Math.hypot(s.vx,s.vy);
+        const sg=ctx.createLinearGradient(s.x-s.vx*(s.len/mag),s.y-s.vy*(s.len/mag),s.x,s.y);
+        sg.addColorStop(0,"rgba(255,255,255,0)");
+        sg.addColorStop(.7,`rgba(200,230,255,${s.life*.4})`);
+        sg.addColorStop(1,`rgba(255,255,255,${s.life*.9})`);
+        ctx.globalAlpha=1; ctx.strokeStyle=sg; ctx.lineWidth=1.2;
+        ctx.beginPath();
+        ctx.moveTo(s.x-s.vx*(s.len/mag),s.y-s.vy*(s.len/mag));
+        ctx.lineTo(s.x,s.y); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      raf=requestAnimationFrame(draw);
     }
     draw();
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize",resize); };
   }, []);
-  return <canvas ref={canvasRef} style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position:"fixed", inset:0, zIndex:0, pointerEvents:"none", opacity:0.85 }}
+    />
+  );
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -1374,7 +1528,9 @@ export default function App() {
   );
 
   return (
-    <div style={{background:"#03070f",minHeight:"100vh",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",position:"relative"}}>
+    <div style={{background:"#020510",minHeight:"100vh",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",position:"relative"}}>
+      {/* Overlay sombre pour lisibilité — entre canvas et contenu */}
+      <div style={{ position:"fixed", inset:0, zIndex:1, pointerEvents:"none", background:"rgba(2,5,16,0.55)" }} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -1441,11 +1597,23 @@ export default function App() {
                 />
               ))}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(115px,1fr))",gap:10,marginBottom:20}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:20}}>
               <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00"/>
               <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff"/>
               <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d"/>
               <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35"/>
+              {profiles.map(p=>(
+                <HexTile
+                  key={p.id}
+                  icon="🚀"
+                  label={p.name}
+                  value={(fleets[p.id]||[]).length}
+                  sub="vaisseau(x)"
+                  color={p.color}
+                  onClick={()=>setHangarProfile(p)}
+                  pulse={false}
+                />
+              ))}
             </div>
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
               <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:14,padding:"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
@@ -1549,10 +1717,10 @@ export default function App() {
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S={
-  header:{position:"sticky",top:0,zIndex:100,background:"rgba(3,7,15,0.95)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
+  header:{position:"sticky",top:0,zIndex:100,background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
   headerInner:{maxWidth:900,margin:"0 auto",padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
-  nav:{display:"flex",overflowX:"auto",background:"rgba(3,7,15,0.9)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:61,zIndex:99,backdropFilter:"blur(12px)"},
-  content:{maxWidth:900,margin:"0 auto",padding:"16px 12px 80px",overflowX:"hidden",boxSizing:"border-box"},
+  nav:{display:"flex",overflowX:"auto",background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:61,zIndex:99,backdropFilter:"blur(12px)"},
+  content:{maxWidth:900,margin:"0 auto",padding:"16px 12px 80px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:6,flexWrap:"wrap"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"5px 7px",overflow:"hidden"},
