@@ -472,34 +472,51 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
         const pct      = detailObj.cost>0 ? Math.min(100,Math.round(total/detailObj.cost*100)) : 0;
         return (
           <Modal title={`🎯 ${detailObj.name}`} onClose={()=>setDetailObj(null)}>
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:40,marginBottom:8}}>{detailObj.icon}</div>
+            <div style={{textAlign:"center",marginBottom:12}}>
+              <div style={{fontSize:40,marginBottom:6}}>{detailObj.icon}</div>
               <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700}}>{fmt(detailObj.cost)} aUEC</div>
-              <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>OBJECTIF TOTAL</div>
+              <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2}}>OBJECTIF TOTAL</div>
             </div>
-            {/* Barre */}
-            <div style={{...S.progressBar,height:12,borderRadius:8,marginBottom:16,position:"relative",overflow:"hidden"}}>
-              <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,#ffcc0088,#ffcc00)`,borderRadius:8,boxShadow:"0 0 12px #ffcc0088",transition:"width 1s ease"}}/>
-              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
+            {/* Barre globale */}
+            <div style={{...S.progressBar,height:12,borderRadius:8,marginBottom:6,position:"relative",overflow:"hidden"}}>
+              <div style={{...S.progressFill,width:`${pct}%`,background:"linear-gradient(90deg,#ffcc0088,#ffcc00)",borderRadius:8,boxShadow:"0 0 12px #ffcc0088",transition:"width 1s ease"}}/>
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
             </div>
             <div style={{color:"#ffcc00",textAlign:"center",fontFamily:"'Orbitron',sans-serif",fontSize:14,marginBottom:16}}>{pct}% atteint</div>
-            {/* Fortune actuelle */}
+
+            {/* Avancement par joueur */}
             <div style={{background:"#0a1628",borderRadius:10,padding:12,marginBottom:12}}>
-              <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>FORTUNE ACTUELLE</div>
-              <div style={{display:"flex",gap:8}}>
-                {profiles.map(p=>(
-                  <div key={p.id} style={{flex:1,background:"#07111f",borderRadius:8,padding:8,border:`1px solid ${p.color}44`,textAlign:"center"}}>
-                    <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>{p.name}</div>
-                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(p.aUEC)}</div>
-                  </div>
-                ))}
+              <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>AVANCEMENT PAR JOUEUR</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {profiles.map(p=>{
+                  const pPct = detailObj.cost>0 ? Math.min(100,Math.round((p.aUEC||0)/detailObj.cost*100)) : 0;
+                  const pMiss = Math.max(0,(detailObj.cost||0)-(p.aUEC||0));
+                  return (
+                    <div key={p.id} style={{background:"#07111f",borderRadius:8,padding:10,border:`1px solid ${p.color}44`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                        <div style={{color:p.color,fontSize:12,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{p.name}</div>
+                        <div style={{color:p.color,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pPct}%</div>
+                      </div>
+                      <div style={{...S.progressBar,height:7,borderRadius:4,position:"relative",overflow:"hidden",marginBottom:5}}>
+                        <div style={{...S.progressFill,width:`${pPct}%`,background:`linear-gradient(90deg,${p.color}88,${p.color})`,borderRadius:4,boxShadow:`0 0 8px ${p.color}66`,transition:"width 1s ease"}}/>
+                        <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.1) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>
+                        <span style={{color:"#00ff9d"}}>{fmt(p.aUEC)} aUEC</span>
+                        {pMiss>0&&<span style={{color:"#ff6b35"}}>manque {fmt(pMiss)}</span>}
+                        {pMiss<=0&&<span style={{color:"#00ff9d"}}>✅ Part atteinte</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            {/* Manque */}
+
+            {/* Il manque global */}
             {missing>0?(
               <div style={{background:"#0a1628",borderRadius:10,padding:12}}>
-                <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>IL MANQUE</div>
-                <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700,textAlign:"center",marginBottom:8}}>{fmt(missing)} aUEC</div>
+                <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>IL MANQUE AU TOTAL</div>
+                <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:700,textAlign:"center",marginBottom:10}}>{fmt(missing)} aUEC</div>
                 <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>PAR PERSONNE</div>
                 <div style={{display:"flex",gap:8}}>
                   {profiles.map(p=>(
@@ -559,11 +576,16 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
 
 // ─── CALCULATEUR TAB ──────────────────────────────────────────────────────────
 function CalcTab({ fleets, profiles }) {
-  const [minerals,    setMinerals]    = useState([]);
-  const [loadingMin,  setLoadingMin]  = useState(false);
-  const [selMineral,  setSelMineral]  = useState("");
-  const [selShip,     setSelShip]     = useState("");
-  const [manualPrice, setManualPrice] = useState("");
+  const [minerals,   setMinerals]   = useState([]);
+  const [loadingMin, setLoadingMin] = useState(false);
+  const [selMineral, setSelMineral] = useState("");
+  const [selShip,    setSelShip]    = useState("");
+  const [manualPrice,setManualPrice]= useState("");
+  // Achat/Revente
+  const [buyPrice,   setBuyPrice]   = useState("");
+  const [sellPrice,  setSellPrice]  = useState("");
+  const [quantity,   setQuantity]   = useState("100");
+  const [mode,       setMode]       = useState("mining"); // mining | trade
 
   const allShips = Object.values(fleets).flat();
 
@@ -594,30 +616,27 @@ function CalcTab({ fleets, profiles }) {
 
   const ship       = allShips.find(s=>s.id===selShip);
   const price      = +manualPrice || 0;
-  const profitUnit = price;
-  const profitSCU  = price * 100;
-  const profitFull = ship ? profitSCU * ship.capacity : 0;
+  const profitFull = ship ? price * 100 * ship.capacity : 0;
 
-  function onMineralChange(name) {
-    setSelMineral(name);
-    const m = minerals.find(x=>x.name===name);
-    if (m) setManualPrice(String(m.price));
-  }
+  // Achat/Revente
+  const buy      = +buyPrice  || 0;
+  const sell     = +sellPrice || 0;
+  const qty      = +quantity  || 0;
+  const margin   = sell - buy;
+  const totalProfit = margin * qty;
+  const marginPct   = buy > 0 ? Math.round((margin / buy) * 100) : 0;
 
   return (
     <div>
-      {/* Bouton UEX Corp animé */}
+      {/* Bouton UEX Corp */}
       <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{ textDecoration:"none", display:"block", marginBottom:20 }}>
         <div style={{
           background:"linear-gradient(135deg,#00d4ff18,#0a1628,#7b2fff18)",
-          border:"1px solid #00d4ff55",
-          borderRadius:14, padding:"16px 20px",
+          border:"1px solid #00d4ff55", borderRadius:14, padding:"16px 20px",
           display:"flex", alignItems:"center", gap:14,
-          boxShadow:"0 0 24px #00d4ff22, 0 0 48px #7b2fff11",
-          animation:"pulse 3s ease-in-out infinite",
+          boxShadow:"0 0 24px #00d4ff22", animation:"pulse 3s ease-in-out infinite",
           position:"relative", overflow:"hidden",
         }}>
-          {/* Shimmer */}
           <div style={{ position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(0,212,255,0.06),transparent)",animation:"shimmer 3s infinite",pointerEvents:"none" }}/>
           <div style={{ fontSize:32 }}>🌐</div>
           <div style={{ flex:1 }}>
@@ -628,71 +647,119 @@ function CalcTab({ fleets, profiles }) {
         </div>
       </a>
 
-      {/* Calculateur */}
-      <div style={{ background:"#07111fcc", border:"1px solid #00d4ff33", borderRadius:16, padding:20, backdropFilter:"blur(12px)" }}>
-        <div style={S.sectionTitle}>⚙️ CALCULATEUR DE PROFITS</div>
-
-        {/* Minerai */}
-        <label style={S.label}>Minerai</label>
-        <select value={selMineral} onChange={e=>onMineralChange(e.target.value)} style={S.input} disabled={loadingMin}>
-          {loadingMin ? <option>Chargement...</option> : minerals.map(m=><option key={m.name} value={m.name}>{m.name} — {fmt(m.price)} aUEC/u</option>)}
-        </select>
-
-        {/* Prix modifiable */}
-        <label style={S.label}>Prix par unité (aUEC) — modifiable</label>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          <input type="number" value={manualPrice} onChange={e=>setManualPrice(e.target.value)} style={{ ...S.input, flex:1, marginBottom:0, fontSize:18, fontFamily:"'Orbitron',sans-serif", color:"#ffcc00" }}/>
-          <button onClick={loadMinerals} style={{ ...S.editBtn, color:"#00d4ff", borderColor:"#00d4ff44", padding:"10px 12px", fontSize:16 }} disabled={loadingMin}>{loadingMin?"⏳":"🔄"}</button>
-        </div>
-
-        {/* Vaisseau */}
-        <label style={S.label}>Vaisseau</label>
-        <select value={selShip} onChange={e=>setSelShip(e.target.value)} style={S.input}>
-          {allShips.length===0 && <option>— Ajoute un vaisseau dans le hangar —</option>}
-          {allShips.map(s=>{
-            const owner = Object.entries(fleets).find(([,arr])=>arr.find(x=>x.id===s.id));
-            const p = profiles.find(p=>p.id===owner?.[0]);
-            return <option key={s.id} value={s.id}>{s.name} ({s.capacity} SCU) — {p?.name||""}</option>;
-          })}
-        </select>
-
-        {/* Résultats */}
-        {ship && price > 0 && (
-          <div style={{ display:"flex", flexDirection:"column", gap:10, marginTop:16 }}>
-            <div style={{ display:"flex", gap:10 }}>
-              <div style={{ flex:1, background:"#0a1628", border:"1px solid #00d4ff33", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
-                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PRIX / UNITÉ</div>
-                <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(profitUnit)}</div>
-                <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
-              </div>
-              <div style={{ flex:1, background:"#0a1628", border:"1px solid #00d4ff33", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
-                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PROFIT / SCU</div>
-                <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(profitSCU)}</div>
-                <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
-              </div>
-            </div>
-            {/* Profit total — grande tuile */}
-            <div style={{
-              background:"linear-gradient(135deg,#00ff9d11,#0a1628)",
-              border:"1px solid #00ff9d55", borderRadius:12, padding:"18px 20px", textAlign:"center",
-              boxShadow:"0 0 20px #00ff9d22",
-            }}>
-              <div style={{ color:"#8899bb", fontSize:10, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT MAX — {ship.name} ({ship.capacity} SCU)</div>
-              <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:"0 0 20px #00ff9d88" }}>{fmt(profitFull)}</div>
-              <div style={{ color:"#8899bb", fontSize:12, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC par voyage complet</div>
-            </div>
-            {/* Info */}
-            <div style={{ background:"#0a1628", borderRadius:8, padding:10, color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>
-              💡 <span style={{color:"#e8f4ff"}}>{ship.name}</span> × <span style={{color:"#ffcc00"}}>{ship.capacity} SCU</span> × <span style={{color:"#ffcc00"}}>100 u/SCU</span> × <span style={{color:"#ffcc00"}}>{fmt(price)} aUEC/u</span> = <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif"}}>{fmt(profitFull)}</span>
-            </div>
-          </div>
-        )}
-        {(!ship || !price) && (
-          <div style={{ color:"#8899bb", textAlign:"center", padding:24, fontFamily:"'Rajdhani',sans-serif" }}>
-            Choisis un minerai et un vaisseau
-          </div>
-        )}
+      {/* Sélecteur de mode */}
+      <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+        {[["mining","⛏ MINAGE"],["trade","🔄 ACHAT/REVENTE"]].map(([m,l])=>(
+          <button key={m} onClick={()=>setMode(m)} style={{
+            flex:1, padding:"11px 8px", border:`2px solid ${mode===m?"#00d4ff":"#1a2a44"}`,
+            borderRadius:10, background: mode===m?"#00d4ff22":"#0a1628",
+            color: mode===m?"#00d4ff":"#8899bb",
+            fontFamily:"'Rajdhani',sans-serif", fontSize:13, fontWeight:700, letterSpacing:1, cursor:"pointer",
+            boxShadow: mode===m?"0 0 16px #00d4ff33":"none", transition:"all .2s"
+          }}>{l}</button>
+        ))}
       </div>
+
+      {/* ── MODE MINAGE ── */}
+      {mode==="mining" && (
+        <div style={{ background:"#07111fcc", border:"1px solid #00d4ff33", borderRadius:16, padding:20, backdropFilter:"blur(12px)" }}>
+          <div style={S.sectionTitle}>⛏ CALCULATEUR DE MINAGE</div>
+          <label style={S.label}>Minerai</label>
+          <select value={selMineral} onChange={e=>{ setSelMineral(e.target.value); const m=minerals.find(x=>x.name===e.target.value); if(m) setManualPrice(String(m.price)); }} style={S.input} disabled={loadingMin}>
+            {loadingMin?<option>Chargement...</option>:minerals.map(m=><option key={m.name} value={m.name}>{m.name} — {fmt(m.price)} aUEC/u</option>)}
+          </select>
+          <label style={S.label}>Prix/unité (aUEC) — modifiable manuellement</label>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <input type="number" value={manualPrice} onChange={e=>setManualPrice(e.target.value)} style={{ ...S.input, flex:1, marginBottom:0, fontSize:18, fontFamily:"'Orbitron',sans-serif", color:"#ffcc00" }}/>
+            <button onClick={loadMinerals} style={{ ...S.editBtn, color:"#00d4ff", borderColor:"#00d4ff44", padding:"10px 12px", fontSize:16 }} disabled={loadingMin}>{loadingMin?"⏳":"🔄"}</button>
+          </div>
+          <label style={S.label}>Vaisseau</label>
+          <select value={selShip} onChange={e=>setSelShip(e.target.value)} style={S.input}>
+            {allShips.length===0&&<option>— Ajoute un vaisseau dans le hangar —</option>}
+            {allShips.map(s=>{ const own=Object.entries(fleets).find(([,arr])=>arr.find(x=>x.id===s.id)); const p=profiles.find(p=>p.id===own?.[0]); return <option key={s.id} value={s.id}>{s.name} ({s.capacity} SCU) — {p?.name||""}</option>; })}
+          </select>
+          {ship && price > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:10, marginTop:16 }}>
+              <div style={{ display:"flex", gap:10 }}>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #ffcc0033", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PRIX / UNITÉ</div>
+                  <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(price)}</div>
+                  <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+                </div>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #00d4ff33", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PROFIT / SCU</div>
+                  <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(price*100)}</div>
+                  <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+                </div>
+              </div>
+              <div style={{ background:"linear-gradient(135deg,#00ff9d11,#0a1628)", border:"1px solid #00ff9d55", borderRadius:12, padding:"18px 20px", textAlign:"center", boxShadow:"0 0 20px #00ff9d22", position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(0,255,157,0.05),transparent)",animation:"shimmer 4s infinite",pointerEvents:"none" }}/>
+                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT MAX — {ship.name} ({ship.capacity} SCU)</div>
+                <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:"0 0 20px #00ff9d88" }}>{fmt(profitFull)}</div>
+                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC par voyage complet</div>
+              </div>
+            </div>
+          )}
+          {(!ship||!price)&&<div style={{ color:"#8899bb", textAlign:"center", padding:20, fontFamily:"'Rajdhani',sans-serif" }}>Choisis un minerai et un vaisseau</div>}
+        </div>
+      )}
+
+      {/* ── MODE ACHAT/REVENTE ── */}
+      {mode==="trade" && (
+        <div style={{ background:"#07111fcc", border:"1px solid #ffcc0033", borderRadius:16, padding:20, backdropFilter:"blur(12px)" }}>
+          <div style={{ ...S.sectionTitle, color:"#ffcc00" }}>🔄 CALCULATEUR ACHAT / REVENTE</div>
+          <label style={S.label}>Prix d'achat (aUEC/unité)</label>
+          <input type="number" value={buyPrice} onChange={e=>setBuyPrice(e.target.value)} style={{ ...S.input, color:"#ff6b35", fontSize:18, fontFamily:"'Orbitron',sans-serif" }} placeholder="Ex: 1200"/>
+          <label style={S.label}>Prix de vente (aUEC/unité)</label>
+          <input type="number" value={sellPrice} onChange={e=>setSellPrice(e.target.value)} style={{ ...S.input, color:"#00ff9d", fontSize:18, fontFamily:"'Orbitron',sans-serif" }} placeholder="Ex: 2400"/>
+          <label style={S.label}>Quantité (unités)</label>
+          <input type="number" value={quantity} onChange={e=>setQuantity(e.target.value)} style={{ ...S.input, fontSize:16 }} placeholder="Ex: 100"/>
+
+          {buy > 0 && sell > 0 && qty > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:10, marginTop:16 }}>
+              <div style={{ display:"flex", gap:8 }}>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #ff6b3544", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>COÛT TOTAL</div>
+                  <div style={{ color:"#ff6b35", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>{fmt(buy*qty)}</div>
+                  <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+                </div>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #00ff9d44", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>REVENTE TOTALE</div>
+                  <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>{fmt(sell*qty)}</div>
+                  <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #ffcc0044", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>MARGE / UNITÉ</div>
+                  <div style={{ color: margin>=0?"#ffcc00":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>{margin>=0?"+":""}{fmt(margin)}</div>
+                  <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+                </div>
+                <div style={{ flex:1, background:"#0a1628", border:"1px solid #ffcc0044", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                  <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>MARGE %</div>
+                  <div style={{ color: marginPct>=0?"#ffcc00":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>{marginPct>=0?"+":""}{marginPct}%</div>
+                </div>
+              </div>
+              {/* Profit net */}
+              <div style={{
+                background: totalProfit>=0 ? "linear-gradient(135deg,#00ff9d11,#0a1628)" : "linear-gradient(135deg,#ff446611,#0a1628)",
+                border: `1px solid ${totalProfit>=0?"#00ff9d55":"#ff446655"}`,
+                borderRadius:12, padding:"18px 20px", textAlign:"center",
+                boxShadow: `0 0 20px ${totalProfit>=0?"#00ff9d22":"#ff446622"}`,
+                position:"relative", overflow:"hidden"
+              }}>
+                <div style={{ position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${totalProfit>=0?"rgba(0,255,157,0.05)":"rgba(255,68,102,0.05)"},transparent)`,animation:"shimmer 4s infinite",pointerEvents:"none" }}/>
+                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT NET TOTAL ({fmt(qty)} unités)</div>
+                <div style={{ color: totalProfit>=0?"#00ff9d":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:`0 0 20px ${totalProfit>=0?"#00ff9d88":"#ff446688"}` }}>
+                  {totalProfit>=0?"+":""}{fmt(totalProfit)}
+                </div>
+                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC</div>
+              </div>
+            </div>
+          )}
+          {(!buy||!sell||!qty)&&<div style={{ color:"#8899bb", textAlign:"center", padding:20, fontFamily:"'Rajdhani',sans-serif" }}>Entre les prix d'achat, de vente et la quantité</div>}
+        </div>
+      )}
     </div>
   );
 }
