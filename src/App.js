@@ -442,39 +442,49 @@ function MiningCalc({ ships, setShips, minerals }) {
 }
 
 // ─── OBJECTIVES TAB ───────────────────────────────────────────────────────────
-function ObjectivesTab({ objectives, setObjectives, profiles }) {
-  const [modal,setModal]=useState(false);
-  const [form,setForm]=useState({name:"",cost:"",icon:"🎯",type:"common",owner:"p1",progress:0,target:100});
+const OBJ_CATEGORIES = [
+  { id:"ship",    icon:"🚀", label:"Vaisseau"   },
+  { id:"armor",   icon:"🛡", label:"Armure"     },
+  { id:"weapon",  icon:"🔫", label:"Arme"       },
+  { id:"clothes", icon:"👕", label:"Vêtement"   },
+  { id:"accesso", icon:"💎", label:"Accessoire" },
+  { id:"other",   icon:"🎯", label:"Autre"      },
+];
 
-  const all=[
-    ...objectives.common.map(o=>({...o,type:"common"})),
-    ...Object.entries(objectives.personal).flatMap(([pid,arr])=>arr.map(o=>({...o,type:"personal",owner:pid})))
+function ObjectivesTab({ objectives, setObjectives, profiles }) {
+  const [modal,      setModal]      = useState(false);
+  const [detailObj,  setDetailObj]  = useState(null); // objectif commun sélectionné
+  const [form, setForm] = useState({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
+
+  const all = [
+    ...objectives.common.map(o=>({...o, type:"common"})),
+    ...Object.entries(objectives.personal).flatMap(([pid,arr])=>arr.map(o=>({...o, type:"personal", owner:pid})))
   ];
 
-  function add(){
-    if(!form.name) return;
-    const obj={id:"obj"+Date.now(),icon:form.icon,name:form.name,cost:+form.cost,type:form.type,owner:form.owner};
-    if(form.type==="common") setObjectives(p=>({...p,common:[...p.common,obj]}));
-    else setObjectives(p=>({...p,personal:{...p.personal,[form.owner]:[...(p.personal[form.owner]||[]),obj]}}));
+  function add() {
+    if (!form.name) return;
+    const catIcon = OBJ_CATEGORIES.find(c=>c.id===form.category)?.icon || "🎯";
+    const obj = { id:"obj"+Date.now(), icon:catIcon, name:form.name, cost:+form.cost, category:form.category, type:form.type, owner:form.owner };
+    if (form.type==="common") setObjectives(p=>({...p, common:[...p.common, obj]}));
+    else setObjectives(p=>({...p, personal:{...p.personal, [form.owner]:[...(p.personal[form.owner]||[]), obj]}}));
     setModal(false);
-    setForm({name:"",cost:"",icon:"🎯",type:"common",owner:"p1",progress:0,target:100});
+    setForm({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
   }
-  function del(obj){
-    if(obj.type==="common") setObjectives(p=>({...p,common:p.common.filter(x=>x.id!==obj.id)}));
-    else setObjectives(p=>({...p,personal:{...p.personal,[obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
+
+  function del(obj) {
+    if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
+    else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
+    setDetailObj(null);
   }
-  // Calcule la progression automatique depuis les aUEC
+
   function getAutoProgress(obj) {
-    if (!obj.cost || obj.cost <= 0) return 0;
-    if (obj.type === "common") {
-      // Objectif commun : somme de tous les profils
-      const total = profiles.reduce((a, p) => a + (p.aUEC || 0), 0);
-      return Math.min(100, Math.round((total / obj.cost) * 100));
+    if (!obj.cost || obj.cost<=0) return 0;
+    if (obj.type==="common") {
+      const total = profiles.reduce((a,p)=>a+(p.aUEC||0), 0);
+      return Math.min(100, Math.round((total/obj.cost)*100));
     } else {
-      // Objectif personnel : aUEC du propriétaire
-      const owner = profiles.find(p => p.id === obj.owner);
-      const money = owner?.aUEC || 0;
-      return Math.min(100, Math.round((money / obj.cost) * 100));
+      const money = profiles.find(p=>p.id===obj.owner)?.aUEC || 0;
+      return Math.min(100, Math.round((money/obj.cost)*100));
     }
   }
 
@@ -484,246 +494,281 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
         <div style={S.sectionTitle}>🎯 OBJECTIFS</div>
         <button onClick={()=>setModal(true)} style={{...S.primaryBtn,width:"auto",marginTop:0}}>+ Objectif</button>
       </div>
-      {all.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Aucun objectif défini</div>}
+      {all.length===0 && <div style={{color:"#8899bb",textAlign:"center",padding:40,fontFamily:"'Rajdhani',sans-serif"}}>Aucun objectif</div>}
       <div style={{display:"flex",flexDirection:"column",gap:12}}>
         {all.map(obj=>{
-          const owner=profiles.find(p=>p.id===obj.owner);
-          const pct = getAutoProgress(obj);
-          const barColor=pct>=100?"#00ff9d":obj.type==="common"?"#ffcc00":(owner?.color||"#00d4ff");
+          const owner    = profiles.find(p=>p.id===obj.owner);
+          const pct      = getAutoProgress(obj);
+          const barColor = pct>=100?"#00ff9d":obj.type==="common"?"#ffcc00":(owner?.color||"#00d4ff");
           const currentMoney = obj.type==="common"
             ? profiles.reduce((a,p)=>a+(p.aUEC||0),0)
             : (profiles.find(p=>p.id===obj.owner)?.aUEC||0);
           return (
-            <div key={obj.id} style={{...S.objectiveCard,borderColor:obj.type==="common"?"#ffcc0055":(owner?.color+"55"||"#00d4ff55")}}>
+            <div key={obj.id}
+              onClick={()=>{ if(obj.type==="common") setDetailObj(obj); }}
+              style={{...S.objectiveCard, borderColor:obj.type==="common"?"#ffcc0055":(owner?.color+"55"||"#00d4ff55"), cursor:obj.type==="common"?"pointer":"default" }}>
               <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                 <div style={{fontSize:26,flexShrink:0}}>{obj.icon}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
                     <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:600}}>{obj.name}</div>
-                    {obj.type==="common"
-                      ?<span style={S.badgeCommon}>COMMUN</span>
-                      :<span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>
-                    }
+                    <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                      {obj.type==="common"
+                        ? <span style={S.badgeCommon}>COMMUN 👆</span>
+                        : <span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>
+                      }
+                    </div>
                   </div>
                   {obj.cost>0&&(
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
-                      <div style={{color:"#ffcc00",fontSize:12,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
+                      <div style={{color:"#ffcc00",fontSize:11,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
                       {pct>=100
                         ? <span style={{color:"#00ff9d",fontSize:11,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
                         : <span style={{color:barColor,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pct}%</span>
                       }
                     </div>
                   )}
-                  {/* Barre de progression animée */}
-                  <div style={{...S.progressBar,height:10,borderRadius:6,position:"relative",overflow:"hidden"}}>
-                    <div style={{
-                      ...S.progressFill,
-                      width:`${pct}%`,
-                      background:`linear-gradient(90deg, ${barColor}88, ${barColor})`,
-                      borderRadius:6,
-                      boxShadow:`0 0 10px ${barColor}88`,
-                      transition:"width 1s ease",
-                    }}/>
-                    {/* Shimmer animé */}
-                    <div style={{
-                      position:"absolute",top:0,left:0,right:0,bottom:0,
-                      background:"linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.15) 50%,transparent 100%)",
-                      animation:"shimmer 2s infinite",
-                      backgroundSize:"200% 100%",
-                    }}/>
+                  <div style={{...S.progressBar,height:8,borderRadius:6,position:"relative",overflow:"hidden"}}>
+                    <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,${barColor}88,${barColor})`,borderRadius:6,boxShadow:`0 0 10px ${barColor}88`,transition:"width 1s ease"}}/>
+                    <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
                   </div>
-                  {obj.cost<=0&&<div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginTop:4}}>Définis un coût pour voir la progression automatique</div>}
                 </div>
-                <button onClick={()=>del(obj)} style={{...S.closeBtn,flexShrink:0}}>🗑</button>
+                <button onClick={e=>{e.stopPropagation();del(obj);}} style={{...S.closeBtn,flexShrink:0}}>🗑</button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Modal détail objectif commun */}
+      {detailObj&&(()=>{
+        const total    = profiles.reduce((a,p)=>a+(p.aUEC||0),0);
+        const missing  = Math.max(0, (detailObj.cost||0) - total);
+        const perPerson= Math.ceil(missing / profiles.length);
+        const pct      = detailObj.cost>0 ? Math.min(100,Math.round(total/detailObj.cost*100)) : 0;
+        return (
+          <Modal title={`🎯 ${detailObj.name}`} onClose={()=>setDetailObj(null)}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:40,marginBottom:8}}>{detailObj.icon}</div>
+              <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700}}>{fmt(detailObj.cost)} aUEC</div>
+              <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>OBJECTIF TOTAL</div>
+            </div>
+            {/* Barre */}
+            <div style={{...S.progressBar,height:12,borderRadius:8,marginBottom:16,position:"relative",overflow:"hidden"}}>
+              <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,#ffcc0088,#ffcc00)`,borderRadius:8,boxShadow:"0 0 12px #ffcc0088",transition:"width 1s ease"}}/>
+              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
+            </div>
+            <div style={{color:"#ffcc00",textAlign:"center",fontFamily:"'Orbitron',sans-serif",fontSize:14,marginBottom:16}}>{pct}% atteint</div>
+            {/* Fortune actuelle */}
+            <div style={{background:"#0a1628",borderRadius:10,padding:12,marginBottom:12}}>
+              <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>FORTUNE ACTUELLE</div>
+              <div style={{display:"flex",gap:8}}>
+                {profiles.map(p=>(
+                  <div key={p.id} style={{flex:1,background:"#07111f",borderRadius:8,padding:8,border:`1px solid ${p.color}44`,textAlign:"center"}}>
+                    <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>{p.name}</div>
+                    <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(p.aUEC)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Manque */}
+            {missing>0?(
+              <div style={{background:"#0a1628",borderRadius:10,padding:12}}>
+                <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>IL MANQUE</div>
+                <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700,textAlign:"center",marginBottom:8}}>{fmt(missing)} aUEC</div>
+                <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>PAR PERSONNE</div>
+                <div style={{display:"flex",gap:8}}>
+                  {profiles.map(p=>(
+                    <div key={p.id} style={{flex:1,background:"#07111f",borderRadius:8,padding:8,border:`1px solid ${p.color}44`,textAlign:"center"}}>
+                      <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>{p.name}</div>
+                      <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(perPerson)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ):(
+              <div style={{color:"#00ff9d",textAlign:"center",fontFamily:"'Orbitron',sans-serif",fontSize:16,padding:12}}>✅ OBJECTIF ATTEINT !</div>
+            )}
+          </Modal>
+        );
+      })()}
+
+      {/* Modal création */}
       {modal&&(
         <Modal title="Nouvel objectif" onClose={()=>setModal(false)}>
-          <label style={S.label}>Icône (emoji)</label>
-          <input value={form.icon} onChange={e=>setForm(p=>({...p,icon:e.target.value}))} style={{...S.input,width:70}}/>
-          <label style={S.label}>Nom de l'objectif</label>
-          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Hercules Starlifter, Armure Novikov..."/>
+          <label style={S.label}>Catégorie</label>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+            {OBJ_CATEGORIES.map(c=>(
+              <button key={c.id} onClick={()=>setForm(p=>({...p,category:c.id}))} style={{
+                padding:"7px 12px",borderRadius:8,cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:600,
+                background: form.category===c.id?"#00d4ff22":"#0a1628",
+                border:`1px solid ${form.category===c.id?"#00d4ff":"#1a2a44"}`,
+                color: form.category===c.id?"#00d4ff":"#8899bb",
+              }}>{c.icon} {c.label}</button>
+            ))}
+          </div>
+          <label style={S.label}>Nom</label>
+          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Hercules C2, Armure Novikov..."/>
           <label style={S.label}>Coût en aUEC</label>
           <input type="number" value={form.cost} onChange={e=>setForm(p=>({...p,cost:e.target.value}))} style={S.input} placeholder="Ex: 5000000"/>
-          <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginBottom:8}}>
-            💡 La barre se remplit automatiquement selon l'argent disponible
-          </div>
           <label style={S.label}>Type</label>
-          <select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} style={S.input}>
-            <option value="common">Commun (somme des deux joueurs)</option>
-            <option value="personal">Personnel (un seul joueur)</option>
-          </select>
-          {form.type==="personal"&&(<>
-            <label style={S.label}>Propriétaire</label>
-            <select value={form.owner} onChange={e=>setForm(p=>({...p,owner:e.target.value}))} style={S.input}>
-              {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </>)}
-          <button onClick={add} style={S.primaryBtn}>✅ Créer l'objectif</button>
+          <div style={{display:"flex",gap:8,marginBottom:4}}>
+            <button onClick={()=>setForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,flex:1,...(form.type==="common"?S.toggleActive:{})}}>🤝 Commun</button>
+            <button onClick={()=>setForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,flex:1,...(form.type==="personal"?S.toggleActive:{})}}>👤 Personnel</button>
+          </div>
+          {form.type==="personal"&&(
+            <div style={{display:"flex",gap:8,marginTop:6}}>
+              {profiles.map(p=>(
+                <button key={p.id} onClick={()=>setForm(prev=>({...prev,owner:p.id}))}
+                  style={{...S.toggleBtn,flex:1,...(form.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <button onClick={add} style={S.primaryBtn}>✅ Créer</button>
         </Modal>
       )}
     </div>
   );
 }
 
-// ─── MINING TAB ───────────────────────────────────────────────────────────────
-function MiningTab({ fleets, setFleets, profiles }) {
-  const [loading,  setLoading]  = useState(false);
-  const [minerals, setMinerals] = useState([]);
-  const [error,    setError]    = useState(null);
-  const [lastFetch,setLastFetch]= useState(null);
-  const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState(null);
-  const [viewMode, setViewMode] = useState("sell"); // sell | buy
+// ─── CALCULATEUR TAB ──────────────────────────────────────────────────────────
+function CalcTab({ fleets, profiles }) {
+  const [minerals,    setMinerals]    = useState([]);
+  const [loadingMin,  setLoadingMin]  = useState(false);
+  const [selMineral,  setSelMineral]  = useState("");
+  const [selShip,     setSelShip]     = useState("");
+  const [manualPrice, setManualPrice] = useState("");
 
-  async function fetchData() {
-    setLoading(true); setError(null);
+  const allShips = Object.values(fleets).flat();
+
+  useEffect(() => {
+    if (allShips.length > 0) setSelShip(allShips[0].id);
+  }, []); // eslint-disable-line
+
+  async function loadMinerals() {
+    setLoadingMin(true);
     try {
-      const rSell = await fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all");
-      if (!rSell.ok) throw new Error("HTTP " + rSell.status);
-      const jSell = await rSell.json();
-      const rows = jSell.data || jSell || [];
-
-      const sellMap = {};
+      const r = await fetch("https://api.uexcorp.space/2.0/commodities_raw_prices_all");
+      const j = await r.json();
+      const rows = j.data || j || [];
+      const map = {};
       rows.forEach(row => {
         const name = row.commodity_name || row.name;
-        if (!name) return;
-        const terminal = row.terminal_name || "—";
-        const system   = row.star_system_name || "";
-        const planet   = row.planet_name || row.space_station_name || "";
-        const loc      = [system, planet].filter(Boolean).join(" › ");
-        if (row.price_sell > 0) {
-          if (!sellMap[name]) sellMap[name] = { name, code: row.commodity_code||"", terminals: [] };
-          sellMap[name].terminals.push({ terminal, loc, price: Math.round(row.price_sell), scu: row.scu_sell_stock??null });
-        }
+        if (!name || !(row.price_sell > 0)) return;
+        if (!map[name] || row.price_sell > map[name].price) map[name] = { name, price: Math.round(row.price_sell) };
       });
-
-      // Trier terminaux
-      const finalizeSell = map => Object.values(map).map(m => {
-        m.terminals.sort((a,b)=>b.price-a.price);
-        m.bestPrice    = m.terminals[0]?.price||0;
-        m.bestTerminal = m.terminals[0]?.terminal||"—";
-        m.bestLocation = m.terminals[0]?.loc||"";
-        return m;
-      }).sort((a,b)=>b.bestPrice-a.bestPrice);
-
-      const sellList = finalizeSell(sellMap);
-
-      setMinerals(sellList);
-      setLastFetch(new Date().toLocaleTimeString("fr-FR"));
-    } catch(e) {
-      setError("Erreur API UEX Corp : " + e.message);
-    }
-    setLoading(false);
+      const list = Object.values(map).sort((a,b)=>b.price-a.price);
+      setMinerals(list);
+      if (list.length > 0) { setSelMineral(list[0].name); setManualPrice(String(list[0].price)); }
+    } catch(e) {}
+    setLoadingMin(false);
   }
 
-  useEffect(() => { fetchData(); }, []); // eslint-disable-line
+  useEffect(() => { loadMinerals(); }, []); // eslint-disable-line
 
-  // liste selon mode
-  const displayList = viewMode === "sell" ? minerals : [...minerals].sort((a,b)=>a.bestPrice-b.bestPrice);
-  const filtered = displayList.filter(m=>m.name?.toLowerCase().includes(search.toLowerCase())||m.code?.toLowerCase().includes(search.toLowerCase()));
+  const ship       = allShips.find(s=>s.id===selShip);
+  const price      = +manualPrice || 0;
+  const profitUnit = price;
+  const profitSCU  = price * 100;
+  const profitFull = ship ? profitSCU * ship.capacity : 0;
 
-  function rankColor(i) {
-    if(i===0) return "#ffd700"; if(i===1) return "#c0c0c0"; if(i===2) return "#cd7f32"; return "#00d4ff";
+  function onMineralChange(name) {
+    setSelMineral(name);
+    const m = minerals.find(x=>x.name===name);
+    if (m) setManualPrice(String(m.price));
   }
 
   return (
     <div>
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
-        <div style={S.sectionTitle}>⛏ MINERAIS TEMPS RÉEL</div>
-        <button onClick={fetchData} style={{...S.primaryBtn,width:"auto",marginTop:0,padding:"7px 14px",fontSize:11}} disabled={loading}>
-          {loading?"⏳":"🔄"} {loading?"...":"Actualiser"}
-        </button>
-      </div>
-      <p style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>
-        <a href="https://uexcorp.space/mining/pricing" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a>
-        {lastFetch&&<span> · MàJ {lastFetch}</span>}
-      </p>
+      {/* Bouton UEX Corp animé */}
+      <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{ textDecoration:"none", display:"block", marginBottom:20 }}>
+        <div style={{
+          background:"linear-gradient(135deg,#00d4ff18,#0a1628,#7b2fff18)",
+          border:"1px solid #00d4ff55",
+          borderRadius:14, padding:"16px 20px",
+          display:"flex", alignItems:"center", gap:14,
+          boxShadow:"0 0 24px #00d4ff22, 0 0 48px #7b2fff11",
+          animation:"pulse 3s ease-in-out infinite",
+          position:"relative", overflow:"hidden",
+        }}>
+          {/* Shimmer */}
+          <div style={{ position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(0,212,255,0.06),transparent)",animation:"shimmer 3s infinite",pointerEvents:"none" }}/>
+          <div style={{ fontSize:32 }}>🌐</div>
+          <div style={{ flex:1 }}>
+            <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:900, letterSpacing:2 }}>UEX CORP</div>
+            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", letterSpacing:1 }}>PRIX MINERAIS & TRADING EN TEMPS RÉEL</div>
+          </div>
+          <div style={{ color:"#00d4ff", fontSize:20 }}>→</div>
+        </div>
+      </a>
 
-      {/* Mode selector — opaque */}
-      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-        {[["sell","💰 VENTE"],["buy","🛒 ACHAT"]].map(([mode,label])=>(
-          <button key={mode} onClick={()=>setViewMode(mode)} style={{
-            flex:1, padding:"10px 4px",
-            border:`1px solid ${viewMode===mode?"#00d4ff":"#1a2a44"}`,
-            borderRadius:8,
-            background: viewMode===mode ? "#00d4ff33" : "#0a1628",
-            color: viewMode===mode ? "#00d4ff" : "#8899bb",
-            fontFamily:"'Rajdhani',sans-serif",
-            fontSize:13, fontWeight:700, letterSpacing:1, cursor:"pointer"
-          }}>{label}</button>
-        ))}
-      </div>
+      {/* Calculateur */}
+      <div style={{ background:"#07111fcc", border:"1px solid #00d4ff33", borderRadius:16, padding:20, backdropFilter:"blur(12px)" }}>
+        <div style={S.sectionTitle}>⚙️ CALCULATEUR DE PROFITS</div>
 
-      {/* Search */}
-      <input value={search} onChange={e=>setSearch(e.target.value)} style={{...S.input,marginBottom:12}} placeholder="🔍 Rechercher..."/>
+        {/* Minerai */}
+        <label style={S.label}>Minerai</label>
+        <select value={selMineral} onChange={e=>onMineralChange(e.target.value)} style={S.input} disabled={loadingMin}>
+          {loadingMin ? <option>Chargement...</option> : minerals.map(m=><option key={m.name} value={m.name}>{m.name} — {fmt(m.price)} aUEC/u</option>)}
+        </select>
 
-      {/* Error */}
-      {error&&<div style={{color:"#ff4466",background:"#ff446611",border:"1px solid #ff446633",borderRadius:8,padding:10,fontSize:11,marginBottom:12}}>
-        {error} — <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a>
-      </div>}
-
-      {/* Loading */}
-      {loading&&minerals.length===0&&[1,2,3,4].map(i=>(
-        <div key={i} style={{background:"#07111f88",borderRadius:10,height:56,marginBottom:6,animation:"pulse 1.5s ease-in-out infinite"}}/>
-      ))}
-
-      {/* SELL / BUY VIEW uniquement */}
-      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
-          {filtered.map((m,i)=>{
-            const isOpen = selected===m.name+"_"+viewMode;
-            const color  = rankColor(i);
-            return (
-              <div key={m.name}>
-                <div onClick={()=>setSelected(isOpen?null:m.name+"_"+viewMode)}
-                  style={{background:"#07111fcc",border:`1px solid ${color}33`,borderRadius:isOpen?"10px 10px 0 0":10,
-                    padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,backdropFilter:"blur(8px)"}}>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color,minWidth:24,fontWeight:700}}>#{i+1}</div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.name}</div>
-                    <div style={{color:"#8899bb",fontSize:9,fontFamily:"'Rajdhani',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.bestLocation}</div>
-                  </div>
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{color: viewMode==="sell"?"#00ff9d":"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>{fmt(m.bestPrice)}</div>
-                    <div style={{color:"#8899bb",fontSize:9}}>aUEC/unité</div>
-                  </div>
-                  <div style={{color:"#8899bb",fontSize:11}}>{isOpen?"▲":"▼"}</div>
-                </div>
-                {isOpen&&(
-                  <div style={{background:"#04090fcc",border:`1px solid ${color}33`,borderTop:"none",borderRadius:"0 0 10px 10px",padding:10}}>
-                    <div style={{color:"#8899bb",fontSize:9,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>
-                      {viewMode==="sell"?"MEILLEURS PRIX DE VENTE":"MEILLEURS PRIX D'ACHAT"} ({m.terminals?.length||0})
-                    </div>
-                    {(m.terminals||[]).slice(0,6).map((t,ti)=>(
-                      <div key={ti} style={{display:"flex",alignItems:"center",gap:8,background:"#07111f",borderRadius:7,padding:"6px 10px",marginBottom:4,border:"1px solid #1a2a4433"}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{color:"#e8f4ff",fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.terminal}</div>
-                          <div style={{color:"#8899bb",fontSize:9,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.loc}</div>
-                        </div>
-                        <div style={{color:ti===0?(viewMode==="sell"?"#00ff9d":"#ff6b35"):"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,flexShrink:0}}>{fmt(t.price)}</div>
-                      </div>
-                    ))}
-                    {(m.terminals||[]).length>6&&<div style={{color:"#8899bb",fontSize:9,textAlign:"center",fontFamily:"'Rajdhani',sans-serif"}}>+{m.terminals.length-6} sur <a href="https://uexcorp.space" target="_blank" rel="noreferrer" style={{color:"#00d4ff"}}>UEX Corp</a></div>}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {filtered.length===0&&!loading&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Chargement...</div>}
+        {/* Prix modifiable */}
+        <label style={S.label}>Prix par unité (aUEC) — modifiable</label>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          <input type="number" value={manualPrice} onChange={e=>setManualPrice(e.target.value)} style={{ ...S.input, flex:1, marginBottom:0, fontSize:18, fontFamily:"'Orbitron',sans-serif", color:"#ffcc00" }}/>
+          <button onClick={loadMinerals} style={{ ...S.editBtn, color:"#00d4ff", borderColor:"#00d4ff44", padding:"10px 12px", fontSize:16 }} disabled={loadingMin}>{loadingMin?"⏳":"🔄"}</button>
         </div>
 
-      {/* Calculateur connecté — tous les vaisseaux de tous les joueurs */}
-      <MiningCalc
-        ships={Object.values(fleets).flat()}
-        setShips={(updater) => {
-          // pas d'édition globale ici — édition dans le hangar de chaque joueur
-        }}
-        minerals={minerals}
-      />
+        {/* Vaisseau */}
+        <label style={S.label}>Vaisseau</label>
+        <select value={selShip} onChange={e=>setSelShip(e.target.value)} style={S.input}>
+          {allShips.length===0 && <option>— Ajoute un vaisseau dans le hangar —</option>}
+          {allShips.map(s=>{
+            const owner = Object.entries(fleets).find(([,arr])=>arr.find(x=>x.id===s.id));
+            const p = profiles.find(p=>p.id===owner?.[0]);
+            return <option key={s.id} value={s.id}>{s.name} ({s.capacity} SCU) — {p?.name||""}</option>;
+          })}
+        </select>
+
+        {/* Résultats */}
+        {ship && price > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:10, marginTop:16 }}>
+            <div style={{ display:"flex", gap:10 }}>
+              <div style={{ flex:1, background:"#0a1628", border:"1px solid #00d4ff33", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PRIX / UNITÉ</div>
+                <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(profitUnit)}</div>
+                <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+              </div>
+              <div style={{ flex:1, background:"#0a1628", border:"1px solid #00d4ff33", borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:2, fontFamily:"'Rajdhani',sans-serif", marginBottom:4 }}>PROFIT / SCU</div>
+                <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:16, fontWeight:700 }}>{fmt(profitSCU)}</div>
+                <div style={{ color:"#8899bb", fontSize:9 }}>aUEC</div>
+              </div>
+            </div>
+            {/* Profit total — grande tuile */}
+            <div style={{
+              background:"linear-gradient(135deg,#00ff9d11,#0a1628)",
+              border:"1px solid #00ff9d55", borderRadius:12, padding:"18px 20px", textAlign:"center",
+              boxShadow:"0 0 20px #00ff9d22",
+            }}>
+              <div style={{ color:"#8899bb", fontSize:10, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT MAX — {ship.name} ({ship.capacity} SCU)</div>
+              <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:"0 0 20px #00ff9d88" }}>{fmt(profitFull)}</div>
+              <div style={{ color:"#8899bb", fontSize:12, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC par voyage complet</div>
+            </div>
+            {/* Info */}
+            <div style={{ background:"#0a1628", borderRadius:8, padding:10, color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>
+              💡 <span style={{color:"#e8f4ff"}}>{ship.name}</span> × <span style={{color:"#ffcc00"}}>{ship.capacity} SCU</span> × <span style={{color:"#ffcc00"}}>100 u/SCU</span> × <span style={{color:"#ffcc00"}}>{fmt(price)} aUEC/u</span> = <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif"}}>{fmt(profitFull)}</span>
+            </div>
+          </div>
+        )}
+        {(!ship || !price) && (
+          <div style={{ color:"#8899bb", textAlign:"center", padding:24, fontFamily:"'Rajdhani',sans-serif" }}>
+            Choisis un minerai et un vaisseau
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1515,7 +1560,13 @@ export default function App() {
     setMissions(prev=>prev.filter(x=>x.id!==id));
   }
 
-  const TABS=[{id:"dashboard",icon:"🏠",label:"BORD"},{id:"missions",icon:"📋",label:"MISSIONS"},{id:"objectives",icon:"🎯",label:"OBJECTIFS"},{id:"ships",icon:"🚀",label:"VAISSEAUX"},{id:"mining",icon:"⛏",label:"MINERAIS"},{id:"settings",icon:"⚙️",label:"RÉGLAGES"}];
+  const TABS=[
+    {id:"dashboard",  icon:"🏠", label:"BORD"},
+    {id:"missions",   icon:"📋", label:"MISSIONS"},
+    {id:"objectives", icon:"🎯", label:"OBJECTIFS"},
+    {id:"calc",       icon:"⛏", label:"CALCUL"},
+    {id:"settings",   icon:"⚙️", label:"RÉGLAGES"},
+  ];
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1599,20 +1650,11 @@ export default function App() {
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:20}}>
               <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00"/>
-              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff"/>
+              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setTab("missions")}/>
               <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d"/>
-              <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35"/>
+              <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")}/>
               {profiles.map(p=>(
-                <HexTile
-                  key={p.id}
-                  icon="🚀"
-                  label={p.name}
-                  value={(fleets[p.id]||[]).length}
-                  sub="vaisseau(x)"
-                  color={p.color}
-                  onClick={()=>setHangarProfile(p)}
-                  pulse={false}
-                />
+                <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)}/>
               ))}
             </div>
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
@@ -1637,8 +1679,7 @@ export default function App() {
         )}
 
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
-        {tab==="ships"&&<div style={{animation:"fadeIn .4s ease"}}><ShipsTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
-        {tab==="mining"&&<div style={{animation:"fadeIn .4s ease"}}><MiningTab fleets={fleets} setFleets={setFleets} profiles={profiles}/></div>}
+        {tab==="calc"&&<div style={{animation:"fadeIn .4s ease"}}><CalcTab fleets={fleets} profiles={profiles}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>
 
