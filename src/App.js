@@ -586,6 +586,8 @@ function CalcTab({ fleets, profiles }) {
   const [sellPrice,  setSellPrice]  = useState("");
   const [quantity,   setQuantity]   = useState("100");
   const [mode,       setMode]       = useState("mining"); // mining | trade
+  const [tradeModal, setTradeModal] = useState(false);
+  const [tradeForm,  setTradeForm]  = useState({ type:"common", owner:"p1" });
 
   const allShips = Object.values(fleets).flat();
 
@@ -740,25 +742,91 @@ function CalcTab({ fleets, profiles }) {
                   <div style={{ color: marginPct>=0?"#ffcc00":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>{marginPct>=0?"+":""}{marginPct}%</div>
                 </div>
               </div>
-              {/* Profit net */}
+              {/* Profit net animé */}
               <div style={{
                 background: totalProfit>=0 ? "linear-gradient(135deg,#00ff9d11,#0a1628)" : "linear-gradient(135deg,#ff446611,#0a1628)",
                 border: `1px solid ${totalProfit>=0?"#00ff9d55":"#ff446655"}`,
-                borderRadius:12, padding:"18px 20px", textAlign:"center",
-                boxShadow: `0 0 20px ${totalProfit>=0?"#00ff9d22":"#ff446622"}`,
+                borderRadius:12, padding:"20px", textAlign:"center",
+                boxShadow: `0 0 24px ${totalProfit>=0?"#00ff9d33":"#ff446633"}`,
                 position:"relative", overflow:"hidden"
               }}>
-                <div style={{ position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${totalProfit>=0?"rgba(0,255,157,0.05)":"rgba(255,68,102,0.05)"},transparent)`,animation:"shimmer 4s infinite",pointerEvents:"none" }}/>
-                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT NET TOTAL ({fmt(qty)} unités)</div>
-                <div style={{ color: totalProfit>=0?"#00ff9d":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:`0 0 20px ${totalProfit>=0?"#00ff9d88":"#ff446688"}` }}>
+                <div style={{ position:"absolute",inset:0,background:`linear-gradient(90deg,transparent,${totalProfit>=0?"rgba(0,255,157,0.07)":"rgba(255,68,102,0.07)"},transparent)`,animation:"shimmer 3s infinite",pointerEvents:"none" }}/>
+                <div style={{ color:"#8899bb", fontSize:9, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:8 }}>PROFIT NET TOTAL ({fmt(qty)} unités)</div>
+                <div style={{
+                  color: totalProfit>=0?"#00ff9d":"#ff4466",
+                  fontFamily:"'Orbitron',sans-serif", fontSize:32, fontWeight:900, letterSpacing:2,
+                  textShadow:`0 0 24px ${totalProfit>=0?"#00ff9daa":"#ff4466aa"}`,
+                  animation:"glow 2s ease-in-out infinite"
+                }}>
                   {totalProfit>=0?"+":""}{fmt(totalProfit)}
                 </div>
-                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC</div>
+                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4, marginBottom:16 }}>aUEC</div>
+                {totalProfit > 0 && (
+                  <button onClick={()=>setTradeModal(true)} style={{
+                    background:"linear-gradient(135deg,#00ff9d22,#0a1628)",
+                    border:"1px solid #00ff9d66", color:"#00ff9d",
+                    borderRadius:10, padding:"11px 24px", cursor:"pointer",
+                    fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700, letterSpacing:1,
+                    boxShadow:"0 0 14px #00ff9d22"
+                  }}>✅ VALIDER CE PROFIT</button>
+                )}
               </div>
             </div>
           )}
           {(!buy||!sell||!qty)&&<div style={{ color:"#8899bb", textAlign:"center", padding:20, fontFamily:"'Rajdhani',sans-serif" }}>Entre les prix d'achat, de vente et la quantité</div>}
         </div>
+      )}
+
+      {/* Modal validation profit */}
+      {tradeModal && totalProfit > 0 && (
+        <Modal title="✅ Valider le profit" onClose={()=>setTradeModal(false)}>
+          <div style={{ textAlign:"center", marginBottom:16 }}>
+            <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:26, fontWeight:900, textShadow:"0 0 20px #00ff9daa", marginBottom:4 }}>+{fmt(totalProfit)} aUEC</div>
+            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>Attribuer ce gain à :</div>
+          </div>
+          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+            <button onClick={()=>setTradeForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="common"?S.toggleActive:{})}}>🤝 Partager 50/50</button>
+            <button onClick={()=>setTradeForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="personal"?S.toggleActive:{})}}>👤 Un joueur</button>
+          </div>
+          {tradeForm.type==="personal"&&(
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              {profiles.map(p=>(
+                <button key={p.id} onClick={()=>setTradeForm(prev=>({...prev,owner:p.id}))}
+                  style={{...S.toggleBtn,flex:1,...(tradeForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <div style={{ background:"#0a1628", borderRadius:8, padding:10, marginBottom:12 }}>
+            {tradeForm.type==="common"
+              ? profiles.map(p=><div key={p.id} style={{ color:p.color, fontFamily:"'Orbitron',sans-serif", fontSize:14, marginBottom:4 }}>{p.name} : +{fmt(Math.floor(totalProfit/profiles.length))} aUEC</div>)
+              : <div style={{ color:profiles.find(p=>p.id===tradeForm.owner)?.color, fontFamily:"'Orbitron',sans-serif", fontSize:16 }}>
+                  {profiles.find(p=>p.id===tradeForm.owner)?.name} : +{fmt(totalProfit)} aUEC
+                </div>
+            }
+          </div>
+          <button onClick={()=>{
+            // Distribuer dans les missions
+            const mission = {
+              id:"m"+Date.now(), name:`Trade ${selMineral||"marchandise"} ×${fmt(qty)}u`,
+              amount: totalProfit, split: tradeForm.type==="common",
+              assignee: tradeForm.owner, note:`Achat ${fmt(buy)} → Vente ${fmt(sell)} aUEC/u`,
+              date: new Date().toLocaleDateString("fr-FR")
+            };
+            // On envoie via un event custom — sera géré dans App
+            window._pendingMission = mission;
+            window._pendingMissionProfiles = profiles.map(p=>({
+              ...p,
+              aUEC: tradeForm.type==="common"
+                ? p.aUEC + Math.floor(totalProfit/profiles.length)
+                : p.id===tradeForm.owner ? p.aUEC+totalProfit : p.aUEC
+            }));
+            setTradeModal(false);
+            // Forcer refresh via event
+            window.dispatchEvent(new CustomEvent("staryeuv_trade_validated"));
+          }} style={S.primaryBtn}>🚀 Confirmer et ajouter aux missions</button>
+        </Modal>
       )}
     </div>
   );
@@ -976,20 +1044,39 @@ function HangarBackground({ color }) {
 }
 
 function HangarPage({ profile, ships, setShips, onClose }) {
-  const [editShip, setEditShip] = useState(null);
+  const [editShip,    setEditShip]    = useState(null);
+  const [slideOut,    setSlideOut]    = useState(false);
+  const touchStartX  = useRef(null);
 
-  // Couleurs hologramme par vaisseau (générées)
-  const shipColors = [
-    "#00d4ff","#00ff9d","#ff6b35","#bf5fff","#ffcc00","#ff4466","#00ffcc","#ff88aa"
-  ];
+  const shipColors = ["#00d4ff","#00ff9d","#ff6b35","#bf5fff","#ffcc00","#ff4466","#00ffcc","#ff88aa"];
+
+  function handleClose() {
+    setSlideOut(true);
+    setTimeout(() => onClose(), 350);
+  }
+
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx > 80) handleClose(); // swipe droite > 80px = retour
+    touchStartX.current = null;
+  }
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(0,0,0,0.95)",
-      display: "flex", flexDirection: "column",
-      overflowY: "auto",
-    }}>
+    <div
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(0,0,0,0.95)",
+        display: "flex", flexDirection: "column",
+        overflowY: "auto",
+        transform: slideOut ? "translateX(100%)" : "translateX(0)",
+        transition: "transform .35s cubic-bezier(.4,0,.2,1)",
+        animation: slideOut ? "none" : "slideInRight .35s cubic-bezier(.4,0,.2,1)",
+      }}
+    >
       {/* Fond hangar animé */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
         <HangarBackground color={profile.color} />
@@ -1002,7 +1089,7 @@ function HangarPage({ profile, ships, setShips, onClose }) {
         backdropFilter: "blur(16px)", padding: "12px 16px",
         display: "flex", alignItems: "center", gap: 12
       }}>
-        <button onClick={onClose} style={{ ...S.closeBtn, fontSize: 22, color: profile.color }}>←</button>
+        <button onClick={handleClose} style={{ ...S.closeBtn, fontSize: 22, color: profile.color }}>←</button>
         <div style={{
           width: 44, height: 44, borderRadius: "50%",
           border: `2px solid ${profile.color}`,
@@ -1136,6 +1223,22 @@ export default function App() {
 
   const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
+  // Écoute validation trade depuis CalcTab
+  useEffect(() => {
+    function onTradeValidated() {
+      if (window._pendingMission) {
+        setMissions(prev => [window._pendingMission, ...prev]);
+        window._pendingMission = null;
+      }
+      if (window._pendingMissionProfiles) {
+        setProfiles(window._pendingMissionProfiles);
+        window._pendingMissionProfiles = null;
+      }
+    }
+    window.addEventListener("staryeuv_trade_validated", onTradeValidated);
+    return () => window.removeEventListener("staryeuv_trade_validated", onTradeValidated);
+  }, []); // eslint-disable-line
+
   // Sync vers Firebase à chaque changement (avec debounce 600ms)
   const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
   const dSaveProfiles   = useCallback(debounce(saveProfiles,   600), [saveProfiles]);   // eslint-disable-line
@@ -1210,6 +1313,7 @@ export default function App() {
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes glow{0%,100%{text-shadow:0 0 8px #00d4ff66}50%{text-shadow:0 0 20px #00d4ffcc}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
         .nav-tab{flex:1 0 60px;padding:10px 6px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8899bb;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all .2s;}
         .nav-tab.active{background:linear-gradient(135deg,#00d4ff22,#0a1628);border-bottom:2px solid #00d4ff;color:#00d4ff;}
