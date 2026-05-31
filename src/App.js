@@ -1351,101 +1351,103 @@ export default function App() {
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
 
-        /* ── NAV TABS ── */
+        /* NAV TABS — mobile */
         .nav-tab{
-          flex:1 0 70px; padding:14px 8px;
+          flex:1 0 60px; padding:12px 6px;
           background:transparent; border:none;
           border-bottom:3px solid transparent;
           color:#8899bb; cursor:pointer;
-          display:flex; flex-direction:column; align-items:center; gap:4px;
+          display:flex; flex-direction:column; align-items:center; gap:3px;
           font-family:'Rajdhani',sans-serif; font-weight:700;
-          transition:all .2s; font-size:11px; letter-spacing:1px;
+          transition:all .2s;
         }
-        .nav-tab span.icon{font-size:20px;}
+        .nav-tab .icon{font-size:20px;}
+        .nav-tab .label{font-size:10px;letter-spacing:1px;}
         .nav-tab.active{
           background:linear-gradient(135deg,#00d4ff22,#0a1628);
           border-bottom:3px solid #00d4ff; color:#00d4ff;
         }
         .nav-tab:hover{color:#00d4ffcc;}
 
-        /* ── DESKTOP ── */
-        @media(min-width:768px){
-          .nav-tab{flex:1 0 100px; padding:16px 12px; font-size:12px;}
-          .nav-tab span.icon{font-size:22px;}
-          .app-wrapper{display:flex; min-height:100vh;}
+        /* SIDEBAR — desktop only */
+        .sidebar{display:none;}
+        .desktop-shift{margin-left:0;}
+
+        @media(min-width:900px){
           .sidebar{
-            position:fixed; left:0; top:0; bottom:0; width:200px; z-index:99;
-            background:rgba(2,5,16,0.95); border-right:1px solid #00d4ff22;
-            display:flex; flex-direction:column; padding-top:80px;
-            backdropFilter:blur(16px);
+            display:flex; flex-direction:column;
+            position:fixed; left:0; top:0; bottom:0; width:190px;
+            background:rgba(2,5,16,0.96); border-right:1px solid #00d4ff22;
+            backdropFilter:blur(20px); padding-top:90px; z-index:98;
           }
           .sidebar .nav-tab{
-            flex:none; width:100%; flex-direction:row; justify-content:flex-start;
-            gap:14px; padding:16px 24px; border-bottom:none;
-            border-left:3px solid transparent; border-right:none;
+            flex:none; width:100%;
+            flex-direction:row; justify-content:flex-start;
+            gap:14px; padding:16px 24px;
+            border-bottom:none; border-left:3px solid transparent;
             font-size:13px;
           }
+          .sidebar .nav-tab .icon{font-size:20px;}
+          .sidebar .nav-tab .label{font-size:13px;letter-spacing:1px;}
           .sidebar .nav-tab.active{
             border-left:3px solid #00d4ff; border-bottom:none;
             background:linear-gradient(90deg,#00d4ff18,transparent);
           }
-          .desktop-content{margin-left:200px;}
           .top-nav{display:none!important;}
+          .desktop-shift{margin-left:190px;}
         }
 
-        /* ── PROFILES GRID ── */
+        /* PROFILES GRID */
         .profiles-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;}
         @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
 
-      {/* ── SIDEBAR desktop ── */}
+      {/* Sidebar desktop uniquement (cachée sur mobile via CSS) */}
       <div className="sidebar">
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
             <span className="icon">{t.icon}</span>
-            <span>{t.label}</span>
+            <span className="label">{t.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Header */}
-      <div style={{...S.header, zIndex:100}} className="desktop-content">
-        <div style={S.headerInner}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:44,width:44,objectFit:"contain"}}/>:<div style={{fontSize:36,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
-            <div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:3}}>STAR YeUv</div>
-              <div style={{color:"#8899bb",fontSize:10,letterSpacing:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
+      {/* Wrapper décalé sur desktop */}
+      <div className="desktop-shift">
+
+        {/* Header */}
+        <div style={S.header}>
+          <div style={S.headerInner}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:42,width:42,objectFit:"contain"}}/>:<div style={{fontSize:34,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
+              <div>
+                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:3}}>STAR YeUv</div>
+                <div style={{color:"#8899bb",fontSize:10,letterSpacing:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
+              </div>
             </div>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-            <SyncBadge synced={loaded}/>
-            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,textAlign:"right"}}>
-              <div style={{fontSize:9,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
-              {fmt((p1?.aUEC||0)+(p2?.aUEC||0))} aUEC
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+              <SyncBadge synced={loaded}/>
+              <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,textAlign:"right"}}>
+                <div style={{fontSize:9,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
+                {fmt((p1?.aUEC||0)+(p2?.aUEC||0))} aUEC
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Nav mobile uniquement */}
-      <div style={S.nav} className="top-nav">
-        {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
-            <span className="icon">{t.icon}</span>
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </div>
+        {/* Nav mobile (cachée sur desktop) */}
+        <div style={S.nav} className="top-nav">
+          {TABS.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
+              <span className="icon">{t.icon}</span>
+              <span className="label">{t.label}</span>
+            </button>
+          ))}
+        </div>
 
-      {/* Content avec swipe */}
-      <div
-        className="desktop-content"
-        style={S.content}
-        onTouchStart={onSwipeStart}
-        onTouchEnd={onSwipeEnd}
-      >
+        {/* Contenu avec swipe */}
+        <div style={S.content} onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -1493,7 +1495,8 @@ export default function App() {
         {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
         {tab==="calc"&&<div style={{animation:"fadeIn .4s ease"}}><CalcTab fleets={fleets} profiles={profiles}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
-      </div>
+      </div>{/* /content */}
+      </div>{/* /desktop-shift */}
 
       {/* HANGAR OVERLAY */}
       {hangarProfile && (
