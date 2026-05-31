@@ -698,7 +698,14 @@ function CalcTab({ fleets, profiles }) {
                 <div style={{ position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(0,255,157,0.05),transparent)",animation:"shimmer 4s infinite",pointerEvents:"none" }}/>
                 <div style={{ color:"#8899bb", fontSize:9, letterSpacing:3, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>PROFIT MAX — {ship.name} ({ship.capacity} SCU)</div>
                 <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:900, letterSpacing:2, textShadow:"0 0 20px #00ff9d88" }}>{fmt(profitFull)}</div>
-                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4 }}>aUEC par voyage complet</div>
+                <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4, marginBottom:16 }}>aUEC par voyage complet</div>
+                <button onClick={()=>{ window._pendingAmount=profitFull; window._pendingLabel=`Minage ${selMineral} — ${ship?.name}`; setTradeModal(true); }} style={{
+                  background:"linear-gradient(135deg,#00ff9d22,#0a1628)",
+                  border:"1px solid #00ff9d66", color:"#00ff9d",
+                  borderRadius:10, padding:"11px 24px", cursor:"pointer",
+                  fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700, letterSpacing:1,
+                  boxShadow:"0 0 14px #00ff9d22"
+                }}>✅ VALIDER CE PROFIT</button>
               </div>
             </div>
           )}
@@ -761,15 +768,14 @@ function CalcTab({ fleets, profiles }) {
                   {totalProfit>=0?"+":""}{fmt(totalProfit)}
                 </div>
                 <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginTop:4, marginBottom:16 }}>aUEC</div>
-                {totalProfit > 0 && (
-                  <button onClick={()=>setTradeModal(true)} style={{
-                    background:"linear-gradient(135deg,#00ff9d22,#0a1628)",
-                    border:"1px solid #00ff9d66", color:"#00ff9d",
-                    borderRadius:10, padding:"11px 24px", cursor:"pointer",
-                    fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700, letterSpacing:1,
-                    boxShadow:"0 0 14px #00ff9d22"
-                  }}>✅ VALIDER CE PROFIT</button>
-                )}
+                <button onClick={()=>{ window._pendingAmount=totalProfit; window._pendingLabel=`Trade ×${fmt(qty)}u`; setTradeModal(true); }} style={{
+                  background: totalProfit>=0?"linear-gradient(135deg,#00ff9d22,#0a1628)":"linear-gradient(135deg,#ff446622,#0a1628)",
+                  border:`1px solid ${totalProfit>=0?"#00ff9d66":"#ff446666"}`,
+                  color: totalProfit>=0?"#00ff9d":"#ff4466",
+                  borderRadius:10, padding:"11px 24px", cursor:"pointer",
+                  fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700, letterSpacing:1,
+                  boxShadow:`0 0 14px ${totalProfit>=0?"#00ff9d22":"#ff446622"}`
+                }}>{totalProfit>=0?"✅ VALIDER CE PROFIT":"⚠️ ENREGISTRER CETTE PERTE"}</button>
               </div>
             </div>
           )}
@@ -778,54 +784,70 @@ function CalcTab({ fleets, profiles }) {
       )}
 
       {/* Modal validation profit */}
-      {tradeModal && totalProfit > 0 && (
-        <Modal title="✅ Valider le profit" onClose={()=>setTradeModal(false)}>
-          <div style={{ textAlign:"center", marginBottom:16 }}>
-            <div style={{ color:"#00ff9d", fontFamily:"'Orbitron',sans-serif", fontSize:26, fontWeight:900, textShadow:"0 0 20px #00ff9daa", marginBottom:4 }}>+{fmt(totalProfit)} aUEC</div>
-            <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif" }}>Attribuer ce gain à :</div>
-          </div>
-          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-            <button onClick={()=>setTradeForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="common"?S.toggleActive:{})}}>🤝 Partager 50/50</button>
-            <button onClick={()=>setTradeForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="personal"?S.toggleActive:{})}}>👤 Un joueur</button>
-          </div>
-          {tradeForm.type==="personal"&&(
-            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-              {profiles.map(p=>(
-                <button key={p.id} onClick={()=>setTradeForm(prev=>({...prev,owner:p.id}))}
-                  style={{...S.toggleBtn,flex:1,...(tradeForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
-          <div style={{ background:"#0a1628", borderRadius:8, padding:10, marginBottom:12 }}>
-            {tradeForm.type==="common"
-              ? profiles.map(p=><div key={p.id} style={{ color:p.color, fontFamily:"'Orbitron',sans-serif", fontSize:14, marginBottom:4 }}>{p.name} : +{fmt(Math.floor(totalProfit/profiles.length))} aUEC</div>)
-              : <div style={{ color:profiles.find(p=>p.id===tradeForm.owner)?.color, fontFamily:"'Orbitron',sans-serif", fontSize:16 }}>
-                  {profiles.find(p=>p.id===tradeForm.owner)?.name} : +{fmt(totalProfit)} aUEC
+      {tradeModal && (
+        <Modal title={window._pendingAmount>=0?"✅ Valider le profit":"⚠️ Enregistrer la perte"} onClose={()=>setTradeModal(false)}>
+          {(()=>{
+            const amount = window._pendingAmount || 0;
+            const label  = window._pendingLabel  || "Transaction";
+            return (
+              <>
+                <div style={{ textAlign:"center", marginBottom:16 }}>
+                  <div style={{ color: amount>=0?"#00ff9d":"#ff4466", fontFamily:"'Orbitron',sans-serif", fontSize:26, fontWeight:900, textShadow:`0 0 20px ${amount>=0?"#00ff9daa":"#ff4466aa"}`, marginBottom:4 }}>
+                    {amount>=0?"+":""}{fmt(amount)} aUEC
+                  </div>
+                  <div style={{ color:"#8899bb", fontSize:10, fontFamily:"'Rajdhani',sans-serif" }}>{label}</div>
                 </div>
-            }
-          </div>
-          <button onClick={()=>{
-            // Distribuer dans les missions
-            const mission = {
-              id:"m"+Date.now(), name:`Trade ${selMineral||"marchandise"} ×${fmt(qty)}u`,
-              amount: totalProfit, split: tradeForm.type==="common",
-              assignee: tradeForm.owner, note:`Achat ${fmt(buy)} → Vente ${fmt(sell)} aUEC/u`,
-              date: new Date().toLocaleDateString("fr-FR")
-            };
-            // On envoie via un event custom — sera géré dans App
-            window._pendingMission = mission;
-            window._pendingMissionProfiles = profiles.map(p=>({
-              ...p,
-              aUEC: tradeForm.type==="common"
-                ? p.aUEC + Math.floor(totalProfit/profiles.length)
-                : p.id===tradeForm.owner ? p.aUEC+totalProfit : p.aUEC
-            }));
-            setTradeModal(false);
-            // Forcer refresh via event
-            window.dispatchEvent(new CustomEvent("staryeuv_trade_validated"));
-          }} style={S.primaryBtn}>🚀 Confirmer et ajouter aux missions</button>
+                <label style={S.label}>Attribuer à</label>
+                <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                  <button onClick={()=>setTradeForm(p=>({...p,type:"common"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="common"?S.toggleActive:{})}}>🤝 Partager 50/50</button>
+                  <button onClick={()=>setTradeForm(p=>({...p,type:"personal"}))} style={{...S.toggleBtn,flex:1,...(tradeForm.type==="personal"?S.toggleActive:{})}}>👤 Un joueur</button>
+                </div>
+                {tradeForm.type==="personal"&&(
+                  <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                    {profiles.map(p=>(
+                      <button key={p.id} onClick={()=>setTradeForm(prev=>({...prev,owner:p.id}))}
+                        style={{...S.toggleBtn,flex:1,...(tradeForm.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div style={{ background:"#0a1628", borderRadius:8, padding:10, marginBottom:12 }}>
+                  {tradeForm.type==="common"
+                    ? profiles.map(p=>(
+                        <div key={p.id} style={{ color:p.color, fontFamily:"'Orbitron',sans-serif", fontSize:14, marginBottom:4 }}>
+                          {p.name} : {amount>=0?"+":""}{fmt(Math.floor(amount/profiles.length))} aUEC
+                        </div>
+                      ))
+                    : <div style={{ color:profiles.find(p=>p.id===tradeForm.owner)?.color, fontFamily:"'Orbitron',sans-serif", fontSize:16 }}>
+                        {profiles.find(p=>p.id===tradeForm.owner)?.name} : {amount>=0?"+":""}{fmt(amount)} aUEC
+                      </div>
+                  }
+                </div>
+                <button onClick={()=>{
+                  const amount = window._pendingAmount || 0;
+                  const label  = window._pendingLabel  || "Transaction";
+                  const mission = {
+                    id:"m"+Date.now(), name: label,
+                    amount: Math.abs(amount),
+                    split: tradeForm.type==="common",
+                    assignee: tradeForm.owner,
+                    note: amount<0?"Perte enregistrée":"",
+                    date: new Date().toLocaleDateString("fr-FR")
+                  };
+                  window._pendingMission = mission;
+                  window._pendingMissionProfiles = profiles.map(p=>({
+                    ...p,
+                    aUEC: tradeForm.type==="common"
+                      ? p.aUEC + Math.floor(amount/profiles.length)
+                      : p.id===tradeForm.owner ? p.aUEC+amount : p.aUEC
+                  }));
+                  setTradeModal(false);
+                  window.dispatchEvent(new CustomEvent("staryeuv_trade_validated"));
+                }} style={S.primaryBtn}>🚀 Confirmer</button>
+              </>
+            );
+          })()}
         </Modal>
       )}
     </div>
