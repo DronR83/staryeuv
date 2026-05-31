@@ -1303,12 +1303,25 @@ export default function App() {
   }
 
   const TABS=[
-    {id:"dashboard",  icon:"🏠", label:"BORD"},
+    {id:"dashboard",  icon:"🏠", label:"HOME"},
     {id:"missions",   icon:"📋", label:"MISSIONS"},
     {id:"objectives", icon:"🎯", label:"OBJECTIFS"},
     {id:"calc",       icon:"⛏", label:"CALCUL"},
     {id:"settings",   icon:"⚙️", label:"RÉGLAGES"},
   ];
+
+  // Swipe gauche/droite pour changer d'onglet
+  const swipeStartX = useRef(null);
+  function onSwipeStart(e) { swipeStartX.current = e.touches?.[0]?.clientX ?? null; }
+  function onSwipeEnd(e) {
+    if (swipeStartX.current === null) return;
+    const dx = (e.changedTouches?.[0]?.clientX ?? swipeStartX.current) - swipeStartX.current;
+    if (Math.abs(dx) < 60) return;
+    const idx = TABS.findIndex(t => t.id === tab);
+    if (dx < 0 && idx < TABS.length - 1) setTab(TABS[idx + 1].id);
+    if (dx > 0 && idx > 0)               setTab(TABS[idx - 1].id);
+    swipeStartX.current = null;
+  }
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1327,7 +1340,7 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
-        ::-webkit-scrollbar{width:4px;background:#07111f;}
+        ::-webkit-scrollbar{width:6px;background:#07111f;}
         ::-webkit-scrollbar-thumb{background:#00d4ff44;border-radius:4px;}
         input,select,textarea{font-family:'Rajdhani',sans-serif;}
         @keyframes pulse{0%,100%{box-shadow:0 0 12px #00d4ff33}50%{box-shadow:0 0 28px #00d4ff88}}
@@ -1337,27 +1350,78 @@ export default function App() {
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
-        .nav-tab{flex:1 0 60px;padding:10px 6px;background:transparent;border:none;border-bottom:2px solid transparent;color:#8899bb;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Rajdhani',sans-serif;font-weight:600;transition:all .2s;}
-        .nav-tab.active{background:linear-gradient(135deg,#00d4ff22,#0a1628);border-bottom:2px solid #00d4ff;color:#00d4ff;}
-        .nav-tab:hover{color:#00d4ffaa;}
+
+        /* ── NAV TABS ── */
+        .nav-tab{
+          flex:1 0 70px; padding:14px 8px;
+          background:transparent; border:none;
+          border-bottom:3px solid transparent;
+          color:#8899bb; cursor:pointer;
+          display:flex; flex-direction:column; align-items:center; gap:4px;
+          font-family:'Rajdhani',sans-serif; font-weight:700;
+          transition:all .2s; font-size:11px; letter-spacing:1px;
+        }
+        .nav-tab span.icon{font-size:20px;}
+        .nav-tab.active{
+          background:linear-gradient(135deg,#00d4ff22,#0a1628);
+          border-bottom:3px solid #00d4ff; color:#00d4ff;
+        }
+        .nav-tab:hover{color:#00d4ffcc;}
+
+        /* ── DESKTOP ── */
+        @media(min-width:768px){
+          .nav-tab{flex:1 0 100px; padding:16px 12px; font-size:12px;}
+          .nav-tab span.icon{font-size:22px;}
+          .app-wrapper{display:flex; min-height:100vh;}
+          .sidebar{
+            position:fixed; left:0; top:0; bottom:0; width:200px; z-index:99;
+            background:rgba(2,5,16,0.95); border-right:1px solid #00d4ff22;
+            display:flex; flex-direction:column; padding-top:80px;
+            backdropFilter:blur(16px);
+          }
+          .sidebar .nav-tab{
+            flex:none; width:100%; flex-direction:row; justify-content:flex-start;
+            gap:14px; padding:16px 24px; border-bottom:none;
+            border-left:3px solid transparent; border-right:none;
+            font-size:13px;
+          }
+          .sidebar .nav-tab.active{
+            border-left:3px solid #00d4ff; border-bottom:none;
+            background:linear-gradient(90deg,#00d4ff18,transparent);
+          }
+          .desktop-content{margin-left:200px;}
+          .top-nav{display:none!important;}
+        }
+
+        /* ── PROFILES GRID ── */
         .profiles-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;}
         @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
 
+      {/* ── SIDEBAR desktop ── */}
+      <div className="sidebar">
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
+            <span className="icon">{t.icon}</span>
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Header */}
-      <div style={S.header}>
+      <div style={{...S.header, zIndex:100}} className="desktop-content">
         <div style={S.headerInner}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:40,width:40,objectFit:"contain"}}/>:<div style={{fontSize:32,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
+            {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:44,width:44,objectFit:"contain"}}/>:<div style={{fontSize:36,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
             <div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:3}}>STAR YeUv</div>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:3}}>STAR YeUv</div>
               <div style={{color:"#8899bb",fontSize:10,letterSpacing:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
             <SyncBadge synced={loaded}/>
-            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,textAlign:"right"}}>
+            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,textAlign:"right"}}>
               <div style={{fontSize:9,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
               {fmt((p1?.aUEC||0)+(p2?.aUEC||0))} aUEC
             </div>
@@ -1365,18 +1429,23 @@ export default function App() {
         </div>
       </div>
 
-      {/* Nav */}
-      <div style={S.nav}>
+      {/* Nav mobile uniquement */}
+      <div style={S.nav} className="top-nav">
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
-            <span style={{fontSize:16}}>{t.icon}</span>
-            <span style={{fontSize:9,letterSpacing:1}}>{t.label}</span>
+            <span className="icon">{t.icon}</span>
+            <span>{t.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Content */}
-      <div style={S.content}>
+      {/* Content avec swipe */}
+      <div
+        className="desktop-content"
+        style={S.content}
+        onTouchStart={onSwipeStart}
+        onTouchEnd={onSwipeEnd}
+      >
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -1502,9 +1571,9 @@ export default function App() {
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S={
   header:{position:"sticky",top:0,zIndex:100,background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
-  headerInner:{maxWidth:900,margin:"0 auto",padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
-  nav:{display:"flex",overflowX:"auto",background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:61,zIndex:99,backdropFilter:"blur(12px)"},
-  content:{maxWidth:900,margin:"0 auto",padding:"16px 12px 80px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
+  headerInner:{maxWidth:"100%",margin:"0 auto",padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
+  nav:{display:"flex",overflowX:"auto",background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:68,zIndex:99,backdropFilter:"blur(12px)"},
+  content:{maxWidth:960,margin:"0 auto",padding:"24px 20px 100px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:6,flexWrap:"wrap"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"5px 7px",overflow:"hidden"},
