@@ -2506,39 +2506,54 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
 }
 
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
-function MissionItem({ mission, profiles, onDelete, isDesktop }) {
+function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
   const [exp,setExp]=useState(false);
   const share=Math.floor(mission.amount/2);
   const owner=profiles.find(p=>p.id===mission.assignee);
+  const isPending = !mission.status || mission.status === "pending";
   return (
-    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14}} onClick={()=>setExp(!exp)}>
-      <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10}}>
+    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14,border:`1px solid ${isPending?"#ffcc0044":"#1a2a4488"}`,position:"relative"}} onClick={()=>setExp(!exp)}>
+      {/* Badge statut */}
+      <div style={{position:"absolute",top:8,right:8,background:isPending?"#ffcc0022":"#00ff9d22",border:`1px solid ${isPending?"#ffcc0066":"#00ff9d66"}`,borderRadius:20,padding:"2px 9px",fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:isPending?"#ffcc00":"#00ff9d",letterSpacing:1}}>
+        {isPending ? "⏳ EN ATTENTE" : "✅ VALIDÉE"}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
         <div style={{flex:1}}>
           <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:14,fontWeight:600}}>{mission.name}</div>
           <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
-        <div style={{textAlign:"right"}}>
-          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?15:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?15:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
           {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
       {exp&&(
-        <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #1a2a44"}}>
+        <div style={{marginTop:12,paddingTop:12,borderTop:"1px solid #1a2a44"}} onClick={e=>e.stopPropagation()}>
           {mission.split?(
-            <div style={{display:"flex",gap:12}}>
+            <div style={{display:"flex",gap:12,marginBottom:10}}>
               {profiles.map(p=>(
-                <div key={p.id} style={{flex:1,background:"#0a1628",borderRadius:6,padding:8,border:`1px solid ${p.color}44`}}>
-                  <div style={{color:p.color,fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>{p.name}</div>
-                  <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?16:14}}>+{fmt(share)}</div>
+                <div key={p.id} style={{flex:1,background:"#0a1628",borderRadius:8,padding:10,border:`1px solid ${p.color}44`}}>
+                  <div style={{color:p.color,fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:2}}>{p.name}</div>
+                  <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?16:14,fontWeight:700}}>+{fmt(share)}</div>
                 </div>
               ))}
             </div>
           ):(
-            <div style={{color:"#8899bb",fontSize:isDesktop?14:12,fontFamily:"'Rajdhani',sans-serif"}}>Attribué à : <span style={{color:owner?.color}}>{owner?.name}</span></div>
+            <div style={{color:"#8899bb",fontSize:isDesktop?14:12,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>
+              Attribué à : <span style={{color:owner?.color,fontWeight:700}}>{owner?.name}</span>
+              <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",marginLeft:10,fontWeight:700}}>+{fmt(mission.amount)}</span>
+            </div>
           )}
-          {mission.note&&<div style={{color:"#8899bb",fontSize:isDesktop?13:11,marginTop:6,fontFamily:"'Rajdhani',sans-serif"}}>📝 {mission.note}</div>}
-          <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,marginTop:8,fontSize:isDesktop?13:11}}>🗑 Supprimer</button>
+          {mission.note&&<div style={{color:"#8899bb",fontSize:isDesktop?13:11,marginBottom:10,fontFamily:"'Rajdhani',sans-serif"}}>📝 {mission.note}</div>}
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {isPending && onValidate && (
+              <button onClick={e=>{e.stopPropagation();onValidate(mission.id);}} style={{background:"linear-gradient(135deg,#00ff9d22,#0a1628)",border:"1px solid #00ff9d88",color:"#00ff9d",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?13:11,fontWeight:700,boxShadow:"0 0 10px #00ff9d33",flex:1}}>
+                ✅ VALIDER + DISTRIBUER {fmt(mission.amount)} aUEC
+              </button>
+            )}
+            <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,fontSize:isDesktop?13:11,padding:"8px 14px"}}>🗑 Supprimer</button>
+          </div>
         </div>
       )}
     </div>
@@ -3824,25 +3839,39 @@ export default function App() {
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
-  const totalEarned = missions.reduce((a,m)=>a+m.amount,0);
+  const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
+  const validatedMissions = missions.filter(m=>m.status==="validated");
+  const pendingMissions   = missions.filter(m=>!m.status||m.status==="pending");
   const p1=profiles.find(p=>p.id==="p1");
   const p2=profiles.find(p=>p.id==="p2");
 
   function addMission(){
     if(!missionForm.name||!missionForm.amount) return;
-    const m={id:"m"+Date.now(),name:missionForm.name,amount:+missionForm.amount,split:missionForm.split,assignee:missionForm.assignee,note:missionForm.note,date:new Date().toLocaleDateString("fr-FR")};
-    const half=Math.floor(m.amount/2);
-    setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; }));
+    const m={id:"m"+Date.now(),name:missionForm.name,amount:+missionForm.amount,split:missionForm.split,assignee:missionForm.assignee,note:missionForm.note,date:new Date().toLocaleDateString("fr-FR"),status:"pending"};
+    // Pas de distribution d'argent ici — en attente de validation
     setMissions(prev=>[m,...prev]);
+    saveMissions([m,...missions]);
     setAddMissionModal(false);
     setMissionForm({name:"",amount:"",split:true,assignee:"p1",note:""});
   }
 
+  function validateMission(id){
+    const m=missions.find(x=>x.id===id); if(!m||m.status==="validated") return;
+    const half=Math.floor(m.amount/2);
+    setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; }));
+    const updated=missions.map(x=>x.id===id?{...x,status:"validated"}:x);
+    setMissions(updated); saveMissions(updated);
+  }
+
   function deleteMission(id){
     const m=missions.find(x=>x.id===id); if(!m) return;
-    const half=Math.floor(m.amount/2);
-    setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; }));
-    setMissions(prev=>prev.filter(x=>x.id!==id));
+    // Rembourse seulement si déjà validée
+    if(m.status==="validated"){
+      const half=Math.floor(m.amount/2);
+      setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; }));
+    }
+    const updated=missions.filter(x=>x.id!==id);
+    setMissions(updated); saveMissions(updated);
   }
 
   const TABS=[
@@ -4062,8 +4091,8 @@ export default function App() {
                 <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
                   <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
-                  <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
-                  <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                  <HexTile iconKind="pad" label="Missions" value={validatedMissions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="share" label="Partagées" value={validatedMissions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
                   {profiles.map(p=>(
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
@@ -4079,9 +4108,9 @@ export default function App() {
                   <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
-                  <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="pad" label="Missions" value={validatedMissions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
-                  <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                  <HexTile iconKind="share" label="Partagées" value={validatedMissions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
                   {profiles.map(p=>(
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
@@ -4099,7 +4128,14 @@ export default function App() {
               <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:isDesktop?16:14,padding:isDesktop?"14px 48px":"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
             </div>
             <div style={{...S.sectionTitle,fontSize:isDesktop?15:13}}>📋 MISSIONS RÉCENTES</div>
-            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} isDesktop={isDesktop}/>)}
+            {pendingMissions.length>0&&<div style={{background:"#ffcc0011",border:"1px solid #ffcc0044",borderRadius:10,padding:"10px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>⏳</span>
+              <div style={{flex:1}}>
+                <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{pendingMissions.length} MISSION{pendingMissions.length>1?"S":""} EN ATTENTE</div>
+                <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>Cliquez sur une mission pour valider et distribuer l'argent</div>
+              </div>
+            </div>}
+            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} isDesktop={isDesktop}/>)}
             {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:13}}>Aucune mission — commencez à jouer !</div>}
             {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
@@ -4131,7 +4167,7 @@ export default function App() {
           <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,marginBottom:12}}>+ Nouvelle mission</button>
           {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:20,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission enregistrée</div>}
           <div style={{maxHeight:"60vh",overflowY:"auto"}}>
-            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
+            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission}/>)}
           </div>
         </Modal>
       )}
@@ -4207,7 +4243,7 @@ export default function App() {
               )}
             </div>
           )}
-          <button onClick={addMission} style={S.primaryBtn}>✅ Valider la mission</button>
+          <button onClick={addMission} style={S.primaryBtn}>📋 Créer la mission (en attente)</button>
         </Modal>
       )}
     </div>
