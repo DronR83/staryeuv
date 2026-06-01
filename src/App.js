@@ -424,6 +424,454 @@ function ShipPicker3D({ value, onChange, hangarShips, color }) {
   );
 }
 
+// ─── NAV ICON ANIMÉ ───────────────────────────────────────────────────────────
+function NavIcon({ tabId, active, size = 32 }) {
+  const canvasRef = useRef(null);
+  const rafRef    = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const S = size * dpr;
+    canvas.width = S; canvas.height = S;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    let t = 0;
+    cancelAnimationFrame(rafRef.current);
+
+    const ICONS = {
+      dashboard: (ctx, s, t, active) => {
+        // Maison futuriste animée
+        const c = s / 2, r = s * 0.38;
+        const col = active ? "#00d4ff" : "#8899bb";
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.translate(c, c);
+        // Pulse halo
+        if (active) {
+          const pulse = 0.5 + 0.5 * Math.sin(t * 0.04);
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.2);
+          g.addColorStop(0, `rgba(0,212,255,${0.15 * pulse})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(0, 0, r * 1.2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.lineJoin = "round";
+        ctx.shadowColor = col; ctx.shadowBlur = active ? 8 + 4 * Math.sin(t * 0.05) : 3;
+        // Corps maison
+        ctx.fillStyle = col + (active ? "25" : "15");
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.65, r * 0.35);
+        ctx.lineTo(-r * 0.65, -r * 0.08);
+        ctx.lineTo(0, -r * 0.72);
+        ctx.lineTo(r * 0.65, -r * 0.08);
+        ctx.lineTo(r * 0.65, r * 0.35);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        // Toit détail
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.82, -r * 0.06);
+        ctx.lineTo(0, -r * 0.88);
+        ctx.lineTo(r * 0.82, -r * 0.06);
+        ctx.stroke();
+        // Porte
+        ctx.fillStyle = col + "44";
+        ctx.beginPath();
+        ctx.roundRect(-r * 0.18, r * 0.02, r * 0.36, r * 0.33, 2);
+        ctx.fill(); ctx.stroke();
+        // Fenêtre
+        const winAlpha = active ? (0.6 + 0.4 * Math.sin(t * 0.07)) : 0.3;
+        ctx.fillStyle = `rgba(0,212,255,${winAlpha})`;
+        ctx.beginPath();
+        ctx.rect(-r * 0.42, -r * 0.12, r * 0.28, r * 0.22);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.rect(r * 0.14, -r * 0.12, r * 0.28, r * 0.22);
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+      },
+
+      concession: (ctx, s, t, active) => {
+        // Fusée spatiale animée
+        const c = s / 2, r = s * 0.36;
+        const col = active ? "#00d4ff" : "#8899bb";
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.translate(c, c);
+        const bob = Math.sin(t * 0.03) * r * 0.04;
+        ctx.translate(0, bob);
+        if (active) {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
+          g.addColorStop(0, `rgba(0,212,255,${0.12 + 0.08 * Math.sin(t * 0.04)})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.fillStyle = col + "28";
+        ctx.shadowColor = col; ctx.shadowBlur = active ? 10 : 3;
+        // Corps fusée
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.85);
+        ctx.bezierCurveTo(r * 0.28, -r * 0.4, r * 0.28, r * 0.2, r * 0.18, r * 0.52);
+        ctx.lineTo(-r * 0.18, r * 0.52);
+        ctx.bezierCurveTo(-r * 0.28, r * 0.2, -r * 0.28, -r * 0.4, 0, -r * 0.85);
+        ctx.fill(); ctx.stroke();
+        // Ailettes
+        [[-1, 1], [1, 1]].forEach(([dx]) => {
+          ctx.beginPath();
+          ctx.moveTo(dx * r * 0.18, r * 0.2);
+          ctx.lineTo(dx * r * 0.58, r * 0.6);
+          ctx.lineTo(dx * r * 0.18, r * 0.52);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        });
+        // Hublot
+        const hubAlpha = active ? (0.7 + 0.3 * Math.sin(t * 0.06)) : 0.4;
+        ctx.fillStyle = `rgba(0,212,255,${hubAlpha})`;
+        ctx.shadowBlur = active ? 12 : 4;
+        ctx.beginPath(); ctx.arc(0, -r * 0.22, r * 0.16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Reflet hublot
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(-r * 0.04, -r * 0.27, r * 0.055, 0, Math.PI * 2); ctx.fill();
+        // Flamme réacteur
+        if (active) {
+          const fl = 0.6 + 0.4 * Math.sin(t * 0.12);
+          const fg = ctx.createLinearGradient(0, r * 0.52, 0, r * 0.52 + r * 0.55 * fl);
+          fg.addColorStop(0, `rgba(0,212,255,${0.9 * fl})`);
+          fg.addColorStop(0.4, `rgba(0,255,157,${0.5 * fl})`);
+          fg.addColorStop(1, "transparent");
+          ctx.fillStyle = fg;
+          ctx.beginPath();
+          ctx.ellipse(0, r * 0.52 + r * 0.28 * fl, r * 0.1, r * 0.28 * fl, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      },
+
+      objectives: (ctx, s, t, active) => {
+        // Cible holographique animée
+        const c = s / 2, r = s * 0.38;
+        const col = active ? "#ff6b35" : "#8899bb";
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.translate(c, c);
+        const rot = t * 0.012;
+        if (active) {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+          g.addColorStop(0, `rgba(255,107,53,${0.12 + 0.08 * Math.sin(t * 0.05)})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = col; ctx.shadowColor = col;
+        // Anneaux tournants
+        [0.9, 0.6, 0.32].forEach((rr, i) => {
+          ctx.shadowBlur = active ? (i === 2 ? 10 : 4) : 2;
+          ctx.lineWidth = i === 2 ? 1.8 : 1.2;
+          ctx.globalAlpha = i === 2 ? 1 : 0.7 - i * 0.1;
+          ctx.save();
+          ctx.rotate(rot * (i % 2 === 0 ? 1 : -1) * (i + 1) * 0.5);
+          ctx.beginPath(); ctx.arc(0, 0, r * rr, 0, Math.PI * 2);
+          ctx.stroke();
+          // Encoches
+          if (i < 2) {
+            for (let n = 0; n < 4; n++) {
+              const a = (n / 4) * Math.PI * 2 + rot;
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(a) * r * rr * 0.85, Math.sin(a) * r * rr * 0.85);
+              ctx.lineTo(Math.cos(a) * r * rr * 1.15, Math.sin(a) * r * rr * 1.15);
+              ctx.stroke();
+            }
+          }
+          ctx.restore();
+        });
+        ctx.globalAlpha = 1;
+        // Centre cible
+        ctx.shadowBlur = active ? 14 + 6 * Math.sin(t * 0.07) : 4;
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2); ctx.fill();
+        // Croix
+        ctx.strokeStyle = col; ctx.lineWidth = 1.4;
+        [[-r * 0.88, 0, -r * 0.42, 0], [r * 0.42, 0, r * 0.88, 0],
+         [0, -r * 0.88, 0, -r * 0.42], [0, r * 0.42, 0, r * 0.88]].forEach(([x1, y1, x2, y2]) => {
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        });
+        ctx.restore();
+      },
+
+      calc: (ctx, s, t, active) => {
+        // Pioche/cristal energie animé
+        const c = s / 2, r = s * 0.36;
+        const col = active ? "#00ff9d" : "#8899bb";
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.translate(c, c);
+        if (active) {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
+          g.addColorStop(0, `rgba(0,255,157,${0.12 + 0.08 * Math.sin(t * 0.05)})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+        ctx.shadowColor = col; ctx.shadowBlur = active ? 8 + 4 * Math.sin(t * 0.06) : 3;
+        ctx.fillStyle = col + "28";
+        // Pioche gauche
+        const swing = active ? Math.sin(t * 0.04) * 0.15 : 0;
+        ctx.save();
+        ctx.rotate(-Math.PI * 0.25 + swing);
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.08, r * 0.06);
+        ctx.lineTo(r * 0.72, -r * 0.6);
+        ctx.lineTo(r * 0.82, -r * 0.48);
+        ctx.lineTo(r * 0.1, r * 0.14);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Tête pioche
+        ctx.fillStyle = col + "55";
+        ctx.beginPath();
+        ctx.moveTo(r * 0.55, -r * 0.75);
+        ctx.lineTo(r * 0.9, -r * 0.52);
+        ctx.lineTo(r * 0.72, -r * 0.3);
+        ctx.lineTo(r * 0.38, -r * 0.52);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+        // Pioche droite (symétrique)
+        ctx.save();
+        ctx.rotate(Math.PI * 0.25 - swing);
+        ctx.beginPath();
+        ctx.moveTo(r * 0.08, r * 0.06);
+        ctx.lineTo(-r * 0.72, -r * 0.6);
+        ctx.lineTo(-r * 0.82, -r * 0.48);
+        ctx.lineTo(-r * 0.1, r * 0.14);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = col + "55";
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.55, -r * 0.75);
+        ctx.lineTo(-r * 0.9, -r * 0.52);
+        ctx.lineTo(-r * 0.72, -r * 0.3);
+        ctx.lineTo(-r * 0.38, -r * 0.52);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+        // Cristal central lumineux
+        if (active) {
+          const cr = r * (0.18 + 0.06 * Math.sin(t * 0.07));
+          const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
+          cg.addColorStop(0, `rgba(0,255,157,${0.9 + 0.1 * Math.sin(t * 0.08)})`);
+          cg.addColorStop(1, `rgba(0,255,157,0.2)`);
+          ctx.fillStyle = cg; ctx.shadowBlur = 16;
+          ctx.beginPath();
+          ctx.moveTo(0, -cr); ctx.lineTo(cr * 0.7, 0);
+          ctx.lineTo(0, cr); ctx.lineTo(-cr * 0.7, 0); ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      },
+
+      settings: (ctx, s, t, active) => {
+        // Engrenage futuriste animé
+        const c = s / 2, r = s * 0.36;
+        const col = active ? "#c084fc" : "#8899bb";
+        ctx.clearRect(0, 0, s, s);
+        ctx.save();
+        ctx.translate(c, c);
+        if (active) {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+          g.addColorStop(0, `rgba(192,132,252,${0.15 + 0.08 * Math.sin(t * 0.04)})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        }
+        const rot = t * 0.015;
+        ctx.save();
+        ctx.rotate(rot);
+        ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+        ctx.shadowColor = col; ctx.shadowBlur = active ? 8 + 4 * Math.sin(t * 0.05) : 3;
+        ctx.fillStyle = col + "25";
+        // Dents engrenage
+        const teeth = 8;
+        ctx.beginPath();
+        for (let i = 0; i < teeth; i++) {
+          const a1 = (i / teeth) * Math.PI * 2;
+          const a2 = ((i + 0.3) / teeth) * Math.PI * 2;
+          const a3 = ((i + 0.7) / teeth) * Math.PI * 2;
+          const a4 = ((i + 1) / teeth) * Math.PI * 2;
+          if (i === 0) ctx.moveTo(Math.cos(a1) * r * 0.6, Math.sin(a1) * r * 0.6);
+          else ctx.lineTo(Math.cos(a1) * r * 0.6, Math.sin(a1) * r * 0.6);
+          ctx.lineTo(Math.cos(a2) * r * 0.88, Math.sin(a2) * r * 0.88);
+          ctx.lineTo(Math.cos(a3) * r * 0.88, Math.sin(a3) * r * 0.88);
+          ctx.lineTo(Math.cos(a4) * r * 0.6, Math.sin(a4) * r * 0.6);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+        // Anneau intérieur (tourne à l'envers)
+        ctx.save();
+        ctx.rotate(-rot * 1.5);
+        ctx.strokeStyle = col + "88"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.38, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 4; i++) {
+          const a = (i / 4) * Math.PI * 2 - rot * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * r * 0.26, Math.sin(a) * r * 0.26);
+          ctx.lineTo(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // Centre
+        ctx.shadowBlur = active ? 12 : 4;
+        ctx.fillStyle = col + "cc";
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.18, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.25)";
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(-r * 0.04, -r * 0.06, r * 0.07, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      },
+    };
+
+    function frame() {
+      if (ICONS[tabId]) ICONS[tabId](ctx, size, t, active);
+      t += active ? 1 : 0.4;
+      rafRef.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabId, active, size]);
+
+  return <canvas ref={canvasRef} style={{ width: size, height: size, display: "block" }} width={size * 2} height={size * 2} />;
+}
+
+// ─── ANIMATED AVATAR ──────────────────────────────────────────────────────────
+function AnimatedAvatar({ profile, size = 56, onClick }) {
+  const canvasRef = useRef(null);
+  const rafRef    = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const S = size * dpr;
+    canvas.width = S; canvas.height = S;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    let t = 0;
+    const col = profile.color || "#00d4ff";
+    cancelAnimationFrame(rafRef.current);
+
+    // Pré-charger avatar si disponible
+    let img = null;
+    if (profile.avatar) {
+      img = new Image();
+      img.src = profile.avatar;
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, size, size);
+      const c = size / 2;
+      const avatarR = size * 0.36;
+
+      // Halo extérieur pulsant
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.025);
+      const halo = ctx.createRadialGradient(c, c, avatarR * 0.9, c, c, size * 0.48);
+      halo.addColorStop(0, `${col}${Math.round(40 * pulse).toString(16).padStart(2, "0")}`);
+      halo.addColorStop(1, "transparent");
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(c, c, size * 0.48, 0, Math.PI * 2); ctx.fill();
+
+      // Anneau LED extérieur tournant (pointillés lumineux)
+      const rot1 = t * 0.018;
+      const R1 = size * 0.455;
+      ctx.shadowColor = col; ctx.shadowBlur = 8;
+      const dots1 = 24;
+      for (let i = 0; i < dots1; i++) {
+        const a = (i / dots1) * Math.PI * 2 + rot1;
+        const bright = (Math.sin(a * 3 - t * 0.04) + 1) / 2;
+        const dotR = 1.5 + bright * 2;
+        ctx.globalAlpha = 0.3 + bright * 0.7;
+        ctx.fillStyle = col;
+        ctx.shadowBlur = bright * 12;
+        ctx.beginPath();
+        ctx.arc(c + Math.cos(a) * R1, c + Math.sin(a) * R1, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+      // Anneau LED intérieur tournant inverse (tirets)
+      const rot2 = -t * 0.012;
+      const R2 = size * 0.42;
+      const segments = 8;
+      for (let i = 0; i < segments; i++) {
+        const aStart = (i / segments) * Math.PI * 2 + rot2;
+        const aEnd   = aStart + (Math.PI * 2 / segments) * 0.55;
+        const bright = (Math.sin(i * 1.3 + t * 0.03) + 1) / 2;
+        ctx.strokeStyle = col;
+        ctx.lineWidth   = 2.5;
+        ctx.lineCap     = "round";
+        ctx.globalAlpha = 0.35 + bright * 0.65;
+        ctx.shadowColor = col; ctx.shadowBlur = 8 + bright * 8;
+        ctx.beginPath();
+        ctx.arc(c, c, R2, aStart, aEnd);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+      // Fond avatar
+      const bg = ctx.createRadialGradient(c - size * 0.06, c - size * 0.06, 0, c, c, avatarR);
+      bg.addColorStop(0, col + "55");
+      bg.addColorStop(1, "#0a1628");
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.arc(c, c, avatarR, 0, Math.PI * 2); ctx.fill();
+
+      // Image avatar si disponible
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(c, c, avatarR, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(img, c - avatarR, c - avatarR, avatarR * 2, avatarR * 2);
+        ctx.restore();
+      } else {
+        // Emoji 👤 fallback
+        ctx.font = `${Math.round(avatarR * 1.1)}px serif`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("👤", c, c + 2);
+      }
+
+      // Bordure avatar principale lumineuse
+      ctx.shadowColor = col; ctx.shadowBlur = 14 + 6 * Math.sin(t * 0.025);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(c, c, avatarR, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Éclats de lumière aux 4 coins de l'anneau
+      const sparkRot = t * 0.022;
+      [0, 1, 2, 3].forEach(i => {
+        const a = (i / 4) * Math.PI * 2 + sparkRot;
+        const sx = c + Math.cos(a) * R1;
+        const sy = c + Math.sin(a) * R1;
+        const bright = (Math.sin(t * 0.04 + i * 1.57) + 1) / 2;
+        if (bright > 0.6) {
+          const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 5);
+          sg.addColorStop(0, `rgba(255,255,255,${bright * 0.9})`);
+          sg.addColorStop(0.3, col + Math.round(bright * 180).toString(16).padStart(2, "0"));
+          sg.addColorStop(1, "transparent");
+          ctx.fillStyle = sg;
+          ctx.beginPath(); ctx.arc(sx, sy, 5, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+
+      t++; rafRef.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.color, profile.avatar, size]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      onClick={onClick}
+      style={{ width: size, height: size, display: "block", flexShrink: 0, cursor: "pointer" }}
+      width={size * 2}
+      height={size * 2}
+    />
+  );
+}
+
 function Modal({ title, onClose, children }) {
   return (
     <div style={S.modalOverlay} onClick={e => { if(e.target===e.currentTarget) onClose(); }}>
@@ -773,13 +1221,11 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{ ...S.profileCard, padding:isDesktop?20:14, borderColor:hov?profile.color:profile.color+"55", boxShadow:hov?`0 0 40px ${profile.color}44`:`0 0 16px ${profile.color}22`, transform:hov?"translateY(-4px)":"none" }}>
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:14,marginBottom:isDesktop?16:12}}>
-        <div
+        <AnimatedAvatar
+          profile={profile}
+          size={isDesktop?72:56}
           onClick={onHangar}
-          style={{ width:isDesktop?72:56,height:isDesktop?72:56,borderRadius:"50%",border:`2px solid ${profile.color}`,background:profile.avatar?`url(${profile.avatar}) center/cover no-repeat`:`radial-gradient(circle,${profile.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isDesktop?28:22,boxShadow:`0 0 16px ${profile.color}66`,flexShrink:0,cursor:"pointer",transition:"transform .2s" }}
-          title="Ouvrir le hangar"
-        >
-          {!profile.avatar&&"👤"}
-        </div>
+        />
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
           <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:15,fontWeight:700}}>{profile.name}</div>
           <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
@@ -2095,7 +2541,7 @@ export default function App() {
       <div className="sidebar">
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
-            <span className="icon">{t.icon}</span>
+            <NavIcon tabId={t.id} active={tab===t.id} size={isDesktop?30:26}/>
             <span className="label">{t.label}</span>
           </button>
         ))}
@@ -2128,7 +2574,7 @@ export default function App() {
         <div style={S.nav} className="top-nav">
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-tab${tab===t.id?" active":""}`}>
-              <span className="icon">{t.icon}</span>
+              <NavIcon tabId={t.id} active={tab===t.id} size={24}/>
               <span className="label">{t.label}</span>
             </button>
           ))}
