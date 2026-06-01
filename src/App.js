@@ -1868,6 +1868,55 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
 }
 
 
+// ─── MONEY BOX (argent joueur, style bannière) ────────────────────────────────
+function MoneyBox({ amount, color, isDesktop }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize();
+    let t = 0;
+    const coins = Array.from({length:18},(_,i)=>({ x:Math.random(), y:Math.random(), sp:0.0009+Math.random()*0.0016, sz:1.2+Math.random()*2.6, ph:Math.random()*6 }));
+    function frame(){
+      const w=canvas.offsetWidth, h=canvas.offsetHeight;
+      t+=0.016; ctx.clearRect(0,0,w,h);
+      const gx=(Math.sin(t*0.3)*0.5+0.5)*w;
+      const g=ctx.createRadialGradient(gx,h/2,0,gx,h/2,w*0.5);
+      g.addColorStop(0,"rgba(0,255,157,0.08)"); g.addColorStop(1,"transparent");
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+      coins.forEach(c=>{ c.y-=c.sp; if(c.y<-0.05){ c.y=1.05; c.x=Math.random(); }
+        const px=c.x*w, py=c.y*h;
+        const al=0.18+0.3*Math.abs(Math.sin(t*1.5+c.ph));
+        ctx.save(); ctx.translate(px,py); ctx.scale(1,0.5+0.5*Math.abs(Math.sin(t*2+c.ph)));
+        ctx.beginPath(); ctx.arc(0,0,c.sz,0,Math.PI*2);
+        ctx.fillStyle=`rgba(0,255,157,${al})`; ctx.strokeStyle=`rgba(120,255,200,${al})`; ctx.lineWidth=0.7;
+        ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      const sx=((t*0.15)%1)*w;
+      const lg=ctx.createLinearGradient(sx-30,0,sx+30,0);
+      lg.addColorStop(0,"transparent"); lg.addColorStop(0.5,"rgba(0,255,157,0.10)"); lg.addColorStop(1,"transparent");
+      ctx.fillStyle=lg; ctx.fillRect(sx-30,0,60,h);
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  },[]);
+  return (
+    <div style={{position:"relative",overflow:"hidden",borderRadius:10,background:"linear-gradient(135deg,#08140e,#0a1424)",border:"1px solid #00ff9d44",boxShadow:"0 0 14px #00ff9d22",padding:isDesktop?"12px 16px":"10px 14px",display:"flex",alignItems:"center",gap:isDesktop?16:12}}>
+      <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <div style={{position:"relative",flexShrink:0}}><TileIcon kind="gold" color="#00ff9d" size={isDesktop?46:38}/></div>
+      <div style={{position:"relative",minWidth:0,flex:1}}>
+        <div style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>aUEC</div>
+        <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?28:22,fontWeight:900,textShadow:"0 0 16px #00ff9d88",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",animation:"moneyPulse 2.5s ease-in-out infinite"}}>{fmt(amount)}</div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── MONEY BANNER (Total Gagné en long) ───────────────────────────────────────
 function MoneyBanner({ totalEarned, profiles, onClick, isDesktop }) {
   const ref = useRef(null);
@@ -2036,15 +2085,12 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
-      <div style={S.statRow}>
-        <div style={{...S.statItem,flex:"0 0 38%",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
-          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div>
-          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?26:19,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",animation:"moneyPulse 2.5s ease-in-out infinite"}}>{fmt(profile.aUEC)}</div>
-        </div>
-        <div style={{...S.statItem,flex:1,alignItems:"center",justifyContent:"center"}}>
+      <div style={{display:"flex",flexDirection:"column",gap:isDesktop?12:10}}>
+        <MoneyBox amount={profile.aUEC} color={profile.color} isDesktop={isDesktop}/>
+        <div style={{...S.statItem,alignItems:"center",justifyContent:"center",padding:isDesktop?"14px 10px":"12px 8px"}}>
           <div style={{...S.statLabel,fontSize:isDesktop?12:11,alignSelf:"flex-start"}}>VAISSEAU</div>
-          <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?72:56}/>
-          <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:15,fontWeight:700,lineHeight:1.15,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow:`0 0 12px ${profile.color}55`}}>{profile.ship}</div>
+          <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?78:60}/>
+          <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?19:16,fontWeight:700,lineHeight:1.15,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow:`0 0 12px ${profile.color}55`}}>{profile.ship}</div>
         </div>
       </div>
     </div>
