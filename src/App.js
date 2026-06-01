@@ -2688,7 +2688,6 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
       {detailObj&&(()=>{
         const total    = profiles.reduce((a,p)=>a+(p.aUEC||0),0);
         const missing  = Math.max(0, (detailObj.cost||0) - total);
-        const perPerson= Math.ceil(missing / profiles.length);
         const pct      = detailObj.cost>0 ? Math.min(100,Math.round(total/detailObj.cost*100)) : 0;
         return (
           <Modal title={`🎯 ${detailObj.name}`} onClose={()=>setDetailObj(null)}>
@@ -2709,8 +2708,9 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
               <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:10}}>AVANCEMENT PAR JOUEUR</div>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {profiles.map(p=>{
-                  const pPct = detailObj.cost>0 ? Math.min(100,Math.round((p.aUEC||0)/detailObj.cost*100)) : 0;
-                  const pMiss = Math.max(0,(detailObj.cost||0)-(p.aUEC||0));
+                  const share = Math.floor((detailObj.cost||0) / profiles.length);
+                  const pPct  = share>0 ? Math.min(100, Math.round((p.aUEC||0)/share*100)) : 0;
+                  const pMiss = Math.max(0, share - (p.aUEC||0));
                   return (
                     <div key={p.id} style={{background:"#07111f",borderRadius:8,padding:10,border:`1px solid ${p.color}44`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -2723,6 +2723,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>
                         <span style={{color:"#00ff9d"}}>{fmt(p.aUEC)} aUEC</span>
+                        <span style={{color:"#8899bb"}}>part : {fmt(share)} aUEC</span>
                         {pMiss>0&&<span style={{color:"#ff6b35"}}>manque {fmt(pMiss)}</span>}
                         {pMiss<=0&&<span style={{color:"#00ff9d"}}>✅ Part atteinte</span>}
                       </div>
@@ -2739,12 +2740,17 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
                 <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:700,textAlign:"center",marginBottom:10}}>{fmt(missing)} aUEC</div>
                 <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",marginBottom:6}}>PAR PERSONNE</div>
                 <div style={{display:"flex",gap:8}}>
-                  {profiles.map(p=>(
-                    <div key={p.id} style={{flex:1,background:"#07111f",borderRadius:8,padding:8,border:`1px solid ${p.color}44`,textAlign:"center"}}>
-                      <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>{p.name}</div>
-                      <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(perPerson)}</div>
-                    </div>
-                  ))}
+                  {profiles.map(p=>{
+                    const pShare = Math.floor((detailObj.cost||0) / profiles.length);
+                    const pMissInd = Math.max(0, pShare - (p.aUEC||0));
+                    return (
+                      <div key={p.id} style={{flex:1,background:"#07111f",borderRadius:8,padding:8,border:`1px solid ${p.color}44`,textAlign:"center"}}>
+                        <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif",marginBottom:4}}>{p.name}</div>
+                        <div style={{color:pMissInd===0?"#00ff9d":"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{pMissInd===0?"✅ OK":fmt(pMissInd)}</div>
+                        {pMissInd===0&&<div style={{color:"#00ff9d",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>Part atteinte</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ):(
