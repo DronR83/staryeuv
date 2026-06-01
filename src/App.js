@@ -424,6 +424,301 @@ function ShipPicker3D({ value, onChange, hangarShips, color }) {
   );
 }
 
+// ─── TILE ICON ANIMÉ (Star Citizen style HD) ──────────────────────────────────
+// ─── SHIP BADGE 3D (compact, à côté du nom vaisseau) ──────────────────────────
+function ShipBadge3D({ shipName, color = "#00d4ff", size = 44 }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  const idx = useMemo(() => {
+    if (!shipName) return 0;
+    return shipName.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 12;
+  }, [shipName]);
+
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = size * 1.6, H = size;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    let t = 0;
+    cancelAnimationFrame(raf.current);
+    const seed = idx * 137.5;
+    const r = n => ((Math.sin(seed + n) + 1) / 2);
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.34;
+
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(cx, cy);
+      const rot = Math.sin(t * 0.018) * 0.12;
+      ctx.rotate(rot);
+      const bob = Math.sin(t * 0.03) * R * 0.06;
+      ctx.translate(0, bob);
+
+      // halo
+      const halo = ctx.createRadialGradient(0, 0, R * 0.3, 0, 0, R * 1.5);
+      halo.addColorStop(0, color + "33"); halo.addColorStop(1, "transparent");
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.ellipse(0, 2, R * 1.5, R * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+
+      // corps
+      const w1 = R * 1.15, h1 = R * 0.3;
+      ctx.shadowColor = color; ctx.shadowBlur = 10 + 4 * Math.sin(t * 0.05);
+      ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.fillStyle = color + "2a";
+      ctx.beginPath();
+      ctx.moveTo(-w1, 0);
+      ctx.bezierCurveTo(-w1 * 0.5, -h1 * 1.6, w1 * 0.3, -h1, w1, 0);
+      ctx.bezierCurveTo(w1 * 0.3, h1, -w1 * 0.5, h1 * 1.6, -w1, 0);
+      ctx.fill(); ctx.stroke();
+      // cockpit
+      ctx.fillStyle = color + "aa"; ctx.shadowBlur = 7;
+      ctx.beginPath(); ctx.ellipse(w1 * 0.3, -h1 * 0.3, w1 * 0.16, h1 * 0.6, -0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.arc(w1 * 0.27, -h1 * 0.45, w1 * 0.045, 0, Math.PI * 2); ctx.fill();
+      // ailes
+      ctx.fillStyle = color + "1e"; ctx.strokeStyle = color + "aa"; ctx.lineWidth = 0.9; ctx.shadowBlur = 5;
+      [[1, -1], [1, 1]].forEach(([, ys]) => {
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.lineTo(-w1 * 0.4, ys * (h1 + R * 0.42)); ctx.lineTo(-w1 * 0.78, ys * h1 * 0.5);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      });
+      // réacteurs
+      for (let i = 0; i < 2; i++) {
+        const ry = (i === 0 ? -1 : 1) * (h1 * 0.6);
+        const fl = 0.6 + 0.4 * Math.sin(t * 0.14 + i * 2);
+        ctx.shadowColor = color; ctx.shadowBlur = 14 * fl; ctx.fillStyle = color;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.85, ry, 3.2, 2, 0, 0, Math.PI * 2); ctx.fill();
+        const jet = ctx.createLinearGradient(-w1 * 0.85, ry, -w1 * 0.85 - 20 * fl, ry);
+        jet.addColorStop(0, color + "dd"); jet.addColorStop(1, "transparent");
+        ctx.fillStyle = jet;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.85 - 10 * fl, ry, 10 * fl, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+      t++;
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, color, size]);
+
+  return <canvas ref={ref} style={{ width: size * 1.6, height: size, display: "block", flexShrink: 0 }} width={size * 3.2} height={size * 2} />;
+}
+
+
+function TileIcon({ kind, color = "#00d4ff", size = 56 }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    let t = 0;
+    cancelAnimationFrame(raf.current);
+    const c = size / 2;
+
+    function halo(r, a) {
+      const g = ctx.createRadialGradient(c, c, 0, c, c, r);
+      g.addColorStop(0, color + Math.round(a).toString(16).padStart(2, "0"));
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    const DRAW = {
+      // Coffre / lingots aUEC (Total Gagné)
+      gold: () => {
+        const r = size * 0.34;
+        halo(size * 0.46, 26 + 16 * Math.sin(t * 0.04));
+        ctx.save(); ctx.translate(c, c);
+        // socle hologramme
+        ctx.strokeStyle = color + "55"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(0, r * 0.85, r * 1.1, r * 0.28, 0, 0, Math.PI * 2); ctx.stroke();
+        // lingots empilés (flottants)
+        const bob = Math.sin(t * 0.03) * r * 0.08;
+        ctx.translate(0, bob);
+        ctx.shadowColor = color; ctx.shadowBlur = 12;
+        const bars = [[-r*0.55, r*0.3, 0.5], [r*0.05, r*0.3, 0.5], [-r*0.25, -r*0.05, 0.55]];
+        bars.forEach(([bx, by, bw], i) => {
+          const grad = ctx.createLinearGradient(bx, by - r*0.2, bx, by + r*0.2);
+          grad.addColorStop(0, color); grad.addColorStop(1, color + "88");
+          ctx.fillStyle = grad; ctx.strokeStyle = "#fff8"; ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          const w = r * bw, hh = r * 0.34;
+          ctx.moveTo(bx, by); ctx.lineTo(bx + w, by - hh * 0.25);
+          ctx.lineTo(bx + w, by + hh * 0.55); ctx.lineTo(bx, by + hh * 0.8);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+          // top face
+          ctx.fillStyle = "#ffffffcc";
+          ctx.beginPath();
+          ctx.moveTo(bx, by); ctx.lineTo(bx + w, by - hh*0.25);
+          ctx.lineTo(bx + w*0.7, by - hh*0.5); ctx.lineTo(bx - w*0.3, by - hh*0.22);
+          ctx.closePath(); ctx.globalAlpha = 0.5; ctx.fill(); ctx.globalAlpha = 1;
+        });
+        // symbole ₵ flottant
+        ctx.shadowBlur = 14; ctx.fillStyle = "#fff";
+        ctx.font = `bold ${Math.round(r*0.5)}px Orbitron,monospace`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("₵", 0, -r*0.55 + Math.sin(t*0.05)*2);
+        ctx.restore();
+      },
+      // Datapad missions
+      pad: () => {
+        const r = size * 0.32;
+        halo(size * 0.45, 22 + 14 * Math.sin(t * 0.04));
+        ctx.save(); ctx.translate(c, c);
+        ctx.rotate(Math.sin(t * 0.02) * 0.05);
+        ctx.shadowColor = color; ctx.shadowBlur = 12;
+        ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.fillStyle = color + "1e";
+        // tablette
+        ctx.beginPath();
+        ctx.roundRect(-r*0.7, -r, r*1.4, r*2, 4);
+        ctx.fill(); ctx.stroke();
+        // bord lumineux haut
+        ctx.fillStyle = color + "66";
+        ctx.beginPath(); ctx.roundRect(-r*0.5, -r*0.85, r, r*0.12, 2); ctx.fill();
+        // lignes texte qui défilent
+        ctx.shadowBlur = 4;
+        for (let i = 0; i < 5; i++) {
+          const ly = -r*0.55 + i * r*0.3;
+          const scan = (Math.sin(t * 0.05 - i * 0.6) + 1) / 2;
+          ctx.strokeStyle = color + Math.round(60 + scan * 150).toString(16).padStart(2, "0");
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-r*0.45, ly);
+          ctx.lineTo(-r*0.45 + r*0.9 * (0.5 + scan*0.5), ly);
+          ctx.stroke();
+        }
+        // check vert qui pulse
+        ctx.strokeStyle = "#00ff9d"; ctx.shadowColor = "#00ff9d";
+        ctx.shadowBlur = 8 + 6 * Math.sin(t * 0.08); ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-r*0.15, r*0.62); ctx.lineTo(0, r*0.78); ctx.lineTo(r*0.3, r*0.45);
+        ctx.stroke();
+        ctx.restore();
+      },
+      // Poignée de main / partage co-op
+      share: () => {
+        const r = size * 0.33;
+        halo(size * 0.45, 22 + 14 * Math.sin(t * 0.04));
+        ctx.save(); ctx.translate(c, c);
+        ctx.shadowColor = color; ctx.shadowBlur = 10;
+        // deux noeuds reliés
+        const pulse = (Math.sin(t * 0.06) + 1) / 2;
+        const lx = -r*0.6, rx = r*0.6;
+        // ligne énergie entre
+        const lg = ctx.createLinearGradient(lx, 0, rx, 0);
+        lg.addColorStop(0, color); lg.addColorStop(0.5, "#fff"); lg.addColorStop(1, color);
+        ctx.strokeStyle = lg; ctx.lineWidth = 2 + pulse * 1.5;
+        ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(rx, 0); ctx.stroke();
+        // particule qui circule
+        const px = lx + (rx - lx) * ((t * 0.02) % 1);
+        ctx.fillStyle = "#fff"; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(px, 0, 2.5, 0, Math.PI*2); ctx.fill();
+        // noeuds
+        [[lx, color], [rx, color]].forEach(([x, col]) => {
+          ctx.shadowColor = col; ctx.shadowBlur = 14;
+          const ng = ctx.createRadialGradient(x, 0, 0, x, 0, r*0.42);
+          ng.addColorStop(0, "#fff"); ng.addColorStop(0.4, col); ng.addColorStop(1, col + "33");
+          ctx.fillStyle = ng;
+          ctx.beginPath(); ctx.arc(x, 0, r*0.36 + pulse*2, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(x, 0, r*0.36 + pulse*2, 0, Math.PI*2); ctx.stroke();
+        });
+        // anneau orbital
+        ctx.strokeStyle = color + "44"; ctx.lineWidth = 1; ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.ellipse(0, 0, r*0.95, r*0.4, t*0.03, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+      },
+      // Cible objectifs
+      target: () => {
+        const r = size * 0.36;
+        halo(size * 0.45, 22 + 14 * Math.sin(t * 0.05));
+        ctx.save(); ctx.translate(c, c);
+        ctx.strokeStyle = color; ctx.shadowColor = color;
+        [0.92, 0.62, 0.34].forEach((rr, i) => {
+          ctx.shadowBlur = i === 2 ? 12 : 4;
+          ctx.lineWidth = i === 2 ? 2 : 1.3;
+          ctx.globalAlpha = i === 2 ? 1 : 0.7;
+          ctx.save(); ctx.rotate(t * 0.012 * (i % 2 ? -1 : 1) * (i+1) * 0.4);
+          ctx.beginPath(); ctx.arc(0, 0, r * rr, 0, Math.PI*2); ctx.stroke();
+          if (i < 2) for (let n = 0; n < 4; n++) {
+            const a = (n/4)*Math.PI*2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a)*r*rr*0.82, Math.sin(a)*r*rr*0.82);
+            ctx.lineTo(Math.cos(a)*r*rr*1.18, Math.sin(a)*r*rr*1.18);
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 14 + 6*Math.sin(t*0.08); ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.13, 0, Math.PI*2); ctx.fill();
+        ctx.lineWidth = 1.4; ctx.strokeStyle = color;
+        [[-r*0.9,0,-r*0.4,0],[r*0.4,0,r*0.9,0],[0,-r*0.9,0,-r*0.4],[0,r*0.4,0,r*0.9]].forEach(([x1,y1,x2,y2])=>{
+          ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        });
+        ctx.restore();
+      },
+      // Vaisseau (fleet) - réutilise rendu de ShipMini
+      ship: () => {
+        const r = size * 0.34;
+        halo(size * 0.46, 22 + 14 * Math.sin(t * 0.04));
+        ctx.save(); ctx.translate(c, c);
+        ctx.rotate(Math.sin(t * 0.02) * 0.08);
+        const bob = Math.sin(t * 0.03) * r * 0.06;
+        ctx.translate(0, bob);
+        ctx.shadowColor = color; ctx.shadowBlur = 12;
+        ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.fillStyle = color + "2a";
+        const w1 = r * 1.1, h1 = r * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(-w1, 0);
+        ctx.bezierCurveTo(-w1*0.5, -h1*1.6, w1*0.3, -h1, w1, 0);
+        ctx.bezierCurveTo(w1*0.3, h1, -w1*0.5, h1*1.6, -w1, 0);
+        ctx.fill(); ctx.stroke();
+        // cockpit
+        ctx.fillStyle = color + "aa"; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.ellipse(w1*0.3, -h1*0.3, w1*0.18, h1*0.6, -0.2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.beginPath(); ctx.arc(w1*0.28, -h1*0.45, w1*0.05, 0, Math.PI*2); ctx.fill();
+        // ailes
+        ctx.fillStyle = color + "1e"; ctx.strokeStyle = color + "aa"; ctx.lineWidth = 1;
+        [[1,-1],[1,1]].forEach(([,ys])=>{
+          ctx.beginPath(); ctx.moveTo(0,0);
+          ctx.lineTo(-w1*0.4, ys*(h1+r*0.4)); ctx.lineTo(-w1*0.78, ys*h1*0.5);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        });
+        // réacteurs flammes
+        for (let i = 0; i < 2; i++) {
+          const ry = (i===0?-1:1)*(h1*0.6);
+          const fl = 0.6 + 0.4*Math.sin(t*0.14 + i*2);
+          ctx.shadowColor = color; ctx.shadowBlur = 16*fl; ctx.fillStyle = color;
+          ctx.beginPath(); ctx.ellipse(-w1*0.85, ry, 4, 2.5, 0, 0, Math.PI*2); ctx.fill();
+          const jet = ctx.createLinearGradient(-w1*0.85, ry, -w1*0.85 - 22*fl, ry);
+          jet.addColorStop(0, color+"dd"); jet.addColorStop(1, "transparent");
+          ctx.fillStyle = jet;
+          ctx.beginPath(); ctx.ellipse(-w1*0.85 - 11*fl, ry, 11*fl, 2, 0, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+      },
+    };
+
+    function frame() {
+      ctx.clearRect(0, 0, size, size);
+      (DRAW[kind] || DRAW.target)();
+      t++;
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, color, size]);
+  return <canvas ref={ref} style={{ width: size, height: size, display: "block", margin: "0 auto" }} width={size*2} height={size*2} />;
+}
+
+
 // ─── NAV ICON ANIMÉ ───────────────────────────────────────────────────────────
 function NavIcon({ tabId, active, size = 32 }) {
   const canvasRef = useRef(null);
@@ -1573,15 +1868,17 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
 }
 
 
-function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse, isDesktop }) {
+function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, pulse, isDesktop }) {
   const [hov,setHov]=useState(false);
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ ...S.hexTile, padding:isDesktop?"20px 14px":"14px 10px", borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
-      <div style={{fontSize:isDesktop?38:32,marginBottom:isDesktop?7:5}}>{icon}</div>
-      <div style={{color,fontSize:isDesktop?13:12,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase"}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?24:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"4px 0":"3px 0"}}>{value}</div>}
-      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?12:11,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
+      style={{ ...S.hexTile, padding:isDesktop?"22px 14px":"16px 10px", borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
+      {iconKind
+        ? <div style={{marginBottom:isDesktop?8:6}}><TileIcon kind={iconKind} color={color} size={isDesktop?56:46}/></div>
+        : <div style={{fontSize:isDesktop?42:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
+      <div style={{color,fontSize:isDesktop?15:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:600}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?28:22,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0"}}>{value}</div>}
+      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?13:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
 }
@@ -1599,15 +1896,21 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
           onClick={onHangar}
         />
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
-          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:15,fontWeight:700}}>{profile.name}</div>
-          <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
+          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:18,fontWeight:700}}>{profile.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?13:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
       <div style={S.statRow}>
-        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>aUEC</div><div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?19:16,fontWeight:700}}>{fmt(profile.aUEC)}</div></div>
-        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>VAISSEAU</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:12}}>{profile.ship}</div></div>
-        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>POSITION</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:11}}>{profile.location}</div></div>
+        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div><div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:18,fontWeight:700}}>{fmt(profile.aUEC)}</div></div>
+        <div style={S.statItem}>
+          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>VAISSEAU</div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?40:32}/>
+            <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?17:14,fontWeight:600}}>{profile.ship}</div>
+          </div>
+        </div>
+        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?12:11}}>POSITION</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:13}}>{profile.location}</div></div>
       </div>
     </div>
   );
@@ -1888,6 +2191,121 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
 }
 
 // ─── CALCULATEUR TAB ──────────────────────────────────────────────────────────
+// ─── QUICK CALC (calculatrice animée) ─────────────────────────────────────────
+function QuickCalc() {
+  const [expr, setExpr] = useState("");
+  const [result, setResult] = useState("");
+  const [flash, setFlash] = useState(false);
+  const ref = useRef(null);
+  const raf = useRef(null);
+
+  // Fond animé grille holographique
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize();
+    let t = 0;
+    function frame(){
+      const w=canvas.offsetWidth, h=canvas.offsetHeight;
+      t+=0.01; ctx.clearRect(0,0,w,h);
+      ctx.strokeStyle="rgba(0,212,255,0.06)"; ctx.lineWidth=1;
+      const gap=26, off=(t*10)%gap;
+      for(let x=-gap+off; x<w+gap; x+=gap){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+h*0.3,h); ctx.stroke(); }
+      for(let y=0; y<h; y+=gap){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+      // particules flottantes
+      for(let i=0;i<6;i++){
+        const px=(Math.sin(t*0.5+i*1.3)*0.5+0.5)*w;
+        const py=(Math.cos(t*0.4+i*2.1)*0.5+0.5)*h;
+        const al=0.15+0.15*Math.sin(t*2+i);
+        ctx.fillStyle=`rgba(0,255,157,${al})`;
+        ctx.beginPath(); ctx.arc(px,py,1.5,0,Math.PI*2); ctx.fill();
+      }
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  },[]);
+
+  function press(k){
+    if(k==="C"){ setExpr(""); setResult(""); return; }
+    if(k==="⌫"){ setExpr(e=>e.slice(0,-1)); return; }
+    if(k==="="){
+      try{
+        const clean = expr.replace(/[^0-9+\-*/.()%\s]/g,"").replace(/%/g,"/100");
+        if(!clean){ return; }
+        // eslint-disable-next-line no-new-func
+        const r = Function('"use strict";return ('+clean+')')();
+        if(r===undefined||r===null||isNaN(r)){ setResult("Erreur"); }
+        else { setResult(String(Math.round(r*100)/100)); setFlash(true); setTimeout(()=>setFlash(false),300); }
+      }catch{ setResult("Erreur"); }
+      return;
+    }
+    setExpr(e=>e+k);
+  }
+
+  const KEYS = [
+    ["C","⌫","%","/"],
+    ["7","8","9","*"],
+    ["4","5","6","-"],
+    ["1","2","3","+"],
+    ["0",".","(",")"],
+  ];
+  const opColor = "#00d4ff", numColor = "#e8f4ff";
+
+  return (
+    <div style={{marginTop:24}}>
+      <div style={{...S.sectionTitle, color:"#00ff9d"}}>🧮 CALCULATRICE RAPIDE</div>
+      <div style={{position:"relative",background:"#050e1d",border:"1px solid #00ff9d33",borderRadius:16,overflow:"hidden",boxShadow:"0 0 24px #00ff9d22",maxWidth:380,margin:"0 auto"}}>
+        <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+        <div style={{position:"relative",padding:18}}>
+          {/* Écran */}
+          <div style={{background:"#030b1a",border:"1px solid #00ff9d22",borderRadius:10,padding:"14px 16px",marginBottom:16,minHeight:70,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"flex-end"}}>
+            <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:18,minHeight:24,wordBreak:"break-all",textAlign:"right"}}>{expr||"0"}</div>
+            <div style={{color: result==="Erreur"?"#ff4466":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:28,fontWeight:700,textShadow:flash?"0 0 16px #00ff9daa":"0 0 6px #00ff9d44",transition:"text-shadow .2s",wordBreak:"break-all",textAlign:"right"}}>{result!==""?result:""}</div>
+          </div>
+          {/* Touches */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {KEYS.flat().map(k=>{
+              const isOp=["/","*","-","+","%"].includes(k);
+              const isAct=["C","⌫"].includes(k);
+              const col = isAct?"#ff6b35":isOp?opColor:numColor;
+              return (
+                <CalcKey key={k} label={k} color={col} onClick={()=>press(k)} />
+              );
+            })}
+            <CalcKey label="=" color="#00ff9d" wide onClick={()=>press("=")} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalcKey({ label, color, onClick, wide }) {
+  const [down,setDown]=useState(false);
+  const [hov,setHov]=useState(false);
+  return (
+    <button
+      onMouseDown={()=>setDown(true)} onMouseUp={()=>setDown(false)} onMouseLeave={()=>{setDown(false);setHov(false);}}
+      onMouseEnter={()=>setHov(true)}
+      onClick={onClick}
+      style={{
+        gridColumn: wide?"span 4":"auto",
+        background: down?`${color}33`:hov?`${color}1e`:"#0a1628",
+        border:`1px solid ${hov?color:color+"44"}`,
+        borderRadius:10, padding:"14px 0",
+        color, fontFamily:"'Orbitron',sans-serif", fontSize:18, fontWeight:700,
+        cursor:"pointer", transition:"all .12s",
+        boxShadow: down?`0 0 16px ${color}66, inset 0 0 8px ${color}44`:hov?`0 0 10px ${color}33`:"none",
+        transform: down?"scale(0.95)":"scale(1)",
+      }}
+    >{label}</button>
+  );
+}
+
+
 function CalcTab({ fleets, profiles }) {
   const [minerals,   setMinerals]   = useState([]);
   const [loadingMin, setLoadingMin] = useState(false);
@@ -2163,6 +2581,7 @@ function CalcTab({ fleets, profiles }) {
           })()}
         </Modal>
       )}
+      <QuickCalc/>
     </div>
   );
 }
@@ -2972,12 +3391,12 @@ export default function App() {
             </div>
             {isDesktop ? (
               <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
-                <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
-                <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
-                <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
-                <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
+                <HexTile iconKind="gold" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
+                <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
                 {profiles.map(p=>(
-                  <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
+                  <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                 ))}
                 <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
                 <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
@@ -2985,12 +3404,12 @@ export default function App() {
             ) : (
               <>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
-                  <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
-                  <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
-                  <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
-                  <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
+                  <HexTile iconKind="gold" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                  <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
                   {profiles.map(p=>(
-                    <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
+                    <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                   ))}
                 </div>
                 <div style={{marginBottom:20}}>
@@ -3121,7 +3540,7 @@ const S={
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:6,flexWrap:"wrap"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"5px 7px",overflow:"hidden"},
-  statLabel:{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
+  statLabel:{color:"#8899bb",fontSize:12,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
   calcBox:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:12,padding:18,backdropFilter:"blur(8px)"},
@@ -3130,8 +3549,8 @@ const S={
   progressFill:{height:"100%",borderRadius:4,transition:"width .4s ease"},
   resultBox:{background:"#0a1628",border:"1px solid #00d4ff44",borderRadius:10,padding:"10px 14px"},
   shipChip:{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#8899bb",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",transition:"all .2s"},
-  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
-  label:{display:"block",color:"#8899bb",fontSize:12,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
+  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
+  label:{display:"block",color:"#8899bb",fontSize:13,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
   input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"10px 14px",color:"#e8f4ff",fontSize:15,outline:"none",marginBottom:4},
   primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
   dangerBtn:{background:"transparent",border:"1px solid #ff446644",color:"#ff4466",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Rajdhani',sans-serif"},
