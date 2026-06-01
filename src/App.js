@@ -2913,28 +2913,28 @@ function QuickCalc({ embedded }) {
 }
 
 function CalcKey({ label, color, onClick, wide }) {
-  const [down,setDown]=useState(false);
-  const [hov,setHov]=useState(false);
+  const [down, setDown] = useState(false);
+  const touched = useRef(false);
   return (
     <button
-      onMouseDown={()=>setDown(true)}
-      onMouseUp={()=>setDown(false)}
-      onMouseLeave={()=>{setDown(false);setHov(false);}}
-      onMouseEnter={()=>setHov(true)}
-      onTouchStart={e=>{e.preventDefault();setDown(true);onClick();}}
-      onTouchEnd={e=>{e.preventDefault();setDown(false);}}
-      onClick={onClick}
+      onPointerDown={e => { e.preventDefault(); setDown(true); onClick(); touched.current = true; }}
+      onPointerUp={e => { e.preventDefault(); setDown(false); }}
+      onPointerLeave={() => setDown(false)}
+      onPointerCancel={() => setDown(false)}
+      onClick={e => { if (touched.current) { touched.current = false; return; } onClick(); }}
       style={{
-        gridColumn: wide?"span 4":"auto",
-        background: down?`${color}44`:hov?`${color}1e`:"#0a1628",
-        border:`1px solid ${down?color:hov?color:color+"44"}`,
-        borderRadius:10, padding:"14px 0",
-        color, fontFamily:"'Orbitron',sans-serif", fontSize:18, fontWeight:700,
-        cursor:"pointer", transition:"background .08s, transform .08s",
-        boxShadow: down?`0 0 20px ${color}88, inset 0 0 10px ${color}44`:hov?`0 0 10px ${color}33`:"none",
-        transform: down?"scale(0.93)":"scale(1)",
-        userSelect:"none", WebkitUserSelect:"none",
-        touchAction:"none", WebkitTapHighlightColor:"transparent",
+        gridColumn: wide ? "span 4" : "auto",
+        background: down ? `${color}44` : "#0a1628",
+        border: `1px solid ${down ? color : color + "44"}`,
+        borderRadius: 10, padding: "14px 0",
+        color, fontFamily: "'Orbitron',sans-serif", fontSize: 18, fontWeight: 700,
+        cursor: "pointer",
+        boxShadow: down ? `0 0 20px ${color}88, inset 0 0 10px ${color}44` : "none",
+        transform: down ? "scale(0.92)" : "scale(1)",
+        transition: "none",
+        userSelect: "none", WebkitUserSelect: "none",
+        touchAction: "none", WebkitTapHighlightColor: "transparent",
+        willChange: "transform",
       }}
     >{label}</button>
   );
