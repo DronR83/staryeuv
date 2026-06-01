@@ -2803,7 +2803,49 @@ function QuickCalc({ embedded }) {
   const ref = useRef(null);
   const raf = useRef(null);
 
-  // Fond animé grille holographique
+  function press(k) {
+    if(k==="C"){ setExpr(""); setResult(""); return; }
+    if(k==="⌫"){ setExpr(e=>e.slice(0,-1)); return; }
+    if(k==="="){
+      setExpr(prev => {
+        try{
+          const clean=prev.replace(/[^0-9+\-*/.()%\s]/g,"").replace(/%/g,"/100");
+          if(!clean) return prev;
+          // eslint-disable-next-line no-new-func
+          const r=Function('"use strict";return ('+clean+')')();
+          if(r===undefined||r===null||isNaN(r)){ setResult("Erreur"); }
+          else{ setResult(String(Math.round(r*100)/100)); setFlash(true); setTimeout(()=>setFlash(false),300); }
+        }catch{ setResult("Erreur"); }
+        return prev;
+      });
+      return;
+    }
+    setResult("");
+    setExpr(e=>e+k);
+  }
+
+  // Clavier physique PC + pavé numérique
+  useEffect(() => {
+    function onKey(e) {
+      if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+      const map = {
+        "0":"0","1":"1","2":"2","3":"3","4":"4","5":"5","6":"6","7":"7","8":"8","9":"9",
+        "Numpad0":"0","Numpad1":"1","Numpad2":"2","Numpad3":"3","Numpad4":"4",
+        "Numpad5":"5","Numpad6":"6","Numpad7":"7","Numpad8":"8","Numpad9":"9",
+        "NumpadAdd":"+","NumpadSubtract":"-","NumpadMultiply":"*","NumpadDivide":"/",
+        "NumpadDecimal":".","NumpadEnter":"=",
+        "+":"+","-":"-","*":"*","/":"/",".":".",
+        "Enter":"=","Backspace":"⌫","Escape":"C","Delete":"C",
+        "NumpadEqual":"=","Equal":"=",
+        "%":"%","(":"(",")":")","NumpadParenLeft":"(","NumpadParenRight":")",
+      };
+      const key = map[e.code] || map[e.key];
+      if(key){ e.preventDefault(); press(key); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     const canvas = ref.current; if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -2831,23 +2873,6 @@ function QuickCalc({ embedded }) {
     frame();
     return ()=>cancelAnimationFrame(raf.current);
   },[]);
-
-  function press(k){
-    if(k==="C"){ setExpr(""); setResult(""); return; }
-    if(k==="⌫"){ setExpr(e=>e.slice(0,-1)); return; }
-    if(k==="="){
-      try{
-        const clean = expr.replace(/[^0-9+\-*/.()%\s]/g,"").replace(/%/g,"/100");
-        if(!clean){ return; }
-        // eslint-disable-next-line no-new-func
-        const r = Function('"use strict";return ('+clean+')')();
-        if(r===undefined||r===null||isNaN(r)){ setResult("Erreur"); }
-        else { setResult(String(Math.round(r*100)/100)); setFlash(true); setTimeout(()=>setFlash(false),300); }
-      }catch{ setResult("Erreur"); }
-      return;
-    }
-    setExpr(e=>e+k);
-  }
 
   const KEYS = [
     ["C","⌫","%","/"],
@@ -2892,18 +2917,24 @@ function CalcKey({ label, color, onClick, wide }) {
   const [hov,setHov]=useState(false);
   return (
     <button
-      onMouseDown={()=>setDown(true)} onMouseUp={()=>setDown(false)} onMouseLeave={()=>{setDown(false);setHov(false);}}
+      onMouseDown={()=>setDown(true)}
+      onMouseUp={()=>setDown(false)}
+      onMouseLeave={()=>{setDown(false);setHov(false);}}
       onMouseEnter={()=>setHov(true)}
+      onTouchStart={e=>{e.preventDefault();setDown(true);onClick();}}
+      onTouchEnd={e=>{e.preventDefault();setDown(false);}}
       onClick={onClick}
       style={{
         gridColumn: wide?"span 4":"auto",
-        background: down?`${color}33`:hov?`${color}1e`:"#0a1628",
-        border:`1px solid ${hov?color:color+"44"}`,
+        background: down?`${color}44`:hov?`${color}1e`:"#0a1628",
+        border:`1px solid ${down?color:hov?color:color+"44"}`,
         borderRadius:10, padding:"14px 0",
         color, fontFamily:"'Orbitron',sans-serif", fontSize:18, fontWeight:700,
-        cursor:"pointer", transition:"all .12s",
-        boxShadow: down?`0 0 16px ${color}66, inset 0 0 8px ${color}44`:hov?`0 0 10px ${color}33`:"none",
-        transform: down?"scale(0.95)":"scale(1)",
+        cursor:"pointer", transition:"background .08s, transform .08s",
+        boxShadow: down?`0 0 20px ${color}88, inset 0 0 10px ${color}44`:hov?`0 0 10px ${color}33`:"none",
+        transform: down?"scale(0.93)":"scale(1)",
+        userSelect:"none", WebkitUserSelect:"none",
+        touchAction:"none", WebkitTapHighlightColor:"transparent",
       }}
     >{label}</button>
   );
