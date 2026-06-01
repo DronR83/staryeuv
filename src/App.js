@@ -1876,6 +1876,44 @@ function hexToRgb(hex){
   return [(n>>16)&255,(n>>8)&255,n&255];
 }
 
+// ─── FORTUNE AMOUNT (auto-fit, néon jaune) ────────────────────────────────────
+function FortuneAmount({ amount, isDesktop }) {
+  const boxRef = useRef(null);
+  const numRef = useRef(null);
+  const [fs, setFs] = useState(isDesktop ? 26 : 18);
+  useEffect(() => {
+    const fit = () => {
+      const box = boxRef.current, num = numRef.current;
+      if (!box || !num) return;
+      const avail = box.clientWidth;
+      if (avail <= 0) return;
+      const maxF = isDesktop ? 32 : 22;
+      const minF = isDesktop ? 14 : 11;
+      num.style.fontSize = maxF + "px";
+      const wAt = num.scrollWidth;
+      let target = maxF;
+      if (wAt > avail) target = Math.max(minF, Math.floor(maxF * avail / wAt));
+      num.style.fontSize = target + "px";
+      setFs(target);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (boxRef.current) ro.observe(boxRef.current);
+    return () => ro.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount, isDesktop]);
+  return (
+    <div ref={boxRef} style={{width:"100%",textAlign:"right",overflow:"hidden"}}>
+      <span ref={numRef} style={{
+        display:"inline-block", color:"#ffffff", fontFamily:"'Orbitron',sans-serif",
+        fontWeight:900, fontSize:fs, whiteSpace:"nowrap", letterSpacing:0.5,
+        textShadow:"0 0 4px #ffcc00, 0 0 10px #ffcc00, 0 0 18px #ffaa00, 0 0 30px #ffaa00"
+      }}>{fmt(amount)} aUEC</span>
+    </div>
+  );
+}
+
+
 function MoneyBox({ amount, color, isDesktop }) {
   const ref = useRef(null);
   const raf = useRef(null);
@@ -3641,12 +3679,10 @@ export default function App() {
                 <div className="desktop-header-sub" style={{color:"#8899bb",fontSize:isDesktop?13:11,letterSpacing:isDesktop?4:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
               </div>
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,minWidth:0,maxWidth:isDesktop?340:200}}>
               <SyncBadge synced={loaded}/>
-              <div className="desktop-fortune" style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:15,textAlign:"right"}}>
-                <div style={{fontSize:isDesktop?11:10,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
-                {fmt((p1?.aUEC||0)+(p2?.aUEC||0))} aUEC
-              </div>
+              <div style={{fontSize:isDesktop?12:10,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
+              <FortuneAmount amount={(p1?.aUEC||0)+(p2?.aUEC||0)} isDesktop={isDesktop}/>
             </div>
           </div>
         </div>
