@@ -1967,7 +1967,6 @@ function ShipTile({ shipName, color, isDesktop }) {
     function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
     resize();
     const [r,g,b]=hexToRgb(col);
-    let t=0;
     let W=canvas.offsetWidth, H=canvas.offsetHeight;
     // étoiles hyperespace partant du centre
     let stars=[];
@@ -1977,7 +1976,6 @@ function ShipTile({ shipName, color, isDesktop }) {
     function frame(){
       W=canvas.offsetWidth; H=canvas.offsetHeight;
       const cx=W/2, cy=H/2;
-      t+=0.016;
       // fond sombre dégradé
       ctx.fillStyle="rgba(4,9,20,0.35)"; ctx.fillRect(0,0,W,H);
       // tunnel lumineux central
