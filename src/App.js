@@ -2037,9 +2037,9 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
       <div style={S.statRow}>
-        <div style={{...S.statItem,flex:"0 0 38%"}}>
+        <div style={{...S.statItem,flex:"0 0 38%",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
           <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div>
-          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:17,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{fmt(profile.aUEC)}</div>
+          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?26:19,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",animation:"moneyPulse 2.5s ease-in-out infinite"}}>{fmt(profile.aUEC)}</div>
         </div>
         <div style={{...S.statItem,flex:1,alignItems:"center",justifyContent:"center"}}>
           <div style={{...S.statLabel,fontSize:isDesktop?12:11,alignSelf:"flex-start"}}>VAISSEAU</div>
@@ -3412,6 +3412,7 @@ export default function App() {
           }
         }
         @keyframes neonSweep{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes moneyPulse{0%,100%{text-shadow:0 0 6px #00ff9d66;transform:scale(1)}50%{text-shadow:0 0 18px #00ff9dcc,0 0 30px #00ff9d55;transform:scale(1.04)}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
