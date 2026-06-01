@@ -375,7 +375,7 @@ const OBJ_CATEGORIES = [
   { id:"other",   icon:"🎯", label:"Autre"      },
 ];
 
-function ObjectivesTab({ objectives, setObjectives, profiles }) {
+function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
   const [modal,      setModal]      = useState(false);
   const [detailObj,  setDetailObj]  = useState(null); // objectif commun sélectionné
   const [form, setForm] = useState({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
@@ -395,7 +395,18 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
     setForm({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
   }
 
-  function del(obj) {
+  function validateObjective(obj) {
+    if (!window.confirm(`Valider "${obj.name}" et déduire ${fmt(obj.cost)} aUEC ?`)) return;
+    // Déduire les aUEC
+    if (obj.type === "common") {
+      const share = Math.floor(obj.cost / profiles.length);
+      setProfiles(prev => prev.map(p => ({ ...p, aUEC: p.aUEC - share })));
+    } else {
+      setProfiles(prev => prev.map(p => p.id === obj.owner ? { ...p, aUEC: p.aUEC - obj.cost } : p));
+    }
+    // Supprimer l'objectif
+    del(obj);
+  }
     if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
     else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
     setDetailObj(null);
@@ -456,6 +467,19 @@ function ObjectivesTab({ objectives, setObjectives, profiles }) {
                     <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,${barColor}88,${barColor})`,borderRadius:6,boxShadow:`0 0 10px ${barColor}88`,transition:"width 1s ease"}}/>
                     <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
                   </div>
+                  {pct>=100&&obj.cost>0&&(
+                    <button
+                      onClick={e=>{e.stopPropagation();validateObjective(obj);}}
+                      style={{
+                        marginTop:10,width:"100%",padding:"10px 0",
+                        background:"linear-gradient(135deg,#00ff9d22,#0a1628)",
+                        border:"1px solid #00ff9d88",borderRadius:8,cursor:"pointer",
+                        color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700,
+                        letterSpacing:1,boxShadow:"0 0 16px #00ff9d44",
+                        animation:"pulse 1.5s ease-in-out infinite",
+                      }}
+                    >✅ VALIDER — DÉDUIRE {fmt(obj.cost)} aUEC</button>
+                  )}
                 </div>
                 <button onClick={e=>{e.stopPropagation();del(obj);}} style={{...S.closeBtn,flexShrink:0}}>🗑</button>
               </div>
@@ -1189,6 +1213,185 @@ function HangarPage({ profile, ships, setShips, onClose }) {
 // ─── SHIPS TAB ────────────────────────────────────────────────────────────────
 // Catalogue de vaisseaux RSI classés par taille avec prix USD + aUEC estimé
 // Taille pad RSI → catégorie : XS/S = small, M = medium, L = large, XL/capital = capital
+// ─── CONCESSION TAB ───────────────────────────────────────────────────────────
+function ConcessionShip3D({ color, index }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, t = 0;
+    const W = canvas.width = 260, H = canvas.height = 140;
+    const seed = index * 137.5 + 42;
+    const r = n => (Math.sin(seed + n) + 1) / 2;
+
+    function draw() {
+      t++;
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      const rot = Math.sin(t * 0.018) * 0.18;
+      ctx.rotate(rot);
+
+      // Halo
+      const halo = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
+      halo.addColorStop(0, color + "33"); halo.addColorStop(1, "transparent");
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.ellipse(0, 8, 90, 36, 0, 0, Math.PI * 2); ctx.fill();
+
+      ctx.shadowColor = color; ctx.shadowBlur = 14 + 6 * Math.sin(t * 0.04);
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.fillStyle = color + "44";
+
+      const w1 = 38 + r(1) * 22, h1 = 10 + r(3) * 7;
+      // Corps
+      ctx.beginPath();
+      ctx.moveTo(-w1, 0);
+      ctx.bezierCurveTo(-w1 * 0.4, -h1 * 1.8, w1 * 0.35, -h1, w1, 0);
+      ctx.bezierCurveTo(w1 * 0.35, h1, -w1 * 0.4, h1 * 1.8, -w1, 0);
+      ctx.fill(); ctx.stroke();
+
+      // Cockpit
+      ctx.fillStyle = color + "99";
+      ctx.beginPath();
+      ctx.ellipse(w1 * 0.22, -h1 * 0.35, w1 * 0.28, h1 * 0.52, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ailes
+      ctx.fillStyle = color + "28"; ctx.strokeStyle = color + "bb"; ctx.lineWidth = 1.2;
+      [[-1], [1]].forEach(([s]) => {
+        ctx.beginPath();
+        ctx.moveTo(-w1 * 0.1, 0);
+        ctx.lineTo(-w1 * 0.45, s * (h1 * 1.8 + r(5) * 14));
+        ctx.lineTo(-w1 * 0.75, s * h1 * 0.6);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      });
+
+      // Réacteurs
+      [-1, 1].forEach((s, i) => {
+        const ry = s * (h1 * 0.55 + r(6 + i) * 4);
+        const fl = 0.7 + 0.3 * Math.sin(t * 0.18 + i * 2);
+        ctx.shadowColor = color; ctx.shadowBlur = 18 * fl;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.87, ry, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+        // Jet
+        const jg = ctx.createLinearGradient(-w1 * 0.87, ry, -w1 * 0.87 - 22 * fl, ry);
+        jg.addColorStop(0, color + "dd"); jg.addColorStop(1, "transparent");
+        ctx.fillStyle = jg;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.87 - 11 * fl, ry, 11 * fl, 2, 0, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.restore();
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [color, index]);
+  return <canvas ref={canvasRef} style={{ width: 160, height: 88, flexShrink: 0 }} width={260} height={140} />;
+}
+
+function ConcessionTab({ profiles, fleets, setFleets }) {
+  const [modal, setModal] = useState(false);
+  const [form,  setForm]  = useState({ name:"", maker:"", price:"", capacity:"", owner:"p1" });
+  const SHIP_COLORS = ["#00d4ff","#00ff9d","#ff6b35","#bf5fff","#ffcc00","#ff4466","#00ffcc","#ff88aa"];
+
+  // Tous les vaisseaux de tous les joueurs avec leur propriétaire
+  const allEntries = profiles.flatMap(p =>
+    (fleets[p.id] || []).map((s, i) => ({ ship: s, profile: p, colorIdx: i }))
+  );
+
+  function addShip() {
+    if (!form.name || !form.owner) return;
+    const ns = { id: "s" + Date.now(), name: form.name, maker: form.maker, capacity: +form.capacity || 0, price: +form.price || 0 };
+    setFleets(prev => ({ ...prev, [form.owner]: [...(prev[form.owner] || []), ns] }));
+    setModal(false);
+    setForm({ name:"", maker:"", price:"", capacity:"", owner:"p1" });
+  }
+
+  function removeShip(pid, sid) {
+    if (!window.confirm("Supprimer ce vaisseau ?")) return;
+    setFleets(prev => ({ ...prev, [pid]: (prev[pid] || []).filter(s => s.id !== sid) }));
+  }
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+        <div style={S.sectionTitle}>🚀 CONCESSION</div>
+        <button onClick={()=>setModal(true)} style={{ ...S.primaryBtn, width:"auto", marginTop:0 }}>+ Acquérir</button>
+      </div>
+      <p style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:16 }}>
+        Enregistre un achat de vaisseau — il sera automatiquement ajouté au hangar du membre concerné.
+      </p>
+
+      {allEntries.length === 0 && (
+        <div style={{ color:"#8899bb", textAlign:"center", padding:40, fontFamily:"'Rajdhani',sans-serif" }}>
+          Aucun vaisseau enregistré — Ajoute ta flotte !
+        </div>
+      )}
+
+      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {allEntries.map(({ ship, profile, colorIdx }, i) => {
+          const color = SHIP_COLORS[colorIdx % SHIP_COLORS.length];
+          return (
+            <div key={ship.id} style={{
+              background:"#07111fcc", border:`1px solid ${color}44`,
+              borderRadius:14, padding:"14px 16px", backdropFilter:"blur(10px)",
+              display:"flex", alignItems:"center", gap:14,
+              boxShadow:`0 0 16px ${color}22`,
+            }}>
+              <ConcessionShip3D color={color} index={i} />
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ color, fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700, marginBottom:4 }}>{ship.name}</div>
+                {ship.maker && <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>{ship.maker}</div>}
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:`1px solid ${profile.color}33` }}>
+                    <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PILOTE</div>
+                    <div style={{ color:profile.color, fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:600 }}>{profile.name}</div>
+                  </div>
+                  {ship.capacity > 0 && (
+                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #00d4ff22" }}>
+                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>CARGO</div>
+                      <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{ship.capacity} SCU</div>
+                    </div>
+                  )}
+                  {ship.price > 0 && (
+                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #ffcc0022" }}>
+                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PRIX</div>
+                      <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{fmt(ship.price)} aUEC</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button onClick={()=>removeShip(profile.id, ship.id)} style={{ ...S.dangerBtn, flexShrink:0, fontSize:16, padding:"6px 10px" }}>🗑</button>
+            </div>
+          );
+        })}
+      </div>
+
+      {modal && (
+        <Modal title="🚀 Nouveau vaisseau" onClose={()=>setModal(false)}>
+          <label style={S.label}>Modèle du vaisseau</label>
+          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} style={S.input} placeholder="Ex: Cutlass Black, Mole..."/>
+          <label style={S.label}>Fabricant</label>
+          <input value={form.maker} onChange={e=>setForm(p=>({...p,maker:e.target.value}))} style={S.input} placeholder="Ex: Drake, MISC, RSI..."/>
+          <label style={S.label}>Prix d'achat (aUEC)</label>
+          <input type="number" value={form.price} onChange={e=>setForm(p=>({...p,price:e.target.value}))} style={S.input} placeholder="Ex: 3000000"/>
+          <label style={S.label}>Capacité cargo (SCU)</label>
+          <input type="number" value={form.capacity} onChange={e=>setForm(p=>({...p,capacity:e.target.value}))} style={S.input} placeholder="Ex: 46"/>
+          <label style={S.label}>Attribuer à</label>
+          <div style={{ display:"flex", gap:8 }}>
+            {profiles.map(p=>(
+              <button key={p.id} onClick={()=>setForm(prev=>({...prev,owner:p.id}))}
+                style={{...S.toggleBtn,flex:1,...(form.owner===p.id?{background:p.color+"22",borderColor:p.color+"66",color:p.color}:{})}}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <button onClick={addShip} style={S.primaryBtn}>🚀 Confirmer l'acquisition</button>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
@@ -1277,7 +1480,8 @@ export default function App() {
 
   // Modals
   const [editProfile,    setEditProfile]    = useState(null);
-  const [hangarProfile,  setHangarProfile]  = useState(null); // profil hangar ouvert
+  const [hangarProfile,  setHangarProfile]  = useState(null);
+  const [missionsModal,  setMissionsModal]  = useState(false);
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
@@ -1303,11 +1507,11 @@ export default function App() {
   }
 
   const TABS=[
-    {id:"dashboard",  icon:"🏠", label:"HOME"},
-    {id:"missions",   icon:"📋", label:"MISSIONS"},
-    {id:"objectives", icon:"🎯", label:"OBJECTIFS"},
-    {id:"calc",       icon:"⛏", label:"CALCUL"},
-    {id:"settings",   icon:"⚙️", label:"RÉGLAGES"},
+    {id:"dashboard",   icon:"🏠", label:"HOME"},
+    {id:"concession",  icon:"🚀", label:"CONCESSION"},
+    {id:"objectives",  icon:"🎯", label:"OBJECTIFS"},
+    {id:"calc",        icon:"⛏", label:"CALCUL"},
+    {id:"settings",    icon:"⚙️", label:"RÉGLAGES"},
   ];
 
   // Swipe gauche/droite pour changer d'onglet
@@ -1376,30 +1580,39 @@ export default function App() {
         @media(min-width:900px){
           .sidebar{
             display:flex; flex-direction:column;
-            position:fixed; left:0; top:0; bottom:0; width:190px;
-            background:rgba(2,5,16,0.96); border-right:1px solid #00d4ff22;
-            backdropFilter:blur(20px); padding-top:90px; z-index:98;
+            position:fixed; left:0; top:0; bottom:0; width:220px;
+            background:rgba(2,5,16,0.97); border-right:1px solid #00d4ff33;
+            backdropFilter:blur(20px); padding-top:100px; z-index:98;
           }
           .sidebar .nav-tab{
             flex:none; width:100%;
             flex-direction:row; justify-content:flex-start;
-            gap:14px; padding:16px 24px;
-            border-bottom:none; border-left:3px solid transparent;
-            font-size:13px;
+            gap:16px; padding:18px 28px;
+            border-bottom:none; border-left:4px solid transparent;
+            font-size:15px; letter-spacing:1.5px;
           }
-          .sidebar .nav-tab .icon{font-size:20px;}
-          .sidebar .nav-tab .label{font-size:13px;letter-spacing:1px;}
+          .sidebar .nav-tab .icon{font-size:24px;}
+          .sidebar .nav-tab .label{font-size:14px;letter-spacing:1.5px;font-weight:700;}
           .sidebar .nav-tab.active{
-            border-left:3px solid #00d4ff; border-bottom:none;
-            background:linear-gradient(90deg,#00d4ff18,transparent);
+            border-left:4px solid #00d4ff; border-bottom:none;
+            background:linear-gradient(90deg,#00d4ff22,transparent);
+            color:#00d4ff;
           }
           .top-nav{display:none!important;}
-          .desktop-shift{margin-left:190px;}
+          .desktop-shift{margin-left:220px;}
+          /* Contenu desktop plus grand */
+          .desktop-main-content{max-width:1200px!important; padding:32px 40px 100px!important;}
+          /* Header desktop */
+          .desktop-header-inner{padding:16px 32px!important;}
+          .desktop-header-title{font-size:28px!important;}
+          .desktop-header-sub{font-size:12px!important;}
+          .desktop-fortune{font-size:18px!important;}
         }
 
         /* PROFILES GRID */
         .profiles-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;}
         @media(min-width:520px){.profiles-grid{grid-template-columns:1fr 1fr;}}
+        @media(min-width:900px){.profiles-grid{grid-template-columns:1fr 1fr;}}
       `}</style>
       <CosmicBackground/>
 
@@ -1447,7 +1660,7 @@ export default function App() {
         </div>
 
         {/* Contenu avec swipe */}
-        <div style={S.content} onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+        <div style={S.content} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -1464,7 +1677,7 @@ export default function App() {
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:20}}>
               <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00"/>
-              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setTab("missions")}/>
+              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)}/>
               <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d"/>
               <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")}/>
               {profiles.map(p=>(
@@ -1477,26 +1690,28 @@ export default function App() {
             <div style={S.sectionTitle}>📋 MISSIONS RÉCENTES</div>
             {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
             {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission — commencez à jouer !</div>}
-            {missions.length>5&&<button onClick={()=>setTab("missions")} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
+            {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
         )}
 
-        {tab==="missions"&&(
-          <div style={{animation:"fadeIn .4s ease"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-              <div style={S.sectionTitle}>📋 TOUTES LES MISSIONS</div>
-              <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",marginTop:0}}>+ Mission</button>
-            </div>
-            {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:40}}>Aucune mission enregistrée</div>}
-            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
-          </div>
-        )}
+        {tab==="concession"&&<div style={{animation:"fadeIn .4s ease"}}><ConcessionTab profiles={profiles} fleets={fleets} setFleets={setFleets}/></div>}
 
-        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles}/></div>}
+        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles} setProfiles={setProfiles}/></div>}
         {tab==="calc"&&<div style={{animation:"fadeIn .4s ease"}}><CalcTab fleets={fleets} profiles={profiles}/></div>}
         {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
       </div>{/* /content */}
       </div>{/* /desktop-shift */}
+
+      {/* Modal Missions (depuis Home) */}
+      {missionsModal&&(
+        <Modal title="📋 TOUTES LES MISSIONS" onClose={()=>setMissionsModal(false)}>
+          <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,marginBottom:12}}>+ Nouvelle mission</button>
+          {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:20,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission enregistrée</div>}
+          <div style={{maxHeight:"60vh",overflowY:"auto"}}>
+            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
+          </div>
+        </Modal>
+      )}
 
       {/* HANGAR OVERLAY */}
       {hangarProfile && (
