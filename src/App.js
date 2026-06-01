@@ -1216,13 +1216,13 @@ function GainsCanvas() {
       // barres graph montantes
       ctx.save(); ctx.translate(cx,cy);
       bars.forEach((b,i)=>{
-        const hh = R*0.7*(b.base+0.3*Math.abs(Math.sin(t*1.5+b.ph)));
+        const hh = R*0.5*(b.base+0.3*Math.abs(Math.sin(t*1.5+b.ph)));
         const bw = R*0.13;
         const al = 0.4+0.4*Math.abs(Math.sin(t+b.ph));
-        const grad=ctx.createLinearGradient(0,R*0.5,0,R*0.5-hh);
+        const grad=ctx.createLinearGradient(0,R*0.85,0,R*0.85-hh);
         grad.addColorStop(0,`rgba(255,107,53,${al})`); grad.addColorStop(1,`rgba(255,204,0,${al})`);
         ctx.fillStyle=grad; ctx.shadowColor="#ffcc00"; ctx.shadowBlur=8;
-        ctx.fillRect(b.x-bw/2, R*0.5-hh, bw, hh);
+        ctx.fillRect(b.x-bw/2, R*0.85-hh, bw, hh);
       });
       ctx.shadowBlur=0; ctx.restore();
       // sparks orbite
@@ -1271,9 +1271,11 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
           <div style={{position:"relative",width:"100%",height:140,borderRadius:12,overflow:"hidden",marginBottom:8,background:"#030b1a",border:"1px solid #ffcc0022"}}>
             <GainsCanvas/>
             <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:2}}>TOTAL GAGNÉ</div>
-              <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:26,fontWeight:900,textShadow:"0 0 16px #ffcc0088"}}>{fmt(totalEarned)}</div>
-              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>aUEC</div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"12px 32px",borderRadius:14,background:"radial-gradient(ellipse at center, rgba(3,11,26,0.92) 0%, rgba(3,11,26,0.75) 60%, rgba(3,11,26,0) 100%)",backdropFilter:"blur(2px)"}}>
+                <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:3,marginBottom:2}}>TOTAL GAGNÉ</div>
+                <div style={{color:"#ffd633",fontFamily:"'Orbitron',sans-serif",fontSize:30,fontWeight:900,textShadow:"0 2px 8px #000, 0 0 20px #ffcc00aa",letterSpacing:1}}>{fmt(totalEarned)}</div>
+                <div style={{color:"#ffcc0099",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:2,marginTop:1}}>aUEC</div>
+              </div>
             </div>
           </div>
 
@@ -1874,8 +1876,8 @@ function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, 
       {iconKind
         ? <div style={{marginBottom:isDesktop?8:6}}><TileIcon kind={iconKind} color={color} size={isDesktop?56:46}/></div>
         : <div style={{fontSize:isDesktop?42:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
-      <div style={{color,fontSize:isDesktop?15:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:600}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?28:22,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0"}}>{value}</div>}
+      <div style={{color,fontSize:isDesktop?15:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?26:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
       {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?13:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
@@ -1900,15 +1902,21 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
       <div style={S.statRow}>
-        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div><div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:18,fontWeight:700}}>{fmt(profile.aUEC)}</div></div>
+        <div style={S.statItem}>
+          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div>
+          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:16,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{fmt(profile.aUEC)}</div>
+        </div>
         <div style={S.statItem}>
           <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>VAISSEAU</div>
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?40:32}/>
-            <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?17:14,fontWeight:600}}>{profile.ship}</div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?34:28}/>
+            <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:12,fontWeight:600,lineHeight:1.1,wordBreak:"break-word",minWidth:0}}>{profile.ship}</div>
           </div>
         </div>
-        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?12:11}}>POSITION</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:13}}>{profile.location}</div></div>
+        <div style={S.statItem}>
+          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>POSITION</div>
+          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:12,lineHeight:1.15,wordBreak:"break-word"}}>{profile.location}</div>
+        </div>
       </div>
     </div>
   );
@@ -3536,8 +3544,8 @@ const S={
   nav:{display:"flex",overflowX:"auto",background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:68,zIndex:99,backdropFilter:"blur(12px)"},
   content:{maxWidth:"100%",margin:"0 auto",padding:"24px 20px 100px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
-  statRow:{display:"flex",gap:6,flexWrap:"wrap"},
-  statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"5px 7px",overflow:"hidden"},
+  statRow:{display:"flex",gap:8,alignItems:"stretch"},
+  statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"8px 10px",overflow:"hidden",display:"flex",flexDirection:"column",justifyContent:"flex-start",gap:3},
   statLabel:{color:"#8899bb",fontSize:12,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
