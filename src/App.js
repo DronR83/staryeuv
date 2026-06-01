@@ -1869,53 +1869,62 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
 
 
 // ─── MONEY BOX (argent joueur, style bannière) ────────────────────────────────
+function hexToRgb(hex){
+  let h=(hex||"#00d4ff").replace("#","");
+  if(h.length===3) h=h.split("").map(x=>x+x).join("");
+  const n=parseInt(h,16);
+  return [(n>>16)&255,(n>>8)&255,n&255];
+}
+
 function MoneyBox({ amount, color, isDesktop }) {
   const ref = useRef(null);
   const raf = useRef(null);
+  const col = color || "#00d4ff";
   useEffect(() => {
     const canvas = ref.current; if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
     resize();
+    const [r,g,b]=hexToRgb(col);
     let t = 0;
     const coins = Array.from({length:18},(_,i)=>({ x:Math.random(), y:Math.random(), sp:0.0009+Math.random()*0.0016, sz:1.2+Math.random()*2.6, ph:Math.random()*6 }));
     function frame(){
       const w=canvas.offsetWidth, h=canvas.offsetHeight;
       t+=0.016; ctx.clearRect(0,0,w,h);
       const gx=(Math.sin(t*0.3)*0.5+0.5)*w;
-      const g=ctx.createRadialGradient(gx,h/2,0,gx,h/2,w*0.5);
-      g.addColorStop(0,"rgba(0,255,157,0.08)"); g.addColorStop(1,"transparent");
-      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+      const grd=ctx.createRadialGradient(gx,h/2,0,gx,h/2,w*0.5);
+      grd.addColorStop(0,`rgba(${r},${g},${b},0.10)`); grd.addColorStop(1,"transparent");
+      ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
       coins.forEach(c=>{ c.y-=c.sp; if(c.y<-0.05){ c.y=1.05; c.x=Math.random(); }
         const px=c.x*w, py=c.y*h;
         const al=0.18+0.3*Math.abs(Math.sin(t*1.5+c.ph));
         ctx.save(); ctx.translate(px,py); ctx.scale(1,0.5+0.5*Math.abs(Math.sin(t*2+c.ph)));
         ctx.beginPath(); ctx.arc(0,0,c.sz,0,Math.PI*2);
-        ctx.fillStyle=`rgba(0,255,157,${al})`; ctx.strokeStyle=`rgba(120,255,200,${al})`; ctx.lineWidth=0.7;
+        ctx.fillStyle=`rgba(${r},${g},${b},${al})`; ctx.strokeStyle=`rgba(${Math.min(r+80,255)},${Math.min(g+80,255)},${Math.min(b+80,255)},${al})`; ctx.lineWidth=0.7;
         ctx.fill(); ctx.stroke(); ctx.restore();
       });
       const sx=((t*0.15)%1)*w;
       const lg=ctx.createLinearGradient(sx-30,0,sx+30,0);
-      lg.addColorStop(0,"transparent"); lg.addColorStop(0.5,"rgba(0,255,157,0.10)"); lg.addColorStop(1,"transparent");
+      lg.addColorStop(0,"transparent"); lg.addColorStop(0.5,`rgba(${r},${g},${b},0.12)`); lg.addColorStop(1,"transparent");
       ctx.fillStyle=lg; ctx.fillRect(sx-30,0,60,h);
       raf.current=requestAnimationFrame(frame);
     }
     frame();
     return ()=>cancelAnimationFrame(raf.current);
-  },[]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[col]);
   return (
-    <div style={{position:"relative",overflow:"hidden",borderRadius:10,background:"linear-gradient(135deg,#08140e,#0a1424)",border:"1px solid #00ff9d44",boxShadow:"0 0 14px #00ff9d22",padding:isDesktop?"12px 16px":"10px 14px",display:"flex",alignItems:"center",gap:isDesktop?16:12}}>
+    <div style={{position:"relative",overflow:"hidden",borderRadius:10,background:"linear-gradient(135deg,#0a1424,#0a0e18)",border:`1px solid ${col}55`,boxShadow:`0 0 14px ${col}33`,padding:isDesktop?"12px 16px":"10px 14px",display:"flex",alignItems:"center",gap:isDesktop?16:12}}>
       <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      <div style={{position:"relative",flexShrink:0}}><TileIcon kind="gold" color="#00ff9d" size={isDesktop?46:38}/></div>
+      <div style={{position:"relative",flexShrink:0}}><TileIcon kind="gold" color={col} size={isDesktop?46:38}/></div>
       <div style={{position:"relative",minWidth:0,flex:1}}>
-        <div style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>aUEC</div>
-        <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?28:22,fontWeight:900,textShadow:"0 0 16px #00ff9d88",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",animation:"moneyPulse 2.5s ease-in-out infinite"}}>{fmt(amount)}</div>
+        <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>aUEC</div>
+        <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?28:22,fontWeight:900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",animation:"neonMoney 4s linear infinite","--mc":col}}>{fmt(amount)}</div>
       </div>
     </div>
   );
 }
-
 
 // ─── MONEY BANNER (Total Gagné en long) ───────────────────────────────────────
 function MoneyBanner({ totalEarned, profiles, onClick, isDesktop }) {
@@ -3459,6 +3468,13 @@ export default function App() {
         }
         @keyframes neonSweep{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes moneyPulse{0%,100%{text-shadow:0 0 6px #00ff9d66;transform:scale(1)}50%{text-shadow:0 0 18px #00ff9dcc,0 0 30px #00ff9d55;transform:scale(1.04)}}
+        @keyframes neonMoney{
+          0%,18%,22%,25%,53%,57%,100%{
+            text-shadow:0 0 4px var(--mc),0 0 11px var(--mc),0 0 20px var(--mc),0 0 38px var(--mc);
+            opacity:1;
+          }
+          20%,24%,55%{ text-shadow:none; opacity:0.78; }
+        }
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
