@@ -395,6 +395,12 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
     setForm({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
   }
 
+  function del(obj) {
+    if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
+    else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
+    setDetailObj(null);
+  }
+
   function validateObjective(obj) {
     if (!window.confirm(`Valider "${obj.name}" et déduire ${fmt(obj.cost)} aUEC ?`)) return;
     // Déduire les aUEC
@@ -406,10 +412,6 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
     }
     // Supprimer l'objectif
     del(obj);
-  }
-    if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
-    else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
-    setDetailObj(null);
   }
 
   function getAutoProgress(obj) {
