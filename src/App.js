@@ -254,7 +254,7 @@ function CosmicBackground() {
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const fmt = n => (n??0).toLocaleString("fr-FR");
+const fmt = n => Math.round(n??0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 // ─── SHIP PICKER 3D ──────────────────────────────────────────────────────────
@@ -1887,8 +1887,8 @@ function FortuneAmount({ amount, isDesktop }) {
       if (!box || !num) return;
       const avail = box.clientWidth;
       if (avail <= 0) return;
-      const maxF = isDesktop ? 32 : 22;
-      const minF = isDesktop ? 14 : 11;
+      const maxF = isDesktop ? 32 : 30;
+      const minF = isDesktop ? 14 : 14;
       num.style.fontSize = maxF + "px";
       const wAt = num.scrollWidth;
       let target = maxF;
@@ -1903,7 +1903,7 @@ function FortuneAmount({ amount, isDesktop }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, isDesktop]);
   return (
-    <div ref={boxRef} style={{width:"100%",textAlign:"right",overflow:"hidden"}}>
+    <div ref={boxRef} style={{width:"100%",textAlign:isDesktop?"right":"left",overflow:"hidden"}}>
       <span ref={numRef} style={{
         display:"inline-block", color:"#ffffff", fontFamily:"'Orbitron',sans-serif",
         fontWeight:800, fontSize:fs, whiteSpace:"nowrap", letterSpacing:0.5,
@@ -3675,17 +3675,20 @@ export default function App() {
 
         {/* Header */}
         <div style={S.header}>
-          <div style={{...S.headerInner, padding: isDesktop ? "20px 48px" : "12px 20px"}} className="desktop-header-inner">
-            <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:12}}>
-              {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:isDesktop?52:42,width:isDesktop?52:42,objectFit:"contain"}}/>:<div style={{fontSize:isDesktop?42:34,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
-              <div>
-                <div className="desktop-header-title" style={{fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?30:22,fontWeight:900,color:"#caf4ff",animation:"neonFlicker 4s linear infinite",letterSpacing:isDesktop?4:3}}>STAR YeUv</div>
-                <div className="desktop-header-sub" style={{color:"#8899bb",fontSize:isDesktop?13:11,letterSpacing:isDesktop?4:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
+          <div style={{...S.headerInner, padding: isDesktop ? "20px 48px" : "12px 18px", flexDirection: isDesktop?"row":"column", alignItems: isDesktop?"center":"stretch", gap: isDesktop?8:10}} className="desktop-header-inner">
+            <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:12,justifyContent:"space-between"}}>
+              <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:12,minWidth:0}}>
+                {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:isDesktop?52:42,width:isDesktop?52:42,objectFit:"contain",flexShrink:0}}/>:<div style={{fontSize:isDesktop?42:34,filter:"drop-shadow(0 0 8px #00d4ff)",flexShrink:0}}>⭐</div>}
+                <div style={{minWidth:0}}>
+                  <div className="desktop-header-title" style={{fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?30:22,fontWeight:900,color:"#caf4ff",animation:"neonFlicker 4s linear infinite",letterSpacing:isDesktop?4:3,whiteSpace:"nowrap"}}>STAR YeUv</div>
+                  <div className="desktop-header-sub" style={{color:"#8899bb",fontSize:isDesktop?13:11,letterSpacing:isDesktop?4:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
+                </div>
               </div>
+              {!isDesktop && <SyncBadge synced={loaded}/>}
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,minWidth:0,maxWidth:isDesktop?340:200}}>
-              <SyncBadge synced={loaded}/>
-              <div style={{fontSize:isDesktop?12:10,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:isDesktop?"flex-end":"stretch",gap:3,minWidth:0,maxWidth:isDesktop?360:"100%",width:isDesktop?"auto":"100%"}}>
+              {isDesktop && <SyncBadge synced={loaded}/>}
+              <div style={{fontSize:isDesktop?12:11,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textAlign:isDesktop?"right":"left"}}>FORTUNE TOTALE</div>
               <FortuneAmount amount={(p1?.aUEC||0)+(p2?.aUEC||0)} isDesktop={isDesktop}/>
             </div>
           </div>
