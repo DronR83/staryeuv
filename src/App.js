@@ -1868,6 +1868,141 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
 }
 
 
+// ─── MONEY BANNER (Total Gagné en long) ───────────────────────────────────────
+function MoneyBanner({ totalEarned, profiles, onClick, isDesktop }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  const [hov, setHov] = useState(false);
+
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize();
+    let t = 0;
+    const coins = Array.from({length:26},(_,i)=>({ x:Math.random(), y:Math.random(), sp:0.0008+Math.random()*0.0014, sz:1.5+Math.random()*3, ph:Math.random()*6 }));
+    function frame(){
+      const w=canvas.offsetWidth, h=canvas.offsetHeight;
+      t+=0.016; ctx.clearRect(0,0,w,h);
+      // dégradé doré diffus en mouvement
+      const gx = (Math.sin(t*0.3)*0.5+0.5)*w;
+      const g = ctx.createRadialGradient(gx,h/2,0,gx,h/2,w*0.5);
+      g.addColorStop(0,"rgba(255,204,0,0.10)"); g.addColorStop(1,"transparent");
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+      // pièces flottantes
+      coins.forEach(c=>{ c.y-=c.sp; if(c.y<-0.05){ c.y=1.05; c.x=Math.random(); }
+        const px=c.x*w, py=c.y*h;
+        const al=0.2+0.3*Math.abs(Math.sin(t*1.5+c.ph));
+        ctx.save(); ctx.translate(px,py); ctx.scale(1,0.5+0.5*Math.abs(Math.sin(t*2+c.ph)));
+        ctx.beginPath(); ctx.arc(0,0,c.sz,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,204,0,${al})`; ctx.strokeStyle=`rgba(255,160,40,${al})`; ctx.lineWidth=0.8;
+        ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      // ligne énergie qui balaie
+      const sx=((t*0.15)%1)*w;
+      const lg=ctx.createLinearGradient(sx-40,0,sx+40,0);
+      lg.addColorStop(0,"transparent"); lg.addColorStop(0.5,"rgba(255,220,80,0.12)"); lg.addColorStop(1,"transparent");
+      ctx.fillStyle=lg; ctx.fillRect(sx-40,0,80,h);
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  },[]);
+
+  return (
+    <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ position:"relative", overflow:"hidden", cursor:"pointer", borderRadius:14,
+        background:"linear-gradient(135deg,#0a1424,#0e0a04)", border:`1px solid ${hov?"#ffcc00":"#ffcc0055"}`,
+        boxShadow:hov?"0 0 36px #ffcc0066, 0 0 8px #ffcc0044 inset":"0 0 16px #ffcc0022",
+        transition:"all .25s", transform:hov?"translateY(-2px)":"none",
+        marginBottom:isDesktop?18:14, padding:isDesktop?"18px 28px":"16px 18px",
+        display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
+      <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <div style={{position:"relative",display:"flex",alignItems:"center",gap:isDesktop?20:14,minWidth:0}}>
+        <div style={{flexShrink:0}}><TileIcon kind="gold" color="#ffcc00" size={isDesktop?60:48}/></div>
+        <div style={{minWidth:0}}>
+          <div style={{color:"#ffcc00",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:12,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Total Gagné</div>
+          <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?34:26,fontWeight:900,textShadow:"0 0 18px #ffcc0088",letterSpacing:isDesktop?0:-0.5,whiteSpace:"nowrap"}}>{fmt(totalEarned)} <span style={{fontSize:isDesktop?18:14,color:"#ffcc00aa"}}>aUEC</span></div>
+        </div>
+      </div>
+      <div style={{position:"relative",display:isDesktop?"flex":"none",gap:14,flexShrink:0}}>
+        {profiles.map(p=>(
+          <div key={p.id} style={{textAlign:"right"}}>
+            <div style={{color:p.color,fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700}}>{p.name}</div>
+            <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{fmt(p.aUEC)}</div>
+          </div>
+        ))}
+        <div style={{color:"#ffcc0088",fontSize:22,alignSelf:"center"}}>→</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CALC TILE (raccourci calculatrice) ───────────────────────────────────────
+function CalcTile({ onClick, isDesktop }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  const [hov, setHov] = useState(false);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    const ctx = canvas.getContext("2d");
+    resize();
+    let t = 0;
+    const col = "#a78bfa";
+    function frame(){
+      const w=canvas.offsetWidth,h=canvas.offsetHeight,cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+      g.addColorStop(0,`rgba(167,139,250,${0.14+0.06*Math.sin(t*0.05)})`); g.addColorStop(1,"transparent");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      // calculatrice stylisée
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.rotate(Math.sin(t*0.02)*0.05);
+      ctx.shadowColor=col; ctx.shadowBlur=12; ctx.strokeStyle=col; ctx.lineWidth=1.6; ctx.fillStyle=col+"1e";
+      ctx.beginPath(); ctx.roundRect(-R*0.6,-R*0.8,R*1.2,R*1.6,5); ctx.fill(); ctx.stroke();
+      // écran
+      const sa=0.5+0.5*Math.sin(t*0.08);
+      ctx.fillStyle=`rgba(167,139,250,${0.3+sa*0.4})`; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.roundRect(-R*0.42,-R*0.62,R*0.84,R*0.34,2); ctx.fill();
+      // boutons
+      ctx.shadowBlur=4;
+      for(let r=0;r<3;r++)for(let cc=0;cc<3;cc++){
+        const bx=-R*0.36+cc*R*0.36, by=-R*0.05+r*R*0.32;
+        const lit=(Math.sin(t*0.1+r*1.3+cc*0.7)+1)/2;
+        ctx.fillStyle=`rgba(167,139,250,${0.2+lit*0.5})`;
+        ctx.beginPath(); ctx.arc(bx,by,R*0.08,0,Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  },[]);
+
+  const base = { position:"relative", background:"#07111fcc", border:`1px solid ${hov?"#a78bfa99":"#a78bfa44"}`, borderRadius:12, transition:"all .25s", backdropFilter:"blur(8px)", cursor:"pointer", overflow:"hidden", boxShadow:hov?"0 0 32px #a78bfa88,0 0 8px #a78bfa44 inset":"0 0 12px #a78bfa33" };
+  return isDesktop ? (
+    <div style={{...base, padding:"22px 14px", textAlign:"center", transform:hov?"scale(1.04) translateY(-2px)":"scale(1)"}}
+      onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={ref} style={{width:"100%",height:64,display:"block",marginBottom:8}}/>
+      <div style={{color:"#a78bfa",fontSize:15,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap"}}>Calculatrice</div>
+      <div style={{color:"#e8f4ff",fontSize:26,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"5px 0"}}>=</div>
+      <div style={{color:"#8899bb",fontSize:13,fontFamily:"'Rajdhani',sans-serif"}}>Calcul rapide</div>
+    </div>
+  ) : (
+    <div style={{...base, padding:"16px 10px", textAlign:"center", transform:hov?"scale(1.03)":"scale(1)"}}
+      onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={ref} style={{width:"100%",height:50,display:"block",marginBottom:6}}/>
+      <div style={{color:"#a78bfa",fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Calculatrice</div>
+      <div style={{color:"#e8f4ff",fontSize:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"3px 0"}}>=</div>
+      <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Calcul</div>
+    </div>
+  );
+}
+
+
 function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, pulse, isDesktop }) {
   const [hov,setHov]=useState(false);
   return (
@@ -2198,7 +2333,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
 
 // ─── CALCULATEUR TAB ──────────────────────────────────────────────────────────
 // ─── QUICK CALC (calculatrice animée) ─────────────────────────────────────────
-function QuickCalc() {
+function QuickCalc({ embedded }) {
   const [expr, setExpr] = useState("");
   const [result, setResult] = useState("");
   const [flash, setFlash] = useState(false);
@@ -2261,8 +2396,8 @@ function QuickCalc() {
   const opColor = "#00d4ff", numColor = "#e8f4ff";
 
   return (
-    <div style={{marginTop:24}}>
-      <div style={{...S.sectionTitle, color:"#00ff9d"}}>🧮 CALCULATRICE RAPIDE</div>
+    <div style={{marginTop:embedded?0:24}}>
+      {!embedded && <div style={{...S.sectionTitle, color:"#00ff9d"}}>🧮 CALCULATRICE RAPIDE</div>}
       <div style={{position:"relative",background:"#050e1d",border:"1px solid #00ff9d33",borderRadius:16,overflow:"hidden",boxShadow:"0 0 24px #00ff9d22",maxWidth:380,margin:"0 auto"}}>
         <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
         <div style={{position:"relative",padding:18}}>
@@ -3203,6 +3338,7 @@ export default function App() {
   const [hangarProfile,  setHangarProfile]  = useState(null);
   const [missionsModal,  setMissionsModal]  = useState(false);
   const [gainsModal,     setGainsModal]     = useState(false);
+  const [calcModal,      setCalcModal]      = useState(false);
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
@@ -3272,6 +3408,16 @@ export default function App() {
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes glow{0%,100%{text-shadow:0 0 8px #00d4ff66}50%{text-shadow:0 0 20px #00d4ffcc}}
+        @keyframes neonFlicker{
+          0%,18%,22%,25%,53%,57%,100%{
+            text-shadow:0 0 4px #00d4ff,0 0 11px #00d4ff,0 0 19px #00d4ff,0 0 40px #0099ff,0 0 80px #0099ff;
+            color:#caf4ff;opacity:1;
+          }
+          20%,24%,55%{
+            text-shadow:none;color:#3a6a88;opacity:0.75;
+          }
+        }
+        @keyframes neonSweep{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
         html,body{overflow-x:hidden;max-width:100vw;}
@@ -3354,7 +3500,7 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:12}}>
               {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:isDesktop?52:42,width:isDesktop?52:42,objectFit:"contain"}}/>:<div style={{fontSize:isDesktop?42:34,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
               <div>
-                <div className="desktop-header-title" style={{fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?30:22,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:isDesktop?4:3}}>STAR YeUv</div>
+                <div className="desktop-header-title" style={{fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?30:22,fontWeight:900,color:"#caf4ff",animation:"neonFlicker 4s linear infinite",letterSpacing:isDesktop?4:3}}>STAR YeUv</div>
                 <div className="desktop-header-sub" style={{color:"#8899bb",fontSize:isDesktop?13:11,letterSpacing:isDesktop?4:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
               </div>
             </div>
@@ -3396,22 +3542,26 @@ export default function App() {
               ))}
             </div>
             {isDesktop ? (
-              <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
-                <HexTile iconKind="gold" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
-                <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
-                <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
-                <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
-                {profiles.map(p=>(
-                  <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
-                ))}
-                <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
-                <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
-              </div>
+              <>
+                <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
+                <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
+                  <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                  <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
+                  {profiles.map(p=>(
+                    <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
+                  ))}
+                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                </div>
+              </>
             ) : (
               <>
+                <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
-                  <HexTile iconKind="gold" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
                   {profiles.map(p=>(
@@ -3445,6 +3595,12 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
+      {calcModal&&(
+        <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
+          <QuickCalc embedded/>
+        </Modal>
+      )}
+
       {gainsModal&&(
         <GainsHistoryModal missions={missions} profiles={profiles} totalEarned={totalEarned} onClose={()=>setGainsModal(false)}/>
       )}
