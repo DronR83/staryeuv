@@ -1445,7 +1445,7 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onClose }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose }) {
   const [text, setText] = useState("");
   const [author, setAuthor] = useState(profiles[0]?.id || "");
   const endRef = useRef(null);
@@ -1522,6 +1522,7 @@ function ChatInterface({ profiles, messages, setMessages, onClose }) {
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Vider</button>}
+          {onMarkRead && <button onClick={onMarkRead} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>✓ Marquer lu</button>}
           <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
         </div>
       </div>
@@ -3729,6 +3730,24 @@ export default function App() {
   const [lastRead, setLastRead] = useState(() => { try { return parseInt(localStorage.getItem("chat_lastRead") || "0"); } catch { return 0; } });
   const unreadCount = chatMsgs.filter(m => (m.id || 0) > lastRead).length;
 
+  // Reset badge à 00h01 chaque jour
+  useEffect(() => {
+    function scheduleReset() {
+      const now2 = new Date();
+      const next = new Date(now2); next.setHours(0, 1, 0, 0); next.setDate(next.getDate() + 1);
+      const ms = next - now2;
+      return setTimeout(() => {
+        const ts = Date.now();
+        setLastRead(ts);
+        try { localStorage.setItem("chat_lastRead", String(ts)); } catch {}
+        scheduleReset();
+      }, ms);
+    }
+    const tid = scheduleReset();
+    return () => clearTimeout(tid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
   // Écoute validation trade depuis CalcTab
@@ -3770,10 +3789,13 @@ export default function App() {
   const [chatOpen,       setChatOpen]       = useState(false);
 
   function openChat() {
+    setChatOpen(true);
+  }
+
+  function markChatRead() {
     const now = Date.now();
     setLastRead(now);
     try { localStorage.setItem("chat_lastRead", String(now)); } catch {}
-    setChatOpen(true);
   }
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
@@ -3808,16 +3830,29 @@ export default function App() {
   ];
 
   // Swipe gauche/droite pour changer d'onglet
+  const [slideHome, setSlideHome] = useState(false);
+
   const swipeStartX = useRef(null);
-  function onSwipeStart(e) { swipeStartX.current = e.touches?.[0]?.clientX ?? null; }
+  const swipeStartY = useRef(null);
+  function onSwipeStart(e) {
+    swipeStartX.current = e.touches?.[0]?.clientX ?? null;
+    swipeStartY.current = e.touches?.[0]?.clientY ?? null;
+  }
   function onSwipeEnd(e) {
     if (swipeStartX.current === null) return;
     const dx = (e.changedTouches?.[0]?.clientX ?? swipeStartX.current) - swipeStartX.current;
-    if (Math.abs(dx) < 60) return;
+    const dy = Math.abs((e.changedTouches?.[0]?.clientY ?? swipeStartY.current) - swipeStartY.current);
+    swipeStartX.current = null; swipeStartY.current = null;
+    if (Math.abs(dx) < 60 || dy > Math.abs(dx) * 0.8) return;
+    // Swipe droite depuis n'importe où → Home avec animation
+    if (dx > 0 && tab !== "dashboard") {
+      setSlideHome(true);
+      setTimeout(() => { setTab("dashboard"); setSlideHome(false); }, 380);
+      return;
+    }
     const idx = TABS.findIndex(t => t.id === tab);
     if (dx < 0 && idx < TABS.length - 1) setTab(TABS[idx + 1].id);
     if (dx > 0 && idx > 0)               setTab(TABS[idx - 1].id);
-    swipeStartX.current = null;
   }
 
   if(!loaded) return (
@@ -3866,6 +3901,12 @@ export default function App() {
         @keyframes badgePop{
           0%,100%{ transform:scale(1); box-shadow:0 0 8px #a78bfa; }
           50%{ transform:scale(1.18); box-shadow:0 0 16px #a78bfacc; }
+        }
+        @keyframes slideToHome{
+          0%{ transform:translateX(0); opacity:1; }
+          40%{ transform:translateX(120px); opacity:0; }
+          41%{ transform:translateX(-60px); opacity:0; }
+          100%{ transform:translateX(0); opacity:1; }
         }
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -3975,7 +4016,7 @@ export default function App() {
         </div>
 
         {/* Contenu avec swipe */}
-        <div style={{...S.content, padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px"}} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+        <div style={{...S.content, padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px", animation: slideHome ? "slideToHome 0.38s cubic-bezier(.4,0,.2,1) forwards" : undefined}} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -4049,7 +4090,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onClose={()=>setChatOpen(false)}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
