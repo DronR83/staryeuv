@@ -282,6 +282,240 @@ function SyncBadge({ synced }) {
 }
 
 // ─── HEX TILE ─────────────────────────────────────────────────────────────────
+// ─── VIREMENT TILE ────────────────────────────────────────────────────────────
+function VirementCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.offsetWidth  * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    const cx = w/2, cy = h/2, R = Math.min(w,h)*0.38;
+    let t = 0;
+    const pts = Array.from({length:40},(_,i)=>({ a:(i/40)*Math.PI*2, sp:0.009+Math.random()*0.006, r:R*(0.6+Math.random()*0.5), sz:1+Math.random()*2, c:Math.random()>.5?"#00d4ff":"#00ff9d", ti:(Math.random()-.5)*.5 }));
+    function frame(){
+      t+=0.018; ctx.clearRect(0,0,w,h);
+      [R*1.1,R*0.75,R*0.45].forEach((rr,i)=>{
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,rr);
+        g.addColorStop(0,`rgba(0,212,255,${0.12-i*0.03})`); g.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fill();
+      });
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.beginPath(); ctx.ellipse(0,0,R*0.88,R*0.26,t*0.2,0,Math.PI*2);
+      const rg=ctx.createLinearGradient(-R,0,R,0);
+      rg.addColorStop(0,"rgba(0,212,255,0)"); rg.addColorStop(.4,"rgba(0,212,255,.8)");
+      rg.addColorStop(.6,"rgba(0,255,157,.9)"); rg.addColorStop(1,"rgba(0,212,255,0)");
+      ctx.strokeStyle=rg; ctx.lineWidth=2; ctx.stroke(); ctx.restore();
+      pts.forEach(p=>{
+        p.a+=p.sp;
+        const x=cx+Math.cos(p.a)*p.r, y=cy+Math.sin(p.a)*p.r*0.26;
+        const d=(Math.sin(p.a)+1)/2, al=0.3+d*0.7, sz=p.sz*(0.4+d*0.7);
+        ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2);
+        ctx.fillStyle=p.c==="#00d4ff"?`rgba(0,212,255,${al})`:`rgba(0,255,157,${al})`;
+        ctx.fill();
+      });
+      const sg=ctx.createRadialGradient(cx-R*.06,cy-R*.06,0,cx,cy,R*0.2);
+      sg.addColorStop(0,"rgba(200,245,255,.95)"); sg.addColorStop(.4,"rgba(0,212,255,.8)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.2,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.2)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.95)"; ctx.shadowColor="#00d4ff"; ctx.shadowBlur=14;
+      ctx.fillText("aUEC",cx,cy+1); ctx.shadowBlur=0;
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  },[]);
+  return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
+}
+
+function VirementTile({ profiles, setProfiles, isDesktop }) {
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to,   setTo]   = useState("");
+  const [amount, setAmount] = useState("");
+  const [sending, setSending] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [hov, setHov] = useState(false);
+  const canvasRef = useRef(null);
+  const rafRef    = useRef(null);
+
+  useEffect(() => {
+    if (profiles.length >= 2) {
+      if (!from) setFrom(profiles[0].id);
+      if (!to)   setTo(profiles[1].id);
+    }
+  }, [profiles]);
+
+  // Animation canvas tuile
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    let w, h, t = 0;
+    function resize() {
+      w = canvas.offsetWidth; h = canvas.offsetHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    resize();
+    const cx = ()=>w/2, cy = ()=>h/2, R = ()=>Math.min(w,h)*0.36;
+    const pts = Array.from({length:24},(_,i)=>({ a:(i/24)*Math.PI*2, sp:0.01+Math.random()*0.007, r:()=>R()*(0.55+Math.random()*0.5), sz:1+Math.random()*2.5, c:Math.random()>.5?"#00d4ff":"#00ff9d" }));
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      const CX=cx(),CY=cy(),RR=R();
+      const bg=ctx.createRadialGradient(CX,CY,0,CX,CY,RR);
+      bg.addColorStop(0,"rgba(0,212,255,0.15)"); bg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(CX,CY,RR,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(CX,CY);
+      ctx.beginPath(); ctx.ellipse(0,0,RR*0.85,RR*0.25,t*0.18,0,Math.PI*2);
+      const rg=ctx.createLinearGradient(-RR,0,RR,0);
+      rg.addColorStop(0,"rgba(0,212,255,0)"); rg.addColorStop(.4,"rgba(0,212,255,.9)");
+      rg.addColorStop(.6,"rgba(0,255,157,1)"); rg.addColorStop(1,"rgba(0,212,255,0)");
+      ctx.strokeStyle=rg; ctx.lineWidth=2.5; ctx.stroke(); ctx.restore();
+      pts.forEach(p=>{ p.a+=p.sp; const PR=p.r(); const x=CX+Math.cos(p.a)*PR,y=CY+Math.sin(p.a)*PR*0.25; const d=(Math.sin(p.a)+1)/2,al=0.25+d*0.75,sz=p.sz*(0.4+d*0.6); ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2); ctx.fillStyle=p.c==="#00d4ff"?`rgba(0,212,255,${al})`:`rgba(0,255,157,${al})`; ctx.fill(); });
+      const sg=ctx.createRadialGradient(CX-RR*.07,CY-RR*.07,0,CX,CY,RR*0.22);
+      sg.addColorStop(0,"rgba(210,248,255,.98)"); sg.addColorStop(.35,"rgba(0,212,255,.85)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(CX,CY,RR*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(RR*.16)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.98)"; ctx.shadowColor="#00d4ff"; ctx.shadowBlur=16;
+      ctx.fillText("₵",CX,CY+1); ctx.shadowBlur=0;
+      rafRef.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(rafRef.current);
+  },[]);
+
+  const fromP = profiles.find(p=>p.id===from);
+  const toP   = profiles.find(p=>p.id===to);
+  const num   = parseFloat(amount)||0;
+  const fee   = Math.round(num*0.005);
+  const total = num+fee;
+  const canSend = num>0 && from && to && from!==to && fromP && fromP.aUEC>=total;
+
+  function doVirement() {
+    if (!canSend) return;
+    setSending(true);
+    setTimeout(()=>{
+      setProfiles(prev=>prev.map(p=>{ if(p.id===from) return{...p,aUEC:p.aUEC-total}; if(p.id===to) return{...p,aUEC:p.aUEC+num}; return p; }));
+      setSuccess({net:num,fee}); setSending(false); setAmount("");
+      setTimeout(()=>{ setSuccess(null); setOpen(false); }, 3200);
+    },900);
+  }
+
+  const tileBase = { position:"relative", background:"#07111fcc", border:`1px solid ${hov?"#00ff9d77":"#00ff9d33"}`, borderRadius:12, transition:"all .25s", backdropFilter:"blur(8px)", cursor:"pointer", overflow:"hidden", boxShadow:hov?"0 0 32px #00ff9d88,0 0 8px #00ff9d44 inset":"0 0 12px #00ff9d33" };
+
+  return (
+    <>
+      {isDesktop ? (
+        <div style={{...tileBase, padding:"20px 14px", textAlign:"center", transform:hov?"scale(1.04) translateY(-2px)":"scale(1)"}}
+          onClick={()=>setOpen(true)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <canvas ref={canvasRef} style={{width:"100%",height:110,display:"block",borderRadius:8,marginBottom:8}}/>
+          <div style={{color:"#00ff9d",fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase"}}>VIREMENT</div>
+          <div style={{color:"#e8f4ff",fontSize:24,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"3px 0"}}>aUEC</div>
+          <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Transfert direct</div>
+        </div>
+      ) : (
+        <div style={{...tileBase, padding:"16px 18px", display:"flex", alignItems:"center", gap:16, transform:hov?"scale(1.01)":"scale(1)"}}
+          onClick={()=>setOpen(true)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <canvas ref={canvasRef} style={{width:90,height:90,display:"block",flexShrink:0,borderRadius:10}}/>
+          <div style={{flex:1}}>
+            <div style={{color:"#00ff9d",fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",marginBottom:2}}>VIREMENT</div>
+            <div style={{color:"#e8f4ff",fontSize:22,fontWeight:700,fontFamily:"'Orbitron',sans-serif",marginBottom:2}}>aUEC</div>
+            <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Transfert direct entre pilotes</div>
+          </div>
+          <div style={{color:"#00ff9d",fontSize:28,opacity:0.6}}>→</div>
+        </div>
+      )}
+
+      {open && (
+        <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setOpen(false)}}>
+          <div style={{...S.modalBox,maxWidth:480}}>
+            <div style={S.modalHeader}>
+              <div style={S.modalTitle}>💸 VIREMENT aUEC</div>
+              <button onClick={()=>setOpen(false)} style={S.closeBtn}>✕</button>
+            </div>
+            <div style={S.modalBody}>
+              {/* Canvas animé modal */}
+              <div style={{position:"relative",width:"100%",height:130,borderRadius:12,overflow:"hidden",marginBottom:18,background:"#030b1a",border:"1px solid #00ff9d22"}}>
+                <VirementCanvas/>
+                {fromP&&toP&&(
+                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",pointerEvents:"none"}}>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{width:46,height:46,borderRadius:"50%",border:`2px solid ${fromP.color}`,background:fromP.avatar?`url(${fromP.avatar}) center/cover`:`radial-gradient(circle,${fromP.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,margin:"0 auto 4px",boxShadow:`0 0 14px ${fromP.color}66`}}>{!fromP.avatar&&"👤"}</div>
+                      <div style={{color:fromP.color,fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1}}>{fromP.name}</div>
+                      <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{fmt(fromP.aUEC)} aUEC</div>
+                    </div>
+                    <div style={{flex:1,textAlign:"center"}}>
+                      <div style={{color:"#00ff9d",fontSize:28,lineHeight:1}}>→</div>
+                      {num>0&&<div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700,marginTop:2}}>{fmt(num)}</div>}
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{width:46,height:46,borderRadius:"50%",border:`2px solid ${toP.color}`,background:toP.avatar?`url(${toP.avatar}) center/cover`:`radial-gradient(circle,${toP.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,margin:"0 auto 4px",boxShadow:`0 0 14px ${toP.color}66`}}>{!toP.avatar&&"👤"}</div>
+                      <div style={{color:toP.color,fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1}}>{toP.name}</div>
+                      <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{fmt(toP.aUEC)} aUEC</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <label style={S.label}>De (expéditeur)</label>
+              <select value={from} onChange={e=>{const v=e.target.value;setFrom(v);if(v===to)setTo(profiles.find(p=>p.id!==v)?.id||"");}} style={S.input}>
+                {profiles.map(p=><option key={p.id} value={p.id}>{p.name} — {fmt(p.aUEC)} aUEC</option>)}
+              </select>
+
+              <label style={S.label}>Vers (destinataire)</label>
+              <select value={to} onChange={e=>{const v=e.target.value;setTo(v);if(v===from)setFrom(profiles.find(p=>p.id!==v)?.id||"");}} style={S.input}>
+                {profiles.map(p=><option key={p.id} value={p.id}>{p.name} — {fmt(p.aUEC)} aUEC</option>)}
+              </select>
+
+              <label style={S.label}>Montant (aUEC)</label>
+              <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} style={S.input} placeholder="Ex: 50 000" min="1"/>
+
+              {num>0&&(
+                <div style={{background:"#07111f",border:"1px solid #00ff9d22",borderRadius:10,padding:"12px 16px",marginTop:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                    <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>Montant reçu par {toP?.name}</span>
+                    <span style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(num)} aUEC</span>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                    <span style={{color:"#ff6b35",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>⚠️ Frais de service (0,5%)</span>
+                    <span style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>−{fmt(fee)} aUEC</span>
+                  </div>
+                  <div style={{height:1,background:"#1a2a44",margin:"8px 0"}}/>
+                  <div style={{display:"flex",justifyContent:"space-between"}}>
+                    <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:700}}>Total débité de {fromP?.name}</span>
+                    <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>{fmt(total)} aUEC</span>
+                  </div>
+                  {fromP&&total>fromP.aUEC&&(
+                    <div style={{color:"#ff4466",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginTop:6}}>⛔ Solde insuffisant — disponible : {fmt(fromP.aUEC)} aUEC</div>
+                  )}
+                </div>
+              )}
+
+              {success&&(
+                <div style={{background:"#00ff9d11",border:"1px solid #00ff9d55",borderRadius:10,padding:"14px",marginTop:12,textAlign:"center",animation:"fadeIn .3s ease"}}>
+                  <div style={{fontSize:30,marginBottom:6}}>✅</div>
+                  <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>Virement effectué !</div>
+                  <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginTop:4}}>{fmt(success.net)} aUEC transférés · Frais prélevés : {fmt(success.fee)} aUEC</div>
+                </div>
+              )}
+
+              <button onClick={doVirement} disabled={!canSend||sending} style={{...S.primaryBtn,marginTop:14,background:canSend?"linear-gradient(135deg,#00ff9d22,#0a1628)":"#0a1628",borderColor:canSend?"#00ff9d66":"#1a2a44",color:canSend?"#00ff9d":"#4a5a6a",opacity:sending?.7:1}}>
+                {sending?"⏳ TRANSFERT EN COURS...":"💸 CONFIRMER LE VIREMENT"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
 function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse, isDesktop }) {
   const [hov,setHov]=useState(false);
   return (
@@ -1680,15 +1914,33 @@ export default function App() {
                 />
               ))}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(${isDesktop?160:110}px,1fr))`,gap:isDesktop?14:10,marginBottom:20}}>
-              <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
-              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
-              <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
-              <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
-              {profiles.map(p=>(
-                <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
-              ))}
-            </div>
+            {isDesktop ? (
+              <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
+                <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
+                <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
+                {profiles.map(p=>(
+                  <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
+                ))}
+                <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+              </div>
+            ) : (
+              <>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
+                  <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
+                  <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+                  <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+                  <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
+                  {profiles.map(p=>(
+                    <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
+                  ))}
+                </div>
+                <div style={{marginBottom:20}}>
+                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                </div>
+              </>
+            )}
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
               <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:isDesktop?16:14,padding:isDesktop?"14px 48px":"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
             </div>
