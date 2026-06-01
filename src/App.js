@@ -1906,9 +1906,9 @@ function FortuneAmount({ amount, isDesktop }) {
     <div ref={boxRef} style={{width:"100%",textAlign:"right",overflow:"hidden"}}>
       <span ref={numRef} style={{
         display:"inline-block", color:"#ffffff", fontFamily:"'Orbitron',sans-serif",
-        fontWeight:900, fontSize:fs, whiteSpace:"nowrap", letterSpacing:0.5,
-        textShadow:"0 0 4px #ffcc00, 0 0 10px #ffcc00, 0 0 18px #ffaa00, 0 0 30px #ffaa00"
-      }}>{fmt(amount)} aUEC</span>
+        fontWeight:800, fontSize:fs, whiteSpace:"nowrap", letterSpacing:0.5,
+        animation:"fortuneBreath 4s ease-in-out infinite"
+      }}>{fmt(amount)}<span style={{fontSize:"0.5em",color:"#ffcc00",fontWeight:700,marginLeft:"0.4em",letterSpacing:1,textShadow:"0 0 4px #ffcc0088"}}>aUEC</span></span>
     </div>
   );
 }
@@ -3592,6 +3592,10 @@ export default function App() {
         @keyframes neonBreath{
           0%,100%{ text-shadow:0 0 2px var(--mc), 0 0 5px var(--mc); }
           50%{ text-shadow:0 0 3px var(--mc), 0 0 9px var(--mc), 0 0 14px var(--mc); }
+        }
+        @keyframes fortuneBreath{
+          0%,100%{ text-shadow:0 0 1px #ffcc00, 0 0 4px #ffcc0099; }
+          50%{ text-shadow:0 0 2px #ffcc00, 0 0 6px #ffcc00, 0 0 10px #ffaa0088; }
         }
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
