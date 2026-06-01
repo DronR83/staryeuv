@@ -282,64 +282,64 @@ function SyncBadge({ synced }) {
 }
 
 // ─── HEX TILE ─────────────────────────────────────────────────────────────────
-function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse }) {
+function HexTile({ icon, label, value, sub, color="#00d4ff", onClick, pulse, isDesktop }) {
   const [hov,setHov]=useState(false);
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ ...S.hexTile, borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
-      <div style={{fontSize:28,marginBottom:4}}>{icon}</div>
-      <div style={{color,fontSize:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase"}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:18,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"2px 0"}}>{value}</div>}
-      {sub&&<div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
+      style={{ ...S.hexTile, padding:isDesktop?"20px 14px":"14px 10px", borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
+      <div style={{fontSize:isDesktop?38:32,marginBottom:isDesktop?7:5}}>{icon}</div>
+      <div style={{color,fontSize:isDesktop?13:12,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase"}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?24:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"4px 0":"3px 0"}}>{value}</div>}
+      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?12:11,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
 }
 
 // ─── PROFILE CARD ─────────────────────────────────────────────────────────────
-function ProfileCard({ profile, onEdit, onHangar }) {
+function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
   const [hov,setHov]=useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ ...S.profileCard, borderColor:hov?profile.color:profile.color+"55", boxShadow:hov?`0 0 40px ${profile.color}44`:`0 0 16px ${profile.color}22`, transform:hov?"translateY(-4px)":"none" }}>
-      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
+      style={{ ...S.profileCard, padding:isDesktop?20:14, borderColor:hov?profile.color:profile.color+"55", boxShadow:hov?`0 0 40px ${profile.color}44`:`0 0 16px ${profile.color}22`, transform:hov?"translateY(-4px)":"none" }}>
+      <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:14,marginBottom:isDesktop?16:12}}>
         <div
           onClick={onHangar}
-          style={{ width:56,height:56,borderRadius:"50%",border:`2px solid ${profile.color}`,background:profile.avatar?`url(${profile.avatar}) center/cover no-repeat`:`radial-gradient(circle,${profile.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:`0 0 16px ${profile.color}66`,flexShrink:0,cursor:"pointer",transition:"transform .2s" }}
+          style={{ width:isDesktop?72:56,height:isDesktop?72:56,borderRadius:"50%",border:`2px solid ${profile.color}`,background:profile.avatar?`url(${profile.avatar}) center/cover no-repeat`:`radial-gradient(circle,${profile.color}44,#0a1628)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:isDesktop?28:22,boxShadow:`0 0 16px ${profile.color}66`,flexShrink:0,cursor:"pointer",transition:"transform .2s" }}
           title="Ouvrir le hangar"
         >
           {!profile.avatar&&"👤"}
         </div>
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
-          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>{profile.name}</div>
-          <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
+          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:15,fontWeight:700}}>{profile.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
-        <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color}}>✏️</button>
+        <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
       <div style={S.statRow}>
-        <div style={S.statItem}><div style={S.statLabel}>aUEC</div><div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700}}>{fmt(profile.aUEC)}</div></div>
-        <div style={S.statItem}><div style={S.statLabel}>VAISSEAU</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>{profile.ship}</div></div>
-        <div style={S.statItem}><div style={S.statLabel}>POSITION</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>{profile.location}</div></div>
+        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>aUEC</div><div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?19:16,fontWeight:700}}>{fmt(profile.aUEC)}</div></div>
+        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>VAISSEAU</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:12}}>{profile.ship}</div></div>
+        <div style={S.statItem}><div style={{...S.statLabel,fontSize:isDesktop?11:10}}>POSITION</div><div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:11}}>{profile.location}</div></div>
       </div>
     </div>
   );
 }
 
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
-function MissionItem({ mission, profiles, onDelete }) {
+function MissionItem({ mission, profiles, onDelete, isDesktop }) {
   const [exp,setExp]=useState(false);
   const share=Math.floor(mission.amount/2);
   const owner=profiles.find(p=>p.id===mission.assignee);
   return (
-    <div style={S.missionItem} onClick={()=>setExp(!exp)}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
+    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14}} onClick={()=>setExp(!exp)}>
+      <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10}}>
+        <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
         <div style={{flex:1}}>
-          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:600}}>{mission.name}</div>
-          <div style={{color:"#8899bb",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
+          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:14,fontWeight:600}}>{mission.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
-          {mission.split&&<div style={{color:"#ffcc00",fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
+          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?15:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+          {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
       {exp&&(
@@ -348,16 +348,16 @@ function MissionItem({ mission, profiles, onDelete }) {
             <div style={{display:"flex",gap:12}}>
               {profiles.map(p=>(
                 <div key={p.id} style={{flex:1,background:"#0a1628",borderRadius:6,padding:8,border:`1px solid ${p.color}44`}}>
-                  <div style={{color:p.color,fontSize:10,fontFamily:"'Rajdhani',sans-serif"}}>{p.name}</div>
-                  <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:14}}>+{fmt(share)}</div>
+                  <div style={{color:p.color,fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>{p.name}</div>
+                  <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?16:14}}>+{fmt(share)}</div>
                 </div>
               ))}
             </div>
           ):(
-            <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Attribué à : <span style={{color:owner?.color}}>{owner?.name}</span></div>
+            <div style={{color:"#8899bb",fontSize:isDesktop?14:12,fontFamily:"'Rajdhani',sans-serif"}}>Attribué à : <span style={{color:owner?.color}}>{owner?.name}</span></div>
           )}
-          {mission.note&&<div style={{color:"#8899bb",fontSize:11,marginTop:6,fontFamily:"'Rajdhani',sans-serif"}}>📝 {mission.note}</div>}
-          <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,marginTop:8,fontSize:11}}>🗑 Supprimer</button>
+          {mission.note&&<div style={{color:"#8899bb",fontSize:isDesktop?13:11,marginTop:6,fontFamily:"'Rajdhani',sans-serif"}}>📝 {mission.note}</div>}
+          <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,marginTop:8,fontSize:isDesktop?13:11}}>🗑 Supprimer</button>
         </div>
       )}
     </div>
@@ -395,12 +395,6 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
     setForm({ name:"", cost:"", icon:"🎯", category:"other", type:"common", owner:"p1" });
   }
 
-  function del(obj) {
-    if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
-    else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
-    setDetailObj(null);
-  }
-
   function validateObjective(obj) {
     if (!window.confirm(`Valider "${obj.name}" et déduire ${fmt(obj.cost)} aUEC ?`)) return;
     // Déduire les aUEC
@@ -412,6 +406,10 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
     }
     // Supprimer l'objectif
     del(obj);
+  }
+    if (obj.type==="common") setObjectives(p=>({...p, common:p.common.filter(x=>x.id!==obj.id)}));
+    else setObjectives(p=>({...p, personal:{...p.personal, [obj.owner]:p.personal[obj.owner].filter(x=>x.id!==obj.id)}}));
+    setDetailObj(null);
   }
 
   function getAutoProgress(obj) {
@@ -1440,6 +1438,12 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab,setTab]=useState("dashboard");
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+  useEffect(() => {
+    const fn = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
 
   // Chaque état est synchronisé avec sa propre collection Firestore
   const [profiles,  setProfiles,  profLoaded,  saveProfiles  ] = useFirestore("profiles",   DEFAULT_PROFILES);
@@ -1559,16 +1563,16 @@ export default function App() {
 
         /* NAV TABS — mobile */
         .nav-tab{
-          flex:1 0 60px; padding:12px 6px;
+          flex:1 0 60px; padding:14px 6px;
           background:transparent; border:none;
           border-bottom:3px solid transparent;
           color:#8899bb; cursor:pointer;
-          display:flex; flex-direction:column; align-items:center; gap:3px;
+          display:flex; flex-direction:column; align-items:center; gap:4px;
           font-family:'Rajdhani',sans-serif; font-weight:700;
           transition:all .2s;
         }
-        .nav-tab .icon{font-size:20px;}
-        .nav-tab .label{font-size:10px;letter-spacing:1px;}
+        .nav-tab .icon{font-size:24px;}
+        .nav-tab .label{font-size:11px;letter-spacing:1px;}
         .nav-tab.active{
           background:linear-gradient(135deg,#00d4ff22,#0a1628);
           border-bottom:3px solid #00d4ff; color:#00d4ff;
@@ -1582,33 +1586,31 @@ export default function App() {
         @media(min-width:900px){
           .sidebar{
             display:flex; flex-direction:column;
-            position:fixed; left:0; top:0; bottom:0; width:220px;
+            position:fixed; left:0; top:0; bottom:0; width:260px;
             background:rgba(2,5,16,0.97); border-right:1px solid #00d4ff33;
-            backdropFilter:blur(20px); padding-top:100px; z-index:98;
+            backdropFilter:blur(20px); padding-top:110px; z-index:98;
           }
           .sidebar .nav-tab{
             flex:none; width:100%;
             flex-direction:row; justify-content:flex-start;
-            gap:16px; padding:18px 28px;
+            gap:18px; padding:20px 32px;
             border-bottom:none; border-left:4px solid transparent;
-            font-size:15px; letter-spacing:1.5px;
+            font-size:16px; letter-spacing:1.5px;
           }
-          .sidebar .nav-tab .icon{font-size:24px;}
-          .sidebar .nav-tab .label{font-size:14px;letter-spacing:1.5px;font-weight:700;}
+          .sidebar .nav-tab .icon{font-size:28px;}
+          .sidebar .nav-tab .label{font-size:15px;letter-spacing:2px;font-weight:700;}
           .sidebar .nav-tab.active{
             border-left:4px solid #00d4ff; border-bottom:none;
             background:linear-gradient(90deg,#00d4ff22,transparent);
             color:#00d4ff;
           }
           .top-nav{display:none!important;}
-          .desktop-shift{margin-left:220px;}
-          /* Contenu desktop plus grand */
-          .desktop-main-content{max-width:1200px!important; padding:32px 40px 100px!important;}
-          /* Header desktop */
-          .desktop-header-inner{padding:16px 32px!important;}
-          .desktop-header-title{font-size:28px!important;}
-          .desktop-header-sub{font-size:12px!important;}
-          .desktop-fortune{font-size:18px!important;}
+          .desktop-shift{margin-left:260px;}
+          .desktop-main-content{max-width:100%!important; padding:40px 56px 100px!important;}
+          .desktop-header-inner{padding:20px 40px!important;}
+          .desktop-header-title{font-size:32px!important; letter-spacing:4px!important;}
+          .desktop-header-sub{font-size:13px!important; letter-spacing:4px!important;}
+          .desktop-fortune{font-size:20px!important;}
         }
 
         /* PROFILES GRID */
@@ -1633,18 +1635,18 @@ export default function App() {
 
         {/* Header */}
         <div style={S.header}>
-          <div style={S.headerInner}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:42,width:42,objectFit:"contain"}}/>:<div style={{fontSize:34,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
+          <div style={{...S.headerInner, padding: isDesktop ? "20px 48px" : "12px 20px"}} className="desktop-header-inner">
+            <div style={{display:"flex",alignItems:"center",gap:isDesktop?18:12}}>
+              {settings.appIcon?<img src={settings.appIcon} alt="logo" style={{height:isDesktop?52:42,width:isDesktop?52:42,objectFit:"contain"}}/>:<div style={{fontSize:isDesktop?42:34,filter:"drop-shadow(0 0 8px #00d4ff)"}}>⭐</div>}
               <div>
-                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:3}}>STAR YeUv</div>
-                <div style={{color:"#8899bb",fontSize:10,letterSpacing:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
+                <div className="desktop-header-title" style={{fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?30:22,fontWeight:900,color:"#00d4ff",animation:"glow 3s ease-in-out infinite",letterSpacing:isDesktop?4:3}}>STAR YeUv</div>
+                <div className="desktop-header-sub" style={{color:"#8899bb",fontSize:isDesktop?13:11,letterSpacing:isDesktop?4:3,fontFamily:"'Rajdhani',sans-serif"}}>COMPANION APP</div>
               </div>
             </div>
             <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
               <SyncBadge synced={loaded}/>
-              <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,textAlign:"right"}}>
-                <div style={{fontSize:9,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
+              <div className="desktop-fortune" style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:15,textAlign:"right"}}>
+                <div style={{fontSize:isDesktop?11:10,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"}}>FORTUNE TOTALE</div>
                 {fmt((p1?.aUEC||0)+(p2?.aUEC||0))} aUEC
               </div>
             </div>
@@ -1662,7 +1664,7 @@ export default function App() {
         </div>
 
         {/* Contenu avec swipe */}
-        <div style={S.content} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+        <div style={{...S.content, padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px"}} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -1674,24 +1676,25 @@ export default function App() {
                   profile={p}
                   onEdit={()=>setEditProfile({...p})}
                   onHangar={()=>setHangarProfile(p)}
+                  isDesktop={isDesktop}
                 />
               ))}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:20}}>
-              <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00"/>
-              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)}/>
-              <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d"/>
-              <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")}/>
+            <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(${isDesktop?160:110}px,1fr))`,gap:isDesktop?14:10,marginBottom:20}}>
+              <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
+              <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
+              <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
+              <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
               {profiles.map(p=>(
-                <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)}/>
+                <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
               ))}
             </div>
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
-              <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:14,padding:"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
+              <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:isDesktop?16:14,padding:isDesktop?"14px 48px":"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
             </div>
-            <div style={S.sectionTitle}>📋 MISSIONS RÉCENTES</div>
-            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission}/>)}
-            {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission — commencez à jouer !</div>}
+            <div style={{...S.sectionTitle,fontSize:isDesktop?15:13}}>📋 MISSIONS RÉCENTES</div>
+            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} isDesktop={isDesktop}/>)}
+            {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:13}}>Aucune mission — commencez à jouer !</div>}
             {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
         )}
@@ -1793,11 +1796,11 @@ const S={
   header:{position:"sticky",top:0,zIndex:100,background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #00d4ff22",backdropFilter:"blur(16px)"},
   headerInner:{maxWidth:"100%",margin:"0 auto",padding:"12px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
   nav:{display:"flex",overflowX:"auto",background:"rgba(2,5,16,0.92)",borderBottom:"1px solid #1a2a4455",position:"sticky",top:68,zIndex:99,backdropFilter:"blur(12px)"},
-  content:{maxWidth:960,margin:"0 auto",padding:"24px 20px 100px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
+  content:{maxWidth:"100%",margin:"0 auto",padding:"24px 20px 100px",overflowX:"hidden",boxSizing:"border-box",position:"relative",zIndex:2},
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:6,flexWrap:"wrap"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"5px 7px",overflow:"hidden"},
-  statLabel:{color:"#8899bb",fontSize:9,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
+  statLabel:{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
   calcBox:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:12,padding:18,backdropFilter:"blur(8px)"},
@@ -1806,21 +1809,21 @@ const S={
   progressFill:{height:"100%",borderRadius:4,transition:"width .4s ease"},
   resultBox:{background:"#0a1628",border:"1px solid #00d4ff44",borderRadius:10,padding:"10px 14px"},
   shipChip:{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#8899bb",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",transition:"all .2s"},
-  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:12,textTransform:"uppercase"},
-  label:{display:"block",color:"#8899bb",fontSize:11,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
-  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"9px 12px",color:"#e8f4ff",fontSize:14,outline:"none",marginBottom:4},
-  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"10px 18px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
-  dangerBtn:{background:"transparent",border:"1px solid #ff446644",color:"#ff4466",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,fontFamily:"'Rajdhani',sans-serif"},
-  ghostBtn:{background:"transparent",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12},
-  editBtn:{background:"transparent",border:"1px solid",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:12},
-  closeBtn:{background:"transparent",border:"none",color:"#8899bb",cursor:"pointer",fontSize:18,padding:4},
-  toggleBtn:{flex:1,background:"#0a1628",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"8px 12px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:600},
+  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
+  label:{display:"block",color:"#8899bb",fontSize:12,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
+  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"10px 14px",color:"#e8f4ff",fontSize:15,outline:"none",marginBottom:4},
+  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
+  dangerBtn:{background:"transparent",border:"1px solid #ff446644",color:"#ff4466",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Rajdhani',sans-serif"},
+  ghostBtn:{background:"transparent",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"9px 18px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13},
+  editBtn:{background:"transparent",border:"1px solid",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
+  closeBtn:{background:"transparent",border:"none",color:"#8899bb",cursor:"pointer",fontSize:20,padding:4},
+  toggleBtn:{flex:1,background:"#0a1628",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"9px 12px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:600},
   toggleActive:{background:"#00d4ff22",borderColor:"#00d4ff66",color:"#00d4ff"},
-  badgeCommon:{background:"#ffcc0022",border:"1px solid #ffcc0055",color:"#ffcc00",borderRadius:10,padding:"2px 8px",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
-  badgePersonal:{background:"transparent",border:"1px solid",borderRadius:10,padding:"2px 8px",fontSize:9,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
+  badgeCommon:{background:"#ffcc0022",border:"1px solid #ffcc0055",color:"#ffcc00",borderRadius:10,padding:"2px 9px",fontSize:10,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
+  badgePersonal:{background:"transparent",border:"1px solid",borderRadius:10,padding:"2px 9px",fontSize:10,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
   modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
   modalBox:{background:"#07111f",border:"1px solid #00d4ff44",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflow:"hidden",display:"flex",flexDirection:"column"},
-  modalHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid #1a2a44"},
-  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:14,color:"#00d4ff",fontWeight:700},
-  modalBody:{padding:"16px 20px",overflowY:"auto",flex:1},
+  modalHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 22px",borderBottom:"1px solid #1a2a44"},
+  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:15,color:"#00d4ff",fontWeight:700},
+  modalBody:{padding:"18px 22px",overflowY:"auto",flex:1},
 };
