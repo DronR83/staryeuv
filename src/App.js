@@ -335,12 +335,17 @@ function VirementCanvas() {
 
 function VirementTile({ profiles, setProfiles, isDesktop }) {
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("virement");
   const [from, setFrom] = useState("");
   const [to,   setTo]   = useState("");
   const [amount, setAmount] = useState("");
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null);
   const [hov, setHov] = useState(false);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("virement_history") || "[]"); }
+    catch { return []; }
+  });
   const canvasRef = useRef(null);
   const rafRef    = useRef(null);
 
@@ -403,7 +408,15 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
     if (!canSend) return;
     setSending(true);
     setTimeout(()=>{
+      const fromName = fromP?.name || from;
+      const toName   = toP?.name   || to;
       setProfiles(prev=>prev.map(p=>{ if(p.id===from) return{...p,aUEC:p.aUEC-total}; if(p.id===to) return{...p,aUEC:p.aUEC+num}; return p; }));
+      const entry = { id: Date.now(), date: new Date().toLocaleString("fr-FR"), from: fromName, to: toName, fromColor: fromP?.color||"#00d4ff", toColor: toP?.color||"#00ff9d", net: num, fee, total };
+      setHistory(prev => {
+        const next = [entry, ...prev].slice(0, 50);
+        try { localStorage.setItem("virement_history", JSON.stringify(next)); } catch {}
+        return next;
+      });
       setSuccess({net:num,fee}); setSending(false); setAmount("");
       setTimeout(()=>{ setSuccess(null); setOpen(false); }, 3200);
     },900);
@@ -441,7 +454,16 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
               <div style={S.modalTitle}>💸 VIREMENT aUEC</div>
               <button onClick={()=>setOpen(false)} style={S.closeBtn}>✕</button>
             </div>
+            {/* Onglets */}
+            <div style={{display:"flex",borderBottom:"1px solid #1a2a44",background:"#050e1d"}}>
+              {[["virement","💸 Virement"],["historique","📜 Historique"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setActiveTab(id)} style={{flex:1,padding:"12px 0",background:"transparent",border:"none",borderBottom:`2px solid ${activeTab===id?"#00ff9d":"transparent"}`,color:activeTab===id?"#00ff9d":"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1.5,cursor:"pointer",transition:"all .2s",textTransform:"uppercase"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div style={S.modalBody}>
+            {activeTab==="virement" && <>
               {/* Canvas animé modal */}
               <div style={{position:"relative",width:"100%",height:130,borderRadius:12,overflow:"hidden",marginBottom:18,background:"#030b1a",border:"1px solid #00ff9d22"}}>
                 <VirementCanvas/>
@@ -510,7 +532,52 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
               <button onClick={doVirement} disabled={!canSend||sending} style={{...S.primaryBtn,marginTop:14,background:canSend?"linear-gradient(135deg,#00ff9d22,#0a1628)":"#0a1628",borderColor:canSend?"#00ff9d66":"#1a2a44",color:canSend?"#00ff9d":"#4a5a6a",opacity:sending?.7:1}}>
                 {sending?"⏳ TRANSFERT EN COURS...":"💸 CONFIRMER LE VIREMENT"}
               </button>
-            </div>
+            </>}
+            </div>}
+
+            {/* ── ONGLET HISTORIQUE ── */}
+            {activeTab==="historique" && <div style={{...S.modalBody, paddingTop:8}}>
+              {history.length===0 ? (
+                <div style={{textAlign:"center",padding:"48px 20px"}}>
+                  <div style={{fontSize:40,marginBottom:12,opacity:.4}}>📜</div>
+                  <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:14,letterSpacing:1}}>Aucun virement effectué</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                    <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1}}>{history.length} TRANSACTION{history.length>1?"S":""}</div>
+                    <button onClick={()=>{setHistory([]);try{localStorage.removeItem("virement_history")}catch{}}} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
+                  </div>
+                  {history.map((h,i)=>(
+                    <div key={h.id} style={{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:10,padding:"12px 14px",marginBottom:8,animation:`fadeIn .${3+i%5}s ease`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <span style={{color:h.fromColor,fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700}}>{h.from}</span>
+                          <span style={{color:"#00ff9d",fontSize:14}}>→</span>
+                          <span style={{color:h.toColor,fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700}}>{h.to}</span>
+                        </div>
+                        <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{h.date}</div>
+                      </div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <div style={{flex:1,background:"#07111f",borderRadius:6,padding:"5px 10px",border:"1px solid #00ff9d22"}}>
+                          <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10,letterSpacing:1}}>REÇU</div>
+                          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(h.net)} aUEC</div>
+                        </div>
+                        <div style={{flex:1,background:"#07111f",borderRadius:6,padding:"5px 10px",border:"1px solid #ff6b3522"}}>
+                          <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10,letterSpacing:1}}>FRAIS</div>
+                          <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>−{fmt(h.fee)} aUEC</div>
+                        </div>
+                        <div style={{flex:1,background:"#07111f",borderRadius:6,padding:"5px 10px",border:"1px solid #00d4ff22"}}>
+                          <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10,letterSpacing:1}}>DÉBITÉ</div>
+                          <div style={{color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{fmt(h.total)} aUEC</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>}
+
           </div>
         </div>
       )}
