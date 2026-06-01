@@ -1445,10 +1445,7 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, onClose }) {
-  const [messages, setMessages] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("chat_messages") || "[]"); } catch { return []; }
-  });
+function ChatInterface({ profiles, messages, setMessages, onClose }) {
   const [text, setText] = useState("");
   const [author, setAuthor] = useState(profiles[0]?.id || "");
   const endRef = useRef(null);
@@ -1497,14 +1494,12 @@ function ChatInterface({ profiles, onClose }) {
     const msg = { id: Date.now(), author: p?.name || author, color: p?.color || "#a78bfa", text: text.trim(), time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("fr-FR") };
     const next = [...messages, msg];
     setMessages(next);
-    try { localStorage.setItem("chat_messages", JSON.stringify(next)); } catch {}
     setText("");
   }
 
   function del(id) {
     const next = messages.filter(m => m.id !== id);
     setMessages(next);
-    try { localStorage.setItem("chat_messages", JSON.stringify(next)); } catch {}
   }
 
   // grouper par date
@@ -1526,7 +1521,7 @@ function ChatInterface({ profiles, onClose }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); try { localStorage.removeItem("chat_messages"); } catch {} } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Vider</button>}
+          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Vider</button>}
           <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
         </div>
       </div>
@@ -3728,6 +3723,11 @@ export default function App() {
   const [objectives,setObjectives,objLoaded,   saveObjectives] = useFirestore("objectives", DEFAULT_OBJECTIVES);
   const [fleets,    setFleets,    fleetLoaded, saveFleets    ] = useFirestore("fleets",     DEFAULT_FLEETS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
+  const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
+
+  // Dernier lu par appareil (localStorage)
+  const [lastRead, setLastRead] = useState(() => { try { return parseInt(localStorage.getItem("chat_lastRead") || "0"); } catch { return 0; } });
+  const unreadCount = chatMsgs.filter(m => (m.id || 0) > lastRead).length;
 
   const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
@@ -3768,7 +3768,13 @@ export default function App() {
   const [gainsModal,     setGainsModal]     = useState(false);
   const [calcModal,      setCalcModal]      = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
-  const chatMsgCount = (() => { try { return JSON.parse(localStorage.getItem("chat_messages") || "[]").length; } catch { return 0; } })();
+
+  function openChat() {
+    const now = Date.now();
+    setLastRead(now);
+    try { localStorage.setItem("chat_lastRead", String(now)); } catch {}
+    setChatOpen(true);
+  }
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
@@ -3990,7 +3996,7 @@ export default function App() {
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
-                  <ChatTile profiles={profiles} msgCount={chatMsgCount} onClick={()=>setChatOpen(true)} isDesktop={isDesktop}/>
+                  <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
                   <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
@@ -4005,7 +4011,7 @@ export default function App() {
               <>
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <div style={{marginBottom:12}}>
-                  <ChatTile profiles={profiles} msgCount={chatMsgCount} onClick={()=>setChatOpen(true)} isDesktop={isDesktop}/>
+                  <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
                   <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
@@ -4043,7 +4049,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} onClose={()=>setChatOpen(false)}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onClose={()=>setChatOpen(false)}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
