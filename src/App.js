@@ -437,13 +437,13 @@ function ShipBadge3D({ shipName, color = "#00d4ff", size = 44 }) {
   useEffect(() => {
     const canvas = ref.current; if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
-    const W = size * 1.6, H = size;
+    const W = size * 1.9, H = size;
     canvas.width = W * dpr; canvas.height = H * dpr;
     const ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
     let t = 0;
     cancelAnimationFrame(raf.current);
-    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.34;
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.46;
 
     function frame() {
       ctx.clearRect(0, 0, W, H);
@@ -501,7 +501,7 @@ function ShipBadge3D({ shipName, color = "#00d4ff", size = 44 }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, color, size]);
 
-  return <canvas ref={ref} style={{ width: size * 1.6, height: size, display: "block", flexShrink: 0 }} width={size * 3.2} height={size * 2} />;
+  return <canvas ref={ref} style={{ width: size * 1.9, height: size, display: "block", flexShrink: 0, margin: "4px auto" }} width={size * 3.8} height={size * 2} />;
 }
 
 
@@ -2037,20 +2037,14 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
       <div style={S.statRow}>
-        <div style={S.statItem}>
+        <div style={{...S.statItem,flex:"0 0 38%"}}>
           <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>aUEC</div>
-          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:16,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{fmt(profile.aUEC)}</div>
+          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:17,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{fmt(profile.aUEC)}</div>
         </div>
-        <div style={S.statItem}>
-          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>VAISSEAU</div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?34:28}/>
-            <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:12,fontWeight:600,lineHeight:1.1,wordBreak:"break-word",minWidth:0}}>{profile.ship}</div>
-          </div>
-        </div>
-        <div style={S.statItem}>
-          <div style={{...S.statLabel,fontSize:isDesktop?12:11}}>POSITION</div>
-          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:12,lineHeight:1.15,wordBreak:"break-word"}}>{profile.location}</div>
+        <div style={{...S.statItem,flex:1,alignItems:"center",justifyContent:"center"}}>
+          <div style={{...S.statLabel,fontSize:isDesktop?12:11,alignSelf:"flex-start"}}>VAISSEAU</div>
+          <ShipBadge3D shipName={profile.ship} color={profile.color} size={isDesktop?72:56}/>
+          <div style={{color:"#e8f4ff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:15,fontWeight:700,lineHeight:1.15,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow:`0 0 12px ${profile.color}55`}}>{profile.ship}</div>
         </div>
       </div>
     </div>
