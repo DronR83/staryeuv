@@ -443,8 +443,6 @@ function ShipBadge3D({ shipName, color = "#00d4ff", size = 44 }) {
     ctx.scale(dpr, dpr);
     let t = 0;
     cancelAnimationFrame(raf.current);
-    const seed = idx * 137.5;
-    const r = n => ((Math.sin(seed + n) + 1) / 2);
     const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.34;
 
     function frame() {
