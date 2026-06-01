@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { fsGet, fsSet, fsListen } from "./firebase";
 
 // ─── DEFAULTS ─────────────────────────────────────────────────────────────────
@@ -257,6 +257,173 @@ function CosmicBackground() {
 const fmt = n => (n??0).toLocaleString("fr-FR");
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
+// ─── SHIP PICKER 3D ──────────────────────────────────────────────────────────
+function ShipPicker3D({ value, onChange, hangarShips, color }) {
+  const canvasRef = useRef(null);
+  const rafRef    = useRef(null);
+  const [manual, setManual] = useState(false);
+  const [manualVal, setManualVal] = useState("");
+
+  // Index pseudo-aléatoire basé sur le nom du vaisseau pour la forme 3D
+  const shipIndex = useMemo(() => {
+    if (!value) return 0;
+    return value.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 12;
+  }, [value]);
+
+  // Animation canvas vaisseau 3D (même logique que HangarShip)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    cancelAnimationFrame(rafRef.current);
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const W = 280, H = 120;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    let t = 0;
+    const seed = shipIndex * 137.5;
+    const r = n => ((Math.sin(seed + n) + 1) / 2);
+    const col = color || "#00d4ff";
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+
+      // Rotation douce
+      const rot = Math.sin(t * 0.018) * 0.12;
+      ctx.rotate(rot);
+
+      // Halo glow
+      const halo = ctx.createRadialGradient(0, 0, 8, 0, 0, 80);
+      halo.addColorStop(0, col + "28"); halo.addColorStop(1, "transparent");
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.ellipse(0, 6, 90, 36, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Ombre portée sol
+      const shadow = ctx.createRadialGradient(0, 32, 2, 0, 32, 55);
+      shadow.addColorStop(0, col + "22"); shadow.addColorStop(1, "transparent");
+      ctx.fillStyle = shadow;
+      ctx.beginPath(); ctx.ellipse(0, 32, 55, 10, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Corps principal
+      const w1 = 44 + r(1) * 26, h1 = 10 + r(3) * 8;
+      ctx.shadowColor = col; ctx.shadowBlur = 14 + 6 * Math.sin(t * 0.05);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.fillStyle = col + "2a";
+      ctx.beginPath();
+      ctx.moveTo(-w1, 0);
+      ctx.bezierCurveTo(-w1 * 0.5, -h1 * 1.6, w1 * 0.3, -h1, w1, 0);
+      ctx.bezierCurveTo(w1 * 0.3, h1, -w1 * 0.5, h1 * 1.6, -w1, 0);
+      ctx.fill(); ctx.stroke();
+
+      // Ligne centrale détail
+      ctx.shadowBlur = 4;
+      ctx.strokeStyle = col + "66"; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(-w1 * 0.7, 0); ctx.lineTo(w1 * 0.8, 0); ctx.stroke();
+
+      // Cockpit
+      ctx.shadowBlur = 10; ctx.fillStyle = col + "99";
+      ctx.beginPath();
+      ctx.ellipse(w1 * 0.22, -h1 * 0.28, w1 * 0.18 * (0.6 + r(6) * 0.4), h1 * 0.55, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      // Reflet cockpit
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.beginPath();
+      ctx.ellipse(w1 * 0.22 + 3, -h1 * 0.38, w1 * 0.06, h1 * 0.2, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ailes
+      ctx.shadowBlur = 6;
+      const wingLen = h1 * 1.4 + r(4) * 14;
+      [[1, -1], [1, 1]].forEach(([xs, ys]) => {
+        ctx.fillStyle = col + "1e"; ctx.strokeStyle = col + "aa"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-w1 * 0.38, ys * (h1 + wingLen));
+        ctx.lineTo(-w1 * 0.78, ys * h1 * 0.55);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Détail aile
+        ctx.strokeStyle = col + "44"; ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(-w1 * 0.2, ys * h1 * 0.4);
+        ctx.lineTo(-w1 * 0.5, ys * (h1 + wingLen * 0.6));
+        ctx.stroke();
+      });
+
+      // Nacelle centrale dessous
+      ctx.shadowBlur = 8; ctx.fillStyle = col + "33"; ctx.strokeStyle = col + "77"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(-w1 * 0.15, h1 * 0.55 + r(7) * 3, w1 * 0.22, h1 * 0.28, 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // Réacteurs
+      for (let i = 0; i < 2; i++) {
+        const ry = (i === 0 ? -1 : 1) * (h1 * 0.6 + r(5 + i) * 5);
+        const flicker = 0.65 + 0.35 * Math.sin(t * 0.14 + i * 2.1);
+        ctx.shadowColor = col; ctx.shadowBlur = 18 * flicker;
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.88, ry, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+        const jet = ctx.createLinearGradient(-w1 * 0.88, ry, -w1 * 0.88 - 28 * flicker, ry);
+        jet.addColorStop(0, col + "dd"); jet.addColorStop(0.5, col + "66"); jet.addColorStop(1, "transparent");
+        ctx.fillStyle = jet;
+        ctx.beginPath(); ctx.ellipse(-w1 * 0.88 - 14 * flicker, ry, 14 * flicker, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Nom du vaisseau
+      ctx.restore();
+      ctx.shadowColor = col; ctx.shadowBlur = 8;
+      ctx.fillStyle = col + "cc";
+      ctx.font = `600 11px 'Rajdhani',sans-serif`;
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText(value || "— Aucun —", W / 2, H - 4);
+      ctx.shadowBlur = 0;
+      rafRef.current = requestAnimationFrame(draw);
+      t++;
+    }
+    draw();
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipIndex, color, value]);
+
+  return (
+    <div>
+      {/* Canvas 3D */}
+      <div style={{background:"#030b1a",border:`1px solid ${color||"#00d4ff"}33`,borderRadius:12,overflow:"hidden",marginBottom:10,position:"relative"}}>
+        <canvas ref={canvasRef} style={{width:"100%",height:90,display:"block"}} width={560} height={240}/>
+      </div>
+
+      {/* Chips du hangar */}
+      {hangarShips && hangarShips.length > 0 && (
+        <>
+          <div style={{color:"#8899bb",fontSize:10,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase",marginBottom:6}}>Sélectionner depuis le hangar</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+            {hangarShips.map((s,i) => (
+              <button key={s.id||i} onClick={()=>{onChange(s.name);setManual(false);}}
+                style={{background:value===s.name?`${color||"#00d4ff"}22`:"#0a1628",border:`1px solid ${value===s.name?color||"#00d4ff":"#1a2a44"}`,borderRadius:20,padding:"5px 12px",color:value===s.name?color||"#00d4ff":"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,cursor:"pointer",transition:"all .2s",fontWeight:value===s.name?700:400}}>
+                🚀 {s.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Toggle manuel */}
+      <button onClick={()=>setManual(m=>!m)} style={{background:"transparent",border:"none",color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,cursor:"pointer",letterSpacing:1,textDecoration:"underline",padding:"0 0 6px",display:"block"}}>
+        {manual ? "↑ Masquer" : "✏️ Saisir manuellement"}
+      </button>
+      {manual && (
+        <input
+          value={manualVal || value}
+          onChange={e => { setManualVal(e.target.value); onChange(e.target.value); }}
+          style={S.input}
+          placeholder="Ex: Hercules C2, Cutlass Black…"
+          autoFocus
+        />
+      )}
+    </div>
+  );
+}
+
 function Modal({ title, onClose, children }) {
   return (
     <div style={S.modalOverlay} onClick={e => { if(e.target===e.currentTarget) onClose(); }}>
@@ -2063,7 +2230,12 @@ export default function App() {
           <label style={S.label}>Localisation</label>
           <input value={editProfile.location} onChange={e=>setEditProfile(p=>({...p,location:e.target.value}))} style={S.input} placeholder="Ex: Area18, ArcCorp"/>
           <label style={S.label}>Vaisseau actuel</label>
-          <input value={editProfile.ship} onChange={e=>setEditProfile(p=>({...p,ship:e.target.value}))} style={S.input} placeholder="Ex: Hercules C2"/>
+          <ShipPicker3D
+            value={editProfile.ship}
+            onChange={v => setEditProfile(p=>({...p, ship:v}))}
+            hangarShips={fleets[editProfile.id] || []}
+            color={editProfile.color}
+          />
           <label style={S.label}>Couleur du profil</label>
           <input type="color" value={editProfile.color} onChange={e=>setEditProfile(p=>({...p,color:e.target.value}))} style={{...S.input,height:44,padding:4}}/>
           <button onClick={()=>{setProfiles(prev=>prev.map(x=>x.id===editProfile.id?editProfile:x));setEditProfile(null);}} style={S.primaryBtn}>💾 Sauvegarder</button>
