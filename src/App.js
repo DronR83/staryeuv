@@ -328,6 +328,7 @@ function VirementCanvas() {
     }
     frame();
     return ()=>cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
 }
@@ -348,6 +349,7 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
       if (!from) setFrom(profiles[0].id);
       if (!to)   setTo(profiles[1].id);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profiles]);
 
   // Animation canvas tuile
@@ -387,6 +389,7 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
     }
     frame();
     return ()=>cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
   const fromP = profiles.find(p=>p.id===from);
