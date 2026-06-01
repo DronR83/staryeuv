@@ -2248,9 +2248,10 @@ function MoneyBox({ amount, color, isDesktop }) {
 }
 
 // ─── SHIP TILE (vaisseau + fond hyperespace) ──────────────────────────────────
-function ShipTile({ shipName, color, isDesktop }) {
+function ShipTile({ shipName, color, isDesktop, onClick }) {
   const ref = useRef(null);
   const raf = useRef(null);
+  const [hov, setHov] = useState(false);
   const col = color || "#00d4ff";
   useEffect(() => {
     const canvas = ref.current; if (!canvas) return;
@@ -2295,11 +2296,34 @@ function ShipTile({ shipName, color, isDesktop }) {
   },[col]);
 
   return (
-    <div style={{position:"relative",overflow:"hidden",borderRadius:10,background:"#070d18",border:`1px solid ${col}44`,boxShadow:`0 0 12px ${col}22`,padding:isDesktop?"8px 10px 10px":"6px 8px 8px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        position:"relative", overflow:"hidden", borderRadius:10,
+        background: hov ? `linear-gradient(135deg,${col}18,#070d18)` : "#070d18",
+        border:`1px solid ${hov ? col : col+"44"}`,
+        boxShadow: hov ? `0 0 28px ${col}77, 0 0 8px ${col}44 inset` : `0 0 12px ${col}22`,
+        padding:isDesktop?"8px 10px 10px":"6px 8px 8px",
+        display:"flex", flexDirection:"column", alignItems:"center",
+        cursor: onClick ? "pointer" : "default",
+        transform: hov ? "translateY(-3px) scale(1.02)" : "none",
+        transition:"all .25s cubic-bezier(.4,0,.2,1)",
+      }}>
       <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      <div style={{position:"relative",color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600,alignSelf:"flex-start"}}>Vaisseau</div>
-      <div style={{position:"relative"}}><ShipBadge3D shipName={shipName} color={col} size={isDesktop?58:46}/></div>
-      <div style={{position:"relative",color:"#eafdff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:14,fontWeight:700,lineHeight:1.1,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow:`0 0 10px ${col}66`}}>{shipName}</div>
+      {/* Overlay lumineux au hover */}
+      {hov && <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%, ${col}22 0%, transparent 70%)`,pointerEvents:"none",transition:"opacity .25s"}}/>}
+      <div style={{position:"relative",width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Vaisseau</div>
+        {onClick && <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?11:10,letterSpacing:1,opacity: hov ? 1 : 0,transition:"opacity .2s",display:"flex",alignItems:"center",gap:4}}>
+          <span style={{fontSize:12}}>🚀</span> HANGAR
+        </div>}
+      </div>
+      <div style={{position:"relative",transform: hov ? "scale(1.08)" : "scale(1)", transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>
+        <ShipBadge3D shipName={shipName} color={col} size={isDesktop?58:46}/>
+      </div>
+      <div style={{position:"relative",color:"#eafdff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:14,fontWeight:700,lineHeight:1.1,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow: hov ? `0 0 18px ${col}, 0 0 8px ${col}` : `0 0 10px ${col}66`,transition:"text-shadow .25s"}}>{shipName}</div>
     </div>
   );
 }
@@ -2475,7 +2499,7 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:isDesktop?12:10}}>
         <MoneyBox amount={profile.aUEC} color={profile.color} isDesktop={isDesktop}/>
-        <ShipTile shipName={profile.ship} color={profile.color} isDesktop={isDesktop}/>
+        <ShipTile shipName={profile.ship} color={profile.color} isDesktop={isDesktop} onClick={onHangar}/>
       </div>
     </div>
   );
