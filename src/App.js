@@ -897,6 +897,378 @@ function SyncBadge({ synced }) {
 }
 
 // ─── HEX TILE ─────────────────────────────────────────────────────────────────
+// ─── GAINS HISTORY MODAL ──────────────────────────────────────────────────────
+function GainsCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    const cx = w/2, cy = h/2, R = Math.min(w,h)*0.4;
+    let t = 0;
+    const bars = Array.from({length:9},(_,i)=>({ x:(i/8-0.5)*R*1.4, ph:Math.random()*6, base:0.3+Math.random()*0.5 }));
+    const sparks = Array.from({length:16},(_,i)=>({ a:(i/16)*Math.PI*2, sp:0.007+Math.random()*0.006, r:R*(0.5+Math.random()*0.55), sz:1.5+Math.random()*2.5 }));
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      [R*1.1,R*0.7].forEach((rr,i)=>{
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,rr);
+        g.addColorStop(0,`rgba(255,204,0,${0.14-i*0.05})`); g.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fill();
+      });
+      // barres graph montantes
+      ctx.save(); ctx.translate(cx,cy);
+      bars.forEach((b,i)=>{
+        const hh = R*0.7*(b.base+0.3*Math.abs(Math.sin(t*1.5+b.ph)));
+        const bw = R*0.13;
+        const al = 0.4+0.4*Math.abs(Math.sin(t+b.ph));
+        const grad=ctx.createLinearGradient(0,R*0.5,0,R*0.5-hh);
+        grad.addColorStop(0,`rgba(255,107,53,${al})`); grad.addColorStop(1,`rgba(255,204,0,${al})`);
+        ctx.fillStyle=grad; ctx.shadowColor="#ffcc00"; ctx.shadowBlur=8;
+        ctx.fillRect(b.x-bw/2, R*0.5-hh, bw, hh);
+      });
+      ctx.shadowBlur=0; ctx.restore();
+      // sparks orbite
+      sparks.forEach(s=>{ s.a+=s.sp; const x=cx+Math.cos(s.a)*s.r,y=cy+Math.sin(s.a)*s.r*0.3; const d=(Math.sin(s.a)+1)/2,al=0.3+d*0.7,sz=s.sz*(0.4+d*0.6);
+        ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2); ctx.fillStyle=`rgba(255,204,0,${al})`; ctx.fill();
+      });
+      const sg=ctx.createRadialGradient(cx-R*.06,cy-R*.06,0,cx,cy,R*0.2);
+      sg.addColorStop(0,"rgba(255,240,200,.98)"); sg.addColorStop(.4,"rgba(255,204,0,.85)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.2,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.2)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.95)"; ctx.shadowColor="#ffcc00"; ctx.shadowBlur=16;
+      ctx.fillText("₵",cx,cy+1); ctx.shadowBlur=0;
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
+}
+
+function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
+  const [filter, setFilter] = useState("all"); // all | p1 | p2...
+
+  // Gains par joueur
+  function gainFor(m, pid) {
+    if (m.split) return Math.floor(m.amount/2);
+    return m.assignee===pid ? m.amount : 0;
+  }
+  const perPlayer = profiles.map(p => ({
+    ...p,
+    total: missions.reduce((a,m)=>a+gainFor(m,p.id),0),
+  }));
+
+  const filtered = filter==="all" ? missions : missions.filter(m => m.split || m.assignee===filter);
+
+  return (
+    <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+      <div style={{...S.modalBox,maxWidth:560}}>
+        <div style={S.modalHeader}>
+          <div style={S.modalTitle}>💰 HISTORIQUE DES GAINS</div>
+          <button onClick={onClose} style={S.closeBtn}>✕</button>
+        </div>
+        <div style={S.modalBody}>
+          {/* Canvas animé */}
+          <div style={{position:"relative",width:"100%",height:140,borderRadius:12,overflow:"hidden",marginBottom:8,background:"#030b1a",border:"1px solid #ffcc0022"}}>
+            <GainsCanvas/>
+            <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:2}}>TOTAL GAGNÉ</div>
+              <div style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:26,fontWeight:900,textShadow:"0 0 16px #ffcc0088"}}>{fmt(totalEarned)}</div>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>aUEC</div>
+            </div>
+          </div>
+
+          {/* Cartes par joueur */}
+          <div style={{display:"flex",gap:10,marginBottom:16}}>
+            {perPlayer.map(p=>(
+              <div key={p.id} style={{flex:1,background:"#0a1628",border:`1px solid ${p.color}44`,borderRadius:10,padding:"10px 12px"}}>
+                <div style={{color:p.color,fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,marginBottom:4}}>{p.name}</div>
+                <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700}}>{fmt(p.total)}</div>
+                <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>aUEC gagnés</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filtre */}
+          <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+            <button onClick={()=>setFilter("all")} style={{background:filter==="all"?"#ffcc0022":"#0a1628",border:`1px solid ${filter==="all"?"#ffcc00":"#1a2a44"}`,borderRadius:20,padding:"5px 14px",color:filter==="all"?"#ffcc00":"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,cursor:"pointer",fontWeight:filter==="all"?700:400}}>Tout</button>
+            {profiles.map(p=>(
+              <button key={p.id} onClick={()=>setFilter(p.id)} style={{background:filter===p.id?`${p.color}22`:"#0a1628",border:`1px solid ${filter===p.id?p.color:"#1a2a44"}`,borderRadius:20,padding:"5px 14px",color:filter===p.id?p.color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,cursor:"pointer",fontWeight:filter===p.id?700:400}}>{p.name}</button>
+            ))}
+          </div>
+
+          {/* Liste gains */}
+          {filtered.length===0 ? (
+            <div style={{textAlign:"center",padding:"40px 20px"}}>
+              <div style={{fontSize:40,marginBottom:12,opacity:.4}}>💰</div>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:14}}>Aucun gain enregistré</div>
+            </div>
+          ) : (
+            <>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,marginBottom:10}}>{filtered.length} MISSION{filtered.length>1?"S":""}</div>
+              {filtered.map(m=>{
+                const owner = profiles.find(p=>p.id===m.assignee);
+                return (
+                  <div key={m.id} style={{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:10,padding:"12px 14px",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div style={{flex:1}}>
+                        <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:600}}>{m.name}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center",marginTop:3}}>
+                          {m.split
+                            ? <span style={{color:"#ffcc00",fontFamily:"'Rajdhani',sans-serif",fontSize:10,letterSpacing:1}}>🤝 PARTAGÉE</span>
+                            : <span style={{color:owner?.color,fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:700}}>{owner?.name}</span>}
+                          <span style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{m.date}</span>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right",whiteSpace:"nowrap"}}>
+                        <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700}}>+{fmt(m.amount)}</div>
+                        {m.split && <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{fmt(Math.floor(m.amount/2))} / pilote</div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── DÉPENSES TILE ────────────────────────────────────────────────────────────
+function DepensesCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    const cx = w/2, cy = h/2, R = Math.min(w,h)*0.38;
+    let t = 0;
+    const coins = Array.from({length:14},(_,i)=>({ a:(i/14)*Math.PI*2, sp:0.008+Math.random()*0.006, r:R*(0.55+Math.random()*0.5), sz:3+Math.random()*3 }));
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      [R*1.1,R*0.7].forEach((rr,i)=>{
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,rr);
+        g.addColorStop(0,`rgba(255,107,53,${0.14-i*0.05})`); g.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.fill();
+      });
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.beginPath(); ctx.ellipse(0,0,R*0.85,R*0.26,t*0.16,0,Math.PI*2);
+      const rg=ctx.createLinearGradient(-R,0,R,0);
+      rg.addColorStop(0,"rgba(255,107,53,0)"); rg.addColorStop(.4,"rgba(255,107,53,.9)");
+      rg.addColorStop(.6,"rgba(255,204,0,1)"); rg.addColorStop(1,"rgba(255,107,53,0)");
+      ctx.strokeStyle=rg; ctx.lineWidth=2.5; ctx.stroke(); ctx.restore();
+      coins.forEach(c=>{ c.a+=c.sp; const x=cx+Math.cos(c.a)*c.r,y=cy+Math.sin(c.a)*c.r*0.26; const d=(Math.sin(c.a)+1)/2,al=0.3+d*0.7,sz=c.sz*(0.5+d*0.6);
+        ctx.save(); ctx.translate(x,y); ctx.scale(1,0.5+0.5*Math.abs(Math.sin(t*2+c.a)));
+        ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,204,0,${al})`; ctx.strokeStyle=`rgba(255,107,53,${al})`; ctx.lineWidth=1;
+        ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      const sg=ctx.createRadialGradient(cx-R*.06,cy-R*.06,0,cx,cy,R*0.22);
+      sg.addColorStop(0,"rgba(255,230,180,.98)"); sg.addColorStop(.4,"rgba(255,107,53,.85)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.2)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.95)"; ctx.shadowColor="#ff6b35"; ctx.shadowBlur=14;
+      ctx.fillText("−₵",cx,cy+1); ctx.shadowBlur=0;
+      raf.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
+}
+
+function DepensesTile({ profiles, setProfiles, isDesktop }) {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("depense");
+  const [who, setWho] = useState("");
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [hov, setHov] = useState(false);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("depenses_history") || "[]"); } catch { return []; }
+  });
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+
+  useEffect(() => { if (profiles.length && !who) setWho(profiles[0].id); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    let w,h,t=0;
+    function resize(){ w=canvas.offsetWidth; h=canvas.offsetHeight; canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); }
+    resize();
+    const coins = Array.from({length:18},(_,i)=>({ a:(i/18)*Math.PI*2, sp:0.009+Math.random()*0.006, rf:0.55+Math.random()*0.45, sz:2+Math.random()*3 }));
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+      const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+      bg.addColorStop(0,"rgba(255,107,53,0.16)"); bg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(cx,cy);
+      ctx.beginPath(); ctx.ellipse(0,0,R*0.85,R*0.25,t*0.18,0,Math.PI*2);
+      const rg=ctx.createLinearGradient(-R,0,R,0);
+      rg.addColorStop(0,"rgba(255,107,53,0)"); rg.addColorStop(.4,"rgba(255,107,53,.9)");
+      rg.addColorStop(.6,"rgba(255,204,0,1)"); rg.addColorStop(1,"rgba(255,107,53,0)");
+      ctx.strokeStyle=rg; ctx.lineWidth=2.5; ctx.stroke(); ctx.restore();
+      coins.forEach(c=>{ c.a+=c.sp; const PR=R*c.rf; const x=cx+Math.cos(c.a)*PR,y=cy+Math.sin(c.a)*PR*0.25; const d=(Math.sin(c.a)+1)/2,al=0.25+d*0.75,sz=c.sz*(0.4+d*0.6);
+        ctx.save(); ctx.translate(x,y); ctx.scale(1,0.5+0.5*Math.abs(Math.sin(t*2+c.a)));
+        ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2); ctx.fillStyle=`rgba(255,204,0,${al})`; ctx.strokeStyle=`rgba(255,107,53,${al})`; ctx.lineWidth=1; ctx.fill(); ctx.stroke(); ctx.restore();
+      });
+      const sg=ctx.createRadialGradient(cx-R*.07,cy-R*.07,0,cx,cy,R*0.22);
+      sg.addColorStop(0,"rgba(255,235,190,.98)"); sg.addColorStop(.35,"rgba(255,107,53,.85)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.18)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.98)"; ctx.shadowColor="#ff6b35"; ctx.shadowBlur=16;
+      ctx.fillText("−₵",cx,cy+1); ctx.shadowBlur=0;
+      rafRef.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return ()=>cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  const whoP = profiles.find(p=>p.id===who);
+  const num = parseFloat(amount)||0;
+  const canSave = num>0 && label.trim() && whoP && whoP.aUEC>=num;
+
+  function doDepense(){
+    if(!canSave) return;
+    setSaving(true);
+    setTimeout(()=>{
+      setProfiles(prev=>prev.map(p=>p.id===who?{...p,aUEC:p.aUEC-num}:p));
+      const entry={ id:Date.now(), date:new Date().toLocaleString("fr-FR"), who:whoP.name, whoColor:whoP.color||"#ff6b35", label:label.trim(), amount:num };
+      setHistory(prev=>{ const next=[entry,...prev].slice(0,100); try{localStorage.setItem("depenses_history",JSON.stringify(next));}catch{} return next; });
+      setOk(true); setSaving(false); setAmount(""); setLabel("");
+      setTimeout(()=>{ setOk(false); setOpen(false); },2800);
+    },800);
+  }
+
+  const tileBase = { position:"relative", background:"#07111fcc", border:`1px solid ${hov?"#ff6b3577":"#ff6b3533"}`, borderRadius:12, transition:"all .25s", backdropFilter:"blur(8px)", cursor:"pointer", overflow:"hidden", boxShadow:hov?"0 0 32px #ff6b3588,0 0 8px #ff6b3544 inset":"0 0 12px #ff6b3533" };
+
+  return (
+    <>
+      {isDesktop ? (
+        <div style={{...tileBase, padding:"20px 14px", textAlign:"center", transform:hov?"scale(1.04) translateY(-2px)":"scale(1)"}}
+          onClick={()=>setOpen(true)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <canvas ref={canvasRef} style={{width:"100%",height:110,display:"block",borderRadius:8,marginBottom:8}}/>
+          <div style={{color:"#ff6b35",fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase"}}>DÉPENSES</div>
+          <div style={{color:"#e8f4ff",fontSize:24,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"3px 0"}}>DIVERSES</div>
+          <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Sorties d'aUEC</div>
+        </div>
+      ) : (
+        <div style={{...tileBase, padding:"16px 18px", display:"flex", alignItems:"center", gap:16, transform:hov?"scale(1.01)":"scale(1)"}}
+          onClick={()=>setOpen(true)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+          <canvas ref={canvasRef} style={{width:90,height:90,display:"block",flexShrink:0,borderRadius:10}}/>
+          <div style={{flex:1}}>
+            <div style={{color:"#ff6b35",fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",marginBottom:2}}>DÉPENSES DIVERSES</div>
+            <div style={{color:"#e8f4ff",fontSize:22,fontWeight:700,fontFamily:"'Orbitron',sans-serif",marginBottom:2}}>aUEC</div>
+            <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>Suivi des sorties d'argent</div>
+          </div>
+          <div style={{color:"#ff6b35",fontSize:28,opacity:0.6}}>−</div>
+        </div>
+      )}
+
+      {open && (
+        <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setOpen(false)}}>
+          <div style={{...S.modalBox,maxWidth:480}}>
+            <div style={S.modalHeader}>
+              <div style={S.modalTitle}>💳 DÉPENSES DIVERSES</div>
+              <button onClick={()=>setOpen(false)} style={S.closeBtn}>✕</button>
+            </div>
+            <div style={{display:"flex",borderBottom:"1px solid #1a2a44",background:"#050e1d"}}>
+              {[["depense","💳 Dépense"],["historique","📜 Historique"]].map(([id,lbl])=>(
+                <button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"12px 0",background:"transparent",border:"none",borderBottom:`2px solid ${tab===id?"#ff6b35":"transparent"}`,color:tab===id?"#ff6b35":"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1.5,cursor:"pointer",transition:"all .2s",textTransform:"uppercase"}}>{lbl}</button>
+              ))}
+            </div>
+            <div style={S.modalBody}>
+            {tab==="depense" && <>
+              <div style={{position:"relative",width:"100%",height:120,borderRadius:12,overflow:"hidden",marginBottom:18,background:"#030b1a",border:"1px solid #ff6b3522"}}>
+                <DepensesCanvas/>
+              </div>
+              <label style={S.label}>Qui dépense ?</label>
+              <select value={who} onChange={e=>setWho(e.target.value)} style={S.input}>
+                {profiles.map(p=><option key={p.id} value={p.id}>{p.name} — {fmt(p.aUEC)} aUEC</option>)}
+              </select>
+              <label style={S.label}>Description</label>
+              <input value={label} onChange={e=>setLabel(e.target.value)} style={S.input} placeholder="Ex: Carburant, Réparation, Armes…"/>
+              <label style={S.label}>Montant (aUEC)</label>
+              <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} style={S.input} placeholder="Ex: 25 000" min="1"/>
+              {num>0 && (
+                <div style={{background:"#07111f",border:"1px solid #ff6b3522",borderRadius:10,padding:"12px 16px",marginTop:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between"}}>
+                    <span style={{color:"#ff6b35",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:700}}>Débité de {whoP?.name}</span>
+                    <span style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>−{fmt(num)} aUEC</span>
+                  </div>
+                  {whoP && num>whoP.aUEC && <div style={{color:"#ff4466",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginTop:6}}>⛔ Solde insuffisant — {fmt(whoP.aUEC)} aUEC dispo</div>}
+                </div>
+              )}
+              {ok && (
+                <div style={{background:"#ff6b3511",border:"1px solid #ff6b3555",borderRadius:10,padding:"14px",marginTop:12,textAlign:"center",animation:"fadeIn .3s ease"}}>
+                  <div style={{fontSize:30,marginBottom:6}}>✅</div>
+                  <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700}}>Dépense enregistrée !</div>
+                </div>
+              )}
+              <button onClick={doDepense} disabled={!canSave||saving} style={{...S.primaryBtn,marginTop:14,background:canSave?"linear-gradient(135deg,#ff6b3522,#0a1628)":"#0a1628",borderColor:canSave?"#ff6b3566":"#1a2a44",color:canSave?"#ff6b35":"#4a5a6a",opacity:saving?.7:1}}>
+                {saving?"⏳ ENREGISTREMENT...":"💳 ENREGISTRER LA DÉPENSE"}
+              </button>
+            </>}
+
+            {tab==="historique" && <>
+              {history.length===0 ? (
+                <div style={{textAlign:"center",padding:"48px 20px"}}>
+                  <div style={{fontSize:40,marginBottom:12,opacity:.4}}>📜</div>
+                  <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:14,letterSpacing:1}}>Aucune dépense enregistrée</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                    <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1}}>{history.length} DÉPENSE{history.length>1?"S":""} · TOTAL {fmt(history.reduce((a,h)=>a+h.amount,0))} aUEC</div>
+                    <button onClick={()=>{setHistory([]);try{localStorage.removeItem("depenses_history")}catch{}}} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
+                  </div>
+                  {history.map(h=>(
+                    <div key={h.id} style={{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div>
+                        <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:600}}>{h.label}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center",marginTop:3}}>
+                          <span style={{color:h.whoColor,fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:700}}>{h.who}</span>
+                          <span style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{h.date}</span>
+                        </div>
+                      </div>
+                      <div style={{color:"#ff6b35",fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700,whiteSpace:"nowrap"}}>−{fmt(h.amount)}</div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </>}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
 // ─── VIREMENT TILE ────────────────────────────────────────────────────────────
 function VirementCanvas() {
   const ref = useRef(null);
@@ -2405,6 +2777,7 @@ export default function App() {
   const [editProfile,    setEditProfile]    = useState(null);
   const [hangarProfile,  setHangarProfile]  = useState(null);
   const [missionsModal,  setMissionsModal]  = useState(false);
+  const [gainsModal,     setGainsModal]     = useState(false);
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
@@ -2599,7 +2972,7 @@ export default function App() {
             </div>
             {isDesktop ? (
               <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
-                <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
+                <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                 <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                 <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
@@ -2607,11 +2980,12 @@ export default function App() {
                   <HexTile key={p.id} icon="🚀" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                 ))}
                 <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
               </div>
             ) : (
               <>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
-                  <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" isDesktop={isDesktop}/>
+                  <HexTile icon="💰" label="Total Gagné" value={fmt(totalEarned)} sub="aUEC" color="#ffcc00" onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                   <HexTile icon="📋" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <HexTile icon="🤝" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile icon="🎯" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
@@ -2621,6 +2995,9 @@ export default function App() {
                 </div>
                 <div style={{marginBottom:20}}>
                   <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                </div>
+                <div style={{marginBottom:20}}>
+                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
                 </div>
               </>
             )}
@@ -2643,6 +3020,10 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
+      {gainsModal&&(
+        <GainsHistoryModal missions={missions} profiles={profiles} totalEarned={totalEarned} onClose={()=>setGainsModal(false)}/>
+      )}
+
       {missionsModal&&(
         <Modal title="📋 TOUTES LES MISSIONS" onClose={()=>setMissionsModal(false)}>
           <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,marginBottom:12}}>+ Nouvelle mission</button>
