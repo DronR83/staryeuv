@@ -1903,7 +1903,7 @@ function FortuneAmount({ amount, isDesktop }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, isDesktop]);
   return (
-    <div ref={boxRef} style={{width:"100%",textAlign:isDesktop?"right":"left",overflow:"hidden"}}>
+    <div ref={boxRef} style={{width:"100%",textAlign:isDesktop?"right":"center",overflow:"hidden"}}>
       <span ref={numRef} style={{
         display:"inline-block", color:"#ffffff", fontFamily:"'Orbitron',sans-serif",
         fontWeight:800, fontSize:fs, whiteSpace:"nowrap", letterSpacing:0.5,
@@ -3686,9 +3686,9 @@ export default function App() {
               </div>
               {!isDesktop && <SyncBadge synced={loaded}/>}
             </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:isDesktop?"flex-end":"stretch",gap:3,minWidth:0,maxWidth:isDesktop?360:"100%",width:isDesktop?"auto":"100%"}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:isDesktop?"flex-end":"center",gap:3,minWidth:0,maxWidth:isDesktop?360:"100%",width:isDesktop?"auto":"100%"}}>
               {isDesktop && <SyncBadge synced={loaded}/>}
-              <div style={{fontSize:isDesktop?12:11,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textAlign:isDesktop?"right":"left"}}>FORTUNE TOTALE</div>
+              <div style={{fontSize:isDesktop?12:11,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textAlign:isDesktop?"right":"center"}}>FORTUNE TOTALE</div>
               <FortuneAmount amount={(p1?.aUEC||0)+(p2?.aUEC||0)} isDesktop={isDesktop}/>
             </div>
           </div>
