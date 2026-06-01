@@ -1338,6 +1338,264 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 }
 
 
+// ─── CHAT TILE + INTERFACE ────────────────────────────────────────────────────
+function ChatCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    let t = 0;
+    // bulles de chat flottantes
+    const bubbles = Array.from({length: 8}, (_, i) => ({
+      x: 0.1 + Math.random() * 0.8,
+      y: 1.1 + Math.random() * 0.5,
+      sp: 0.0008 + Math.random() * 0.0012,
+      w: 0.15 + Math.random() * 0.25,
+      h2: 0.06 + Math.random() * 0.08,
+      col: Math.random() > 0.5 ? "#00d4ff" : "#a78bfa",
+      ph: Math.random() * 6,
+    }));
+    function frame() {
+      t += 0.016; ctx.clearRect(0, 0, w, h);
+      // fond dégradé
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, "rgba(5,8,24,0)"); bg.addColorStop(1, "rgba(10,5,28,0)");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+      // bulles flottantes
+      bubbles.forEach(b => {
+        b.y -= b.sp;
+        if (b.y < -0.15) { b.y = 1.1 + Math.random() * 0.3; b.x = 0.05 + Math.random() * 0.9; }
+        const bx = b.x * w, by = b.y * h, bw = b.w * w, bh = b.h2 * h;
+        const al = 0.12 + 0.1 * Math.abs(Math.sin(t * 1.2 + b.ph));
+        ctx.strokeStyle = b.col + Math.round(al * 255).toString(16).padStart(2, "0");
+        ctx.fillStyle = b.col + Math.round(al * 60).toString(16).padStart(2, "0");
+        ctx.lineWidth = 1; ctx.shadowColor = b.col; ctx.shadowBlur = 4;
+        const r2 = bh * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(bx + r2, by); ctx.arcTo(bx + bw, by, bx + bw, by + bh, r2);
+        ctx.arcTo(bx + bw, by + bh, bx, by + bh, r2);
+        // petite pointe
+        ctx.arcTo(bx, by + bh, bx, by, r2);
+        ctx.arcTo(bx, by, bx + bw, by, r2);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+      // lignes réseau
+      for (let i = 0; i < 3; i++) {
+        const y2 = h * (0.25 + i * 0.25 + 0.03 * Math.sin(t * 0.4 + i));
+        const al2 = 0.04 + 0.02 * Math.sin(t * 0.3 + i * 2);
+        ctx.strokeStyle = `rgba(167,139,250,${al2})`; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(0, y2); ctx.lineTo(w, y2); ctx.stroke();
+      }
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} />;
+}
+
+function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
+  const [hov, setHov] = useState(false);
+  const hasNew = msgCount > 0;
+  const base = {
+    position: "relative", overflow: "hidden", cursor: "pointer",
+    background: "#07111fcc", borderRadius: 12, transition: "all .25s",
+    backdropFilter: "blur(8px)",
+    border: `1px solid ${hov ? "#a78bfa99" : "#a78bfa44"}`,
+    boxShadow: hov ? "0 0 32px #a78bfa88, 0 0 8px #a78bfa44 inset" : "0 0 12px #a78bfa33",
+    transform: hov ? "scale(1.03) translateY(-2px)" : "scale(1)",
+  };
+  return isDesktop ? (
+    <div style={{ ...base, padding: "20px 14px", textAlign: "center" }}
+      onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <div style={{ position: "absolute", inset: 0 }}><ChatCanvas /></div>
+      {hasNew && (
+        <div style={{ position: "absolute", top: 8, right: 8, background: "#a78bfa", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 11, fontWeight: 900, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 10px #a78bfa", animation: "badgePop 1.5s ease-in-out infinite", zIndex: 2 }}>{msgCount}</div>
+      )}
+      <div style={{ position: "relative", zIndex: 1, pointerEvents: "none" }}>
+        <div style={{ fontSize: 32, marginBottom: 8, filter: "drop-shadow(0 0 8px #a78bfa)" }}>💬</div>
+        <div style={{ color: "#a78bfa", fontSize: 15, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>CHAT</div>
+        <div style={{ color: "#e8f4ff", fontSize: 22, fontWeight: 700, fontFamily: "'Orbitron',sans-serif", margin: "5px 0" }}>MEMO</div>
+        <div style={{ color: "#8899bb", fontSize: 12, fontFamily: "'Rajdhani',sans-serif" }}>Notes internes</div>
+      </div>
+    </div>
+  ) : (
+    <div style={{ ...base, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}
+      onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <div style={{ position: "absolute", inset: 0 }}><ChatCanvas /></div>
+      {hasNew && (
+        <div style={{ position: "absolute", top: 8, right: 8, background: "#a78bfa", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 11, fontWeight: 900, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 10px #a78bfa", animation: "badgePop 1.5s ease-in-out infinite", zIndex: 2 }}>{msgCount}</div>
+      )}
+      <div style={{ position: "relative", zIndex: 1, fontSize: 36, filter: "drop-shadow(0 0 10px #a78bfa)", flexShrink: 0 }}>💬</div>
+      <div style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <div style={{ color: "#a78bfa", fontSize: 14, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 2 }}>CHAT · MEMO</div>
+        <div style={{ color: "#e8f4ff", fontSize: 22, fontWeight: 700, fontFamily: "'Orbitron',sans-serif" }}>Notes internes</div>
+        <div style={{ color: "#8899bb", fontSize: 12, fontFamily: "'Rajdhani',sans-serif" }}>Messages persistants</div>
+      </div>
+      <div style={{ position: "relative", zIndex: 1, color: "#a78bfa", fontSize: 22, opacity: 0.7 }}>→</div>
+    </div>
+  );
+}
+
+function ChatInterface({ profiles, onClose }) {
+  const [messages, setMessages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("chat_messages") || "[]"); } catch { return []; }
+  });
+  const [text, setText] = useState("");
+  const [author, setAuthor] = useState(profiles[0]?.id || "");
+  const endRef = useRef(null);
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Fond animé interface chat
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize() { canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    resize();
+    const w = () => canvas.offsetWidth, h = () => canvas.offsetHeight;
+    let t2 = 0;
+    const stars2 = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.5, ph: Math.random() * 6 }));
+    function frame2() {
+      t2 += 0.012; ctx.clearRect(0, 0, w(), h());
+      const bg2 = ctx.createLinearGradient(0, 0, 0, h());
+      bg2.addColorStop(0, "rgb(5,8,24)"); bg2.addColorStop(1, "rgb(8,4,20)");
+      ctx.fillStyle = bg2; ctx.fillRect(0, 0, w(), h());
+      // grille holographique
+      ctx.strokeStyle = "rgba(167,139,250,0.04)"; ctx.lineWidth = 0.8;
+      const gap2 = 32;
+      for (let x2 = 0; x2 < w() + gap2; x2 += gap2) { ctx.beginPath(); ctx.moveTo(x2, 0); ctx.lineTo(x2, h()); ctx.stroke(); }
+      for (let y2 = 0; y2 < h() + gap2; y2 += gap2) { ctx.beginPath(); ctx.moveTo(0, y2); ctx.lineTo(w(), y2); ctx.stroke(); }
+      // étoiles
+      stars2.forEach(s => {
+        const al3 = 0.2 + 0.3 * Math.abs(Math.sin(t2 * 0.8 + s.ph));
+        ctx.fillStyle = `rgba(200,220,255,${al3})`;
+        ctx.beginPath(); ctx.arc(s.x * w(), s.y * h(), s.r, 0, Math.PI * 2); ctx.fill();
+      });
+      rafRef.current = requestAnimationFrame(frame2);
+    }
+    frame2();
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  function send() {
+    if (!text.trim() || !author) return;
+    const p = profiles.find(p2 => p2.id === author);
+    const msg = { id: Date.now(), author: p?.name || author, color: p?.color || "#a78bfa", text: text.trim(), time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("fr-FR") };
+    const next = [...messages, msg];
+    setMessages(next);
+    try { localStorage.setItem("chat_messages", JSON.stringify(next)); } catch {}
+    setText("");
+  }
+
+  function del(id) {
+    const next = messages.filter(m => m.id !== id);
+    setMessages(next);
+    try { localStorage.setItem("chat_messages", JSON.stringify(next)); } catch {}
+  }
+
+  // grouper par date
+  const grouped = messages.reduce((acc, m) => {
+    const d = m.date || ""; if (!acc[d]) acc[d] = []; acc[d].push(m); return acc;
+  }, {});
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column" }}>
+      {/* Fond animé */}
+      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+      {/* Header */}
+      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.95)", borderBottom: "1px solid #a78bfa44", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #a78bfa)" }}>💬</div>
+          <div>
+            <div style={{ color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>CHAT · MEMO</div>
+            <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>{messages.length} MESSAGE{messages.length !== 1 ? "S" : ""}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); try { localStorage.removeItem("chat_messages"); } catch {} } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Vider</button>}
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
+        </div>
+      </div>
+      {/* Messages */}
+      <div style={{ position: "relative", zIndex: 1, flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>💬</div>
+            <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 16, letterSpacing: 1 }}>Aucun message — commencez à écrire !</div>
+          </div>
+        )}
+        {Object.entries(grouped).map(([date, msgs]) => (
+          <div key={date}>
+            <div style={{ textAlign: "center", margin: "16px 0 12px", display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,transparent,#a78bfa33)" }} />
+              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 2 }}>{date}</div>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,#a78bfa33,transparent)" }} />
+            </div>
+            {msgs.map((m, mi) => {
+              const isFirst = mi === 0 || msgs[mi - 1]?.author !== m.author;
+              return (
+                <div key={m.id} style={{ marginBottom: 6, animation: "fadeIn .3s ease" }}>
+                  {isFirst && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, marginTop: mi > 0 ? 12 : 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: `radial-gradient(circle,${m.color}44,#0a1628)`, border: `1.5px solid ${m.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, boxShadow: `0 0 8px ${m.color}66` }}>👤</div>
+                      <div style={{ color: m.color, fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>{m.author}</div>
+                      <div style={{ color: "#4a5a6a", fontFamily: "'Rajdhani',sans-serif", fontSize: 10 }}>{m.time}</div>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, paddingLeft: 36 }}>
+                    <div style={{ flex: 1, background: `linear-gradient(135deg,${m.color}0f,#0a162888)`, border: `1px solid ${m.color}33`, borderRadius: "0 12px 12px 12px", padding: "8px 12px", backdropFilter: "blur(4px)" }}>
+                      <div style={{ color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word" }}>{m.text}</div>
+                    </div>
+                    <button onClick={() => del(m.id)} style={{ background: "transparent", border: "none", color: "#4a5a6a", cursor: "pointer", fontSize: 13, padding: "4px", opacity: 0.5, flexShrink: 0 }} title="Supprimer">🗑</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+      {/* Input */}
+      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.97)", borderTop: "1px solid #a78bfa33", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <select value={author} onChange={e => setAuthor(e.target.value)} style={{ background: "#0a1628", border: "1px solid #a78bfa44", borderRadius: 8, color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 12, padding: "8px 12px", cursor: "pointer", flex: "0 0 auto" }}>
+            {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, alignSelf: "center", flexShrink: 0 }}>écrit en tant que :</div>
+          <div style={{ color: profiles.find(p => p.id === author)?.color || "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700, alignSelf: "center" }}>{profiles.find(p => p.id === author)?.name}</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            style={{ flex: 1, background: "#0a1628", border: "1px solid #a78bfa44", borderRadius: 10, padding: "11px 14px", color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, outline: "none" }}
+            placeholder="Écrire un message… (Entrée pour envoyer)"
+          />
+          <button onClick={send} disabled={!text.trim()} style={{ background: text.trim() ? "linear-gradient(135deg,#a78bfa33,#0a1628)" : "#0a1628", border: `1px solid ${text.trim() ? "#a78bfa" : "#1a2a44"}`, color: text.trim() ? "#a78bfa" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: text.trim() ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: text.trim() ? "0 0 12px #a78bfa44" : "none" }}>
+            ENVOYER
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── DÉPENSES TILE ────────────────────────────────────────────────────────────
 function DepensesCanvas() {
   const ref = useRef(null);
@@ -3509,6 +3767,8 @@ export default function App() {
   const [missionsModal,  setMissionsModal]  = useState(false);
   const [gainsModal,     setGainsModal]     = useState(false);
   const [calcModal,      setCalcModal]      = useState(false);
+  const [chatOpen,       setChatOpen]       = useState(false);
+  const chatMsgCount = (() => { try { return JSON.parse(localStorage.getItem("chat_messages") || "[]").length; } catch { return 0; } })();
   const [addMissionModal,setAddMissionModal]= useState(false);
   const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
 
@@ -3596,6 +3856,10 @@ export default function App() {
         @keyframes fortuneBreath{
           0%,100%{ text-shadow:0 0 1px #ffcc00, 0 0 4px #ffcc0099; }
           50%{ text-shadow:0 0 2px #ffcc00, 0 0 6px #ffcc00, 0 0 10px #ffaa0088; }
+        }
+        @keyframes badgePop{
+          0%,100%{ transform:scale(1); box-shadow:0 0 8px #a78bfa; }
+          50%{ transform:scale(1.18); box-shadow:0 0 16px #a78bfacc; }
         }
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -3726,6 +3990,7 @@ export default function App() {
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
+                  <ChatTile profiles={profiles} msgCount={chatMsgCount} onClick={()=>setChatOpen(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="share" label="Partagées" value={missions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
@@ -3739,6 +4004,9 @@ export default function App() {
             ) : (
               <>
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
+                <div style={{marginBottom:12}}>
+                  <ChatTile profiles={profiles} msgCount={chatMsgCount} onClick={()=>setChatOpen(true)} isDesktop={isDesktop}/>
+                </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
                   <HexTile iconKind="pad" label="Missions" value={missions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
@@ -3775,6 +4043,8 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
+      {chatOpen && <ChatInterface profiles={profiles} onClose={()=>setChatOpen(false)}/>}
+
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
           <QuickCalc embedded/>
