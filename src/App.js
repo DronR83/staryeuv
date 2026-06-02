@@ -2315,7 +2315,7 @@ function FortuneAmount({ amount, isDesktop }) {
       if (!box || !num) return;
       const avail = box.clientWidth;
       if (avail <= 0) return;
-      const maxF = isDesktop ? Math.round(window.innerWidth / 40) : 30;
+      const maxF = isDesktop ? 44 : 30;
       const minF = isDesktop ? 14 : 14;
       num.style.fontSize = maxF + "px";
       const wAt = num.scrollWidth;
@@ -2357,7 +2357,7 @@ function MoneyBox({ amount, color, isDesktop }) {
       if (!box || !num) return;
       const avail = box.clientWidth - 8;
       if (avail <= 0) return;
-      const maxF = isDesktop ? Math.round(window.innerWidth / 30) : 32;
+      const maxF = isDesktop ? 52 : 32;
       const minF = isDesktop ? 15 : 12;
       // mesure à taille de référence puis met à l'échelle
       num.style.fontSize = maxF + "px";
@@ -2645,10 +2645,10 @@ function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, 
       style={{ ...S.hexTile, padding:isDesktop?"22px 14px":"16px 10px", borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
       {iconKind
         ? <div style={{marginBottom:isDesktop?8:6}}><TileIcon kind={iconKind} color={color} size={isDesktop?56:46}/></div>
-        : <div style={{fontSize:isDesktop?52:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
-      <div style={{color,fontSize:isDesktop?20:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?34:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
-      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?17:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
+        : <div style={{fontSize:isDesktop?40:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
+      <div style={{color,fontSize:isDesktop?16:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?28:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
+      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?14:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
 }
@@ -2666,7 +2666,7 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
           onClick={onHangar}
         />
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
-          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?28:18,fontWeight:700}}>{profile.name}</div>
+          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?24:18,fontWeight:700}}>{profile.name}</div>
           <div style={{color:"#8899bb",fontSize:isDesktop?15:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
@@ -2694,11 +2694,11 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
         <div style={{flex:1}}>
-          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?20:14,fontWeight:600}}>{mission.name}</div>
-          <div style={{color:"#8899bb",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
+          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?18:14,fontWeight:600}}>{mission.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?13:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
           {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
@@ -4290,6 +4290,10 @@ export default function App() {
           .top-nav{display:none!important;}
           .desktop-shift{margin-left:260px;}
           .desktop-main-content{max-width:100%!important; padding:40px 56px 100px!important;}
+          /* Scaling desktop global */
+          @media(min-width:900px){
+            .desktop-main-content { font-size: clamp(15px, 1vw, 20px); }
+          }
           .desktop-header-inner{padding:20px 40px!important;}
           .desktop-header-title{font-size:32px!important; letter-spacing:4px!important;}
           .desktop-header-sub{font-size:13px!important; letter-spacing:4px!important;}
@@ -4351,7 +4355,6 @@ export default function App() {
         <div style={{...S.content,
           padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px",
           animation: slideHome ? "slideToHome 0.38s cubic-bezier(.4,0,.2,1) forwards" : undefined,
-          zoom: isDesktop ? Math.min(2.2, Math.max(1.2, window.innerWidth / 900)) : 1,
         }} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
@@ -4410,7 +4413,7 @@ export default function App() {
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
               <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:isDesktop?16:14,padding:isDesktop?"14px 48px":"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
             </div>
-            <div style={{...S.sectionTitle,fontSize:isDesktop?20:13}}>📋 MISSIONS RÉCENTES</div>
+            <div style={{...S.sectionTitle,fontSize:isDesktop?17:13}}>📋 MISSIONS RÉCENTES</div>
             {pendingMissions.length>0&&<div style={{background:"#ffcc0011",border:"1px solid #ffcc0044",borderRadius:10,padding:"10px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:18}}>⏳</span>
               <div style={{flex:1}}>
@@ -4542,7 +4545,7 @@ const S={
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:8,alignItems:"stretch"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"8px 10px",overflow:"hidden",display:"flex",flexDirection:"column",justifyContent:"flex-start",gap:3},
-  statLabel:{color:"#8899bb",fontSize:15,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
+  statLabel:{color:"#8899bb",fontSize:13,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
   calcBox:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:12,padding:18,backdropFilter:"blur(8px)"},
@@ -4551,10 +4554,10 @@ const S={
   progressFill:{height:"100%",borderRadius:4,transition:"width .4s ease"},
   resultBox:{background:"#0a1628",border:"1px solid #00d4ff44",borderRadius:10,padding:"10px 14px"},
   shipChip:{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#8899bb",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",transition:"all .2s"},
-  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
-  label:{display:"block",color:"#8899bb",fontSize:16,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
-  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"12px 16px",color:"#e8f4ff",fontSize:17,outline:"none",marginBottom:4},
-  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"13px 24px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
+  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
+  label:{display:"block",color:"#8899bb",fontSize:14,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
+  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"10px 14px",color:"#e8f4ff",fontSize:15,outline:"none",marginBottom:4},
+  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
   dangerBtn:{background:"transparent",border:"1px solid #ff446644",color:"#ff4466",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Rajdhani',sans-serif"},
   ghostBtn:{background:"transparent",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"9px 18px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13},
   editBtn:{background:"transparent",border:"1px solid",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
@@ -4566,6 +4569,6 @@ const S={
   modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
   modalBox:{background:"#07111f",border:"1px solid #00d4ff44",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:720,maxHeight:"92vh",overflow:"hidden",display:"flex",flexDirection:"column"},
   modalHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 22px",borderBottom:"1px solid #1a2a44"},
-  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:"#00d4ff",fontWeight:700},
+  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:16,color:"#00d4ff",fontWeight:700},
   modalBody:{padding:"18px 22px",overflowY:"auto",flex:1},
 };
