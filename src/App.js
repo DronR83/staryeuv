@@ -1452,47 +1452,66 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
-  const swipeY    = useRef(null);
-  const swipeX    = useRef(null);
-  const [dragX, setDragX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const scrollRef = useRef(null);
-  const inputRef  = useRef(null);
+  const swipeY      = useRef(null);
+  const swipeX      = useRef(null);
+  const panelRef    = useRef(null);
+  const backdropRef = useRef(null);
+  const hintRef     = useRef(null);
+  const scrollRef   = useRef(null);
+  const inputRef    = useRef(null);
+  const W           = useRef(typeof window !== "undefined" ? window.innerWidth : 390);
 
   // Scroll auto
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  function onTouchStart2(e){
-    swipeX.current = e.touches[0].clientX;
-    swipeY.current = e.touches[0].clientY;
-    setIsDragging(false);
-    setDragX(0);
-  }
-  function onTouchMove2(e){
-    if(swipeX.current===null) return;
-    const dx = e.touches[0].clientX - swipeX.current;
-    const dy = Math.abs(e.touches[0].clientY - swipeY.current);
-    if(dx > 8 && dy < dx * 0.7){
-      setIsDragging(true);
-      setDragX(Math.max(0, dx));
-      e.stopPropagation();
+  function setDrag(dx) {
+    const p = Math.min(1, dx / (W.current * 0.7));
+    if (panelRef.current) {
+      panelRef.current.style.transform = `translateX(${dx}px)`;
+      panelRef.current.style.boxShadow = dx > 0 ? `-6px 0 32px rgba(0,0,0,${0.4 - p * 0.3})` : "none";
+    }
+    if (backdropRef.current) {
+      backdropRef.current.style.opacity = String(p);
+      backdropRef.current.style.transform = `scale(${0.94 + p * 0.06})`;
+    }
+    if (hintRef.current) {
+      hintRef.current.style.opacity = String(Math.max(0, p - 0.3) / 0.7);
     }
   }
-  function onTouchEnd2(e){
-    if(swipeX.current===null) return;
+
+  function onTouchStart2(e) {
+    swipeX.current = e.touches[0].clientX;
+    swipeY.current = e.touches[0].clientY;
+    if (panelRef.current) panelRef.current.style.transition = "none";
+    if (backdropRef.current) backdropRef.current.style.transition = "none";
+  }
+
+  function onTouchMove2(e) {
+    if (swipeX.current === null) return;
+    const dx = e.touches[0].clientX - swipeX.current;
+    const dy = Math.abs(e.touches[0].clientY - swipeY.current);
+    if (dx > 4 && dy < dx * 0.8) {
+      e.stopPropagation();
+      setDrag(Math.max(0, dx));
+    }
+  }
+
+  function onTouchEnd2(e) {
+    if (swipeX.current === null) return;
     const dx = e.changedTouches[0].clientX - swipeX.current;
     const dy = Math.abs(e.changedTouches[0].clientY - swipeY.current);
     swipeX.current = null; swipeY.current = null;
-    setIsDragging(false);
-    if(dx > 80 && dy < dx * 0.7){
-      // Lancer l'animation de fermeture
-      setClosing(true);
-      setDragX(window.innerWidth);
-      setTimeout(() => onClose(), 320);
+    const spring = "transform .38s cubic-bezier(.32,1,.4,1), box-shadow .38s ease, opacity .38s ease";
+    if (dx > 80 && dy < dx * 0.8) {
+      // Fermeture : lancer vers la droite
+      if (panelRef.current) { panelRef.current.style.transition = "transform .28s cubic-bezier(.4,0,.8,.5)"; panelRef.current.style.transform = `translateX(${W.current}px)`; }
+      if (backdropRef.current) { backdropRef.current.style.transition = "opacity .28s ease, transform .28s ease"; backdropRef.current.style.opacity = "0"; }
+      setTimeout(() => onClose(), 280);
     } else {
-      // Rebond — retour position initiale
-      setDragX(0);
+      // Rebond spring
+      if (panelRef.current) { panelRef.current.style.transition = spring; panelRef.current.style.transform = "translateX(0px)"; panelRef.current.style.boxShadow = "none"; }
+      if (backdropRef.current) { backdropRef.current.style.transition = spring; backdropRef.current.style.opacity = "0"; backdropRef.current.style.transform = "scale(0.94)"; }
+      if (hintRef.current) hintRef.current.style.opacity = "0";
     }
   }
 
@@ -1564,8 +1583,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const grouped=messages.reduce((acc,m)=>{ const d=m.date||""; if(!acc[d])acc[d]=[]; acc[d].push(m); return acc; },{});
   const authorP=profiles.find(p=>p.id===author);
 
-  const progress = Math.min(1, dragX / (window.innerWidth * 0.7)); // 0→1
-
   return (
     <div
       onTouchStart={onTouchStart2}
@@ -1573,29 +1590,22 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
       onTouchEnd={onTouchEnd2}
       style={{ position:"fixed", inset:0, zIndex:999 }}>
 
-      {/* Backdrop — menu visible derrière, s'éclaircit au swipe */}
-      <div style={{
-        position:"absolute", inset:0,
-        background:`rgba(3,7,16,${1 - progress * 0.7})`,
-        transform:`scale(${0.94 + progress * 0.06})`,
-        transition: isDragging ? "none" : "all .32s cubic-bezier(.32,1,.4,1)",
-        pointerEvents:"none",
+      {/* Backdrop derrière — révèle le menu */}
+      <div ref={backdropRef} style={{
+        position:"absolute", inset:0, opacity:0,
+        background:"linear-gradient(135deg,#040816,#07041a)",
+        transform:"scale(0.94)", pointerEvents:"none",
+        willChange:"transform,opacity",
       }}>
-        <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#040816,#07041a)",opacity:1-progress}}/>
-        {/* Halo "menu derrière" */}
-        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",opacity:progress,transition:isDragging?"none":"opacity .3s"}}>
-          <div style={{color:"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:16,letterSpacing:4,textShadow:"0 0 20px #a78bfa",opacity:Math.max(0,progress-0.3)/0.7}}>← HOME</div>
+        <div ref={hintRef} style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",opacity:0}}>
+          <div style={{color:"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:16,letterSpacing:4,textShadow:"0 0 20px #a78bfa"}}>← HOME</div>
         </div>
       </div>
 
-      {/* Panel chat qui suit le doigt */}
-      <div style={{
+      {/* Panel chat */}
+      <div ref={panelRef} style={{
         position:"absolute", inset:0, display:"flex", flexDirection:"column",
-        background:"#040816",
-        transform: `translateX(${dragX}px)`,
-        transition: isDragging ? "none" : closing ? "transform .32s cubic-bezier(.4,0,.8,.5)" : "transform .38s cubic-bezier(.32,1,.4,1)",
-        boxShadow: dragX > 0 ? `-8px 0 40px rgba(0,0,0,${0.5 - progress * 0.3})` : "none",
-        willChange:"transform",
+        background:"#040816", willChange:"transform",
       }}>
       {/* Fond canvas */}
       <canvas ref={bgRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
