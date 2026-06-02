@@ -3797,11 +3797,12 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
                 const t=settings.ntfyTopic.trim();
                 fetch(`https://ntfy.sh/${encodeURIComponent(t)}`,{
                   method:"POST",
+                  mode:"no-cors",
                   headers:{"Title":"🔔 Test Star YeUv","Tags":"white_check_mark","Content-Type":"text/plain"},
                   body:"Test notifications OK !"
                 })
-                .then(r=>{ if(r.ok) alert("✅ Notification envoyée ! Vérifie ntfy sur ton téléphone."); else alert("⚠️ Erreur "+r.status+" — vérifie ton topic."); })
-                .catch(()=>alert("❌ Impossible de contacter ntfy.sh — vérifie ta connexion."));
+                .then(()=>alert("✅ Requête envoyée ! Vérifie ntfy sur ton téléphone dans 5 secondes."))
+                .catch(()=>alert("❌ Erreur réseau — vérifie ta connexion internet."));
               }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
             </div>
           : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun topic configuré</div>
@@ -3892,6 +3893,7 @@ export default function App() {
         if (topic) {
           fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
             method: "POST",
+            mode: "no-cors",
             headers: {
               "Title": `💬 Star YeUv — ${newest.author}`,
               "Tags": "speech_balloon",
