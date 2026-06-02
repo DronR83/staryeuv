@@ -1338,82 +1338,81 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 }
 
 
-// ─── HOOK SWIPE CLOSE (ultra-fluide, pointer events + RAF) ───────────────────
-function useSwipeClose(onClose, options = {}) {
-  const { threshold = 80 } = options;
+// ─── HOOK SWIPE CLOSE (touch events + RAF, compatible iOS Safari) ──────────────
+function useSwipeClose(onClose) {
   const panelRef    = useRef(null);
   const backdropRef = useRef(null);
   const hintRef     = useRef(null);
   const startX      = useRef(null);
   const startY      = useRef(null);
+  const curX        = useRef(0);
+  const locked      = useRef(false);
   const rafId       = useRef(null);
-  const locked      = useRef(false); // bloque scroll vertical si swipe horizontal détecté
-  const W           = useRef(typeof window !== "undefined" ? window.innerWidth : 390);
 
   function applyDrag(dx) {
-    const p = Math.min(1, dx / (W.current * 0.65));
+    const p = Math.min(1, dx / (window.innerWidth * 0.65));
     if (panelRef.current)    panelRef.current.style.transform    = `translateX(${dx}px)`;
-    if (backdropRef.current) { backdropRef.current.style.opacity = String(p * 0.9); backdropRef.current.style.transform = `scale(${0.94 + p * 0.06})`; }
-    if (hintRef.current)     hintRef.current.style.opacity = String(Math.max(0, (p - 0.25) / 0.75));
+    if (backdropRef.current) {
+      backdropRef.current.style.opacity   = String(p * 0.9);
+      backdropRef.current.style.transform = `scale(${0.94 + p * 0.06})`;
+    }
+    if (hintRef.current) hintRef.current.style.opacity = String(Math.max(0, (p - 0.25) / 0.75));
   }
 
-  function spring(to, cb) {
-    if (panelRef.current)    panelRef.current.style.transition    = "transform .35s cubic-bezier(.32,1,.4,1)";
-    if (backdropRef.current) backdropRef.current.style.transition = "opacity .35s ease, transform .35s cubic-bezier(.32,1,.4,1)";
-    if (hintRef.current)     hintRef.current.style.transition     = "opacity .35s ease";
-    applyDrag(to);
-    if (cb) setTimeout(cb, 350);
+  function springBack() {
+    const t = "transform .38s cubic-bezier(.32,1,.4,1)";
+    if (panelRef.current)    { panelRef.current.style.transition    = t; panelRef.current.style.transform    = "translateX(0px)"; }
+    if (backdropRef.current) { backdropRef.current.style.transition = t+", opacity .38s ease"; backdropRef.current.style.opacity = "0"; backdropRef.current.style.transform = "scale(0.94)"; }
+    if (hintRef.current)     { hintRef.current.style.transition = "opacity .38s ease"; hintRef.current.style.opacity = "0"; }
   }
 
   function dismiss() {
-    if (panelRef.current)    panelRef.current.style.transition    = "transform .28s cubic-bezier(.55,0,1,.45)";
-    if (backdropRef.current) backdropRef.current.style.transition = "opacity .28s ease, transform .28s ease";
-    if (hintRef.current)     hintRef.current.style.transition     = "opacity .28s ease";
-    applyDrag(W.current);
+    const t = "transform .28s cubic-bezier(.55,0,1,.45)";
+    if (panelRef.current)    { panelRef.current.style.transition    = t; panelRef.current.style.transform    = `translateX(${window.innerWidth}px)`; }
+    if (backdropRef.current) { backdropRef.current.style.transition = "opacity .28s ease"; backdropRef.current.style.opacity = "0"; }
     setTimeout(onClose, 280);
   }
 
-  function onPD(e) {
-    W.current = window.innerWidth;
-    startX.current = e.clientX;
-    startY.current = e.clientY;
-    locked.current = false;
-    if (panelRef.current)    { panelRef.current.style.transition    = "none"; panelRef.current.setPointerCapture(e.pointerId); }
-    if (backdropRef.current) backdropRef.current.style.transition = "none";
-    if (hintRef.current)     hintRef.current.style.transition     = "none";
-  }
+  const handlers = {
+    onTouchStart(e) {
+      startX.current  = e.touches[0].clientX;
+      startY.current  = e.touches[0].clientY;
+      curX.current    = 0;
+      locked.current  = false;
+      if (panelRef.current)    panelRef.current.style.transition    = "none";
+      if (backdropRef.current) backdropRef.current.style.transition = "none";
+      if (hintRef.current)     hintRef.current.style.transition     = "none";
+    },
+    onTouchMove(e) {
+      if (startX.current === null) return;
+      const dx = e.touches[0].clientX - startX.current;
+      const dy = Math.abs(e.touches[0].clientY - startY.current);
+      // Ignore si scroll vertical dominant
+      if (!locked.current) {
+        if (dy > 12 && dy > Math.abs(dx)) { startX.current = null; return; }
+        if (Math.abs(dx) > 8) locked.current = true;
+      }
+      if (!locked.current || dx <= 0) return;
+      curX.current = dx;
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => applyDrag(Math.max(0, dx)));
+    },
+    onTouchEnd(e) {
+      if (startX.current === null) return;
+      const dx = e.changedTouches[0].clientX - startX.current;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY.current);
+      startX.current = null; locked.current = false;
+      cancelAnimationFrame(rafId.current);
+      if (dx > 80 && dy < dx * 0.9) { dismiss(); }
+      else { springBack(); }
+    },
+    onTouchCancel() {
+      startX.current = null; locked.current = false;
+      cancelAnimationFrame(rafId.current);
+      springBack();
+    },
+  };
 
-  function onPM(e) {
-    if (startX.current === null) return;
-    const dx = e.clientX - startX.current;
-    const dy = Math.abs(e.clientY - startY.current);
-    if (!locked.current) {
-      if (dy > 10 && dy > Math.abs(dx)) { startX.current = null; return; } // scroll vertical → abandon
-      if (Math.abs(dx) > 6) locked.current = true;
-    }
-    if (!locked.current) return;
-    const safe = Math.max(0, dx);
-    cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => applyDrag(safe));
-  }
-
-  function onPU(e) {
-    if (startX.current === null) return;
-    const dx = e.clientX - startX.current;
-    const dy = Math.abs(e.clientY - startY.current);
-    startX.current = null; locked.current = false;
-    cancelAnimationFrame(rafId.current);
-    if (dx > threshold && dy < dx * 0.8) { dismiss(); }
-    else { spring(0); }
-  }
-
-  function onPC() { // pointer cancel
-    if (startX.current === null) return;
-    startX.current = null; locked.current = false;
-    spring(0);
-  }
-
-  const handlers = { onPointerDown: onPD, onPointerMove: onPM, onPointerUp: onPU, onPointerCancel: onPC };
   return { panelRef, backdropRef, hintRef, handlers };
 }
 
@@ -1535,7 +1534,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const inputRef  = useRef(null);
 
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
-  const { onPointerDown:sPD,onPointerMove:sPM,onPointerUp:sPU,onPointerCancel:sPC } = swipeHandlers;
+  const { onTouchStart:sTS,onTouchMove:sTM,onTouchEnd:sTE,onTouchCancel:sTC } = swipeHandlers;
 
   // Scroll auto
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -1609,7 +1608,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const authorP=profiles.find(p=>p.id===author);
 
   return (
-    <div onPointerDown={sPD} onPointerMove={sPM} onPointerUp={sPU} onPointerCancel={sPC} style={{ position:"fixed", inset:0, zIndex:999 }}>
+    <div onTouchStart={sTS} onTouchMove={sTM} onTouchEnd={sTE} onTouchCancel={sTC} style={{ position:"fixed", inset:0, zIndex:999 }}>
 
       {/* Backdrop derrière — révèle le menu */}
       <div ref={backdropRef} style={{
@@ -3619,7 +3618,7 @@ function HangarBackground({ color }) {
 function HangarPage({ profile, ships, setShips, onClose }) {
   const [editShip, setEditShip] = useState(null);
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
-  const { onPointerDown:hPD,onPointerMove:hPM,onPointerUp:hPU,onPointerCancel:hPC } = swipeHandlers;
+  const { onTouchStart:hTS,onTouchMove:hTM,onTouchEnd:hTE,onTouchCancel:hTC } = swipeHandlers;
 
   const shipColors = ["#00d4ff","#00ff9d","#ff6b35","#bf5fff","#ffcc00","#ff4466","#00ffcc","#ff88aa"];
 
@@ -3632,7 +3631,7 @@ function HangarPage({ profile, ships, setShips, onClose }) {
         </div>
       </div>
       {/* Panel hangar */}
-      <div ref={panelRef} onPointerDown={hPD} onPointerMove={hPM} onPointerUp={hPU} onPointerCancel={hPC} style={{
+      <div ref={panelRef} onTouchStart={hTS} onTouchMove={hTM} onTouchEnd={hTE} onTouchCancel={hTC} style={{
         position:"absolute", inset:0,
         background:"rgba(0,0,0,0.95)",
         display:"flex", flexDirection:"column",
