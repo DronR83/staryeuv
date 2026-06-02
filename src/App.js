@@ -1818,7 +1818,7 @@ function DepensesCanvas() {
   return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
 }
 
-function DepensesTile({ profiles, setProfiles, isDesktop }) {
+function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHistory }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("depense");
   const [who, setWho] = useState("");
@@ -1827,9 +1827,6 @@ function DepensesTile({ profiles, setProfiles, isDesktop }) {
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
   const [hov, setHov] = useState(false);
-  const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("depenses_history") || "[]"); } catch { return []; }
-  });
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -1883,7 +1880,7 @@ function DepensesTile({ profiles, setProfiles, isDesktop }) {
     setTimeout(()=>{
       setProfiles(prev=>prev.map(p=>p.id===who?{...p,aUEC:p.aUEC-num}:p));
       const entry={ id:Date.now(), date:new Date().toLocaleString("fr-FR"), who:whoP.name, whoColor:whoP.color||"#ff6b35", label:label.trim(), amount:num };
-      setHistory(prev=>{ const next=[entry,...prev].slice(0,100); try{localStorage.setItem("depenses_history",JSON.stringify(next));}catch{} return next; });
+      setHistory([entry,...history].slice(0,100));
       setOk(true); setSaving(false); setAmount(""); setLabel("");
       setTimeout(()=>{ setOk(false); setOpen(false); },2800);
     },800);
@@ -1969,7 +1966,7 @@ function DepensesTile({ profiles, setProfiles, isDesktop }) {
                 <>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                     <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1}}>{history.length} DÉPENSE{history.length>1?"S":""} · TOTAL {fmt(history.reduce((a,h)=>a+h.amount,0))} aUEC</div>
-                    <button onClick={()=>{setHistory([]);try{localStorage.removeItem("depenses_history")}catch{}}} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
+                    <button onClick={()=>setHistory([])} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
                   </div>
                   {history.map(h=>(
                     <div key={h.id} style={{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:10,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -2492,7 +2489,7 @@ function ShipTile({ shipName, color, isDesktop, onClick }) {
       {/* Overlay lumineux au hover */}
       {hov && <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%, ${col}22 0%, transparent 70%)`,pointerEvents:"none",transition:"opacity .25s"}}/>}
       <div style={{position:"relative",width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?12:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Vaisseau</div>
+        <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:11,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Vaisseau</div>
         {onClick && <div style={{color:col,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?11:10,letterSpacing:1,opacity: hov ? 1 : 0,transition:"opacity .2s",display:"flex",alignItems:"center",gap:4}}>
           <span style={{fontSize:12}}>🚀</span> HANGAR
         </div>}
@@ -2500,7 +2497,7 @@ function ShipTile({ shipName, color, isDesktop, onClick }) {
       <div style={{position:"relative",transform: hov ? "scale(1.08)" : "scale(1)", transition:"transform .3s cubic-bezier(.4,0,.2,1)"}}>
         <ShipBadge3D shipName={shipName} color={col} size={isDesktop?58:46}/>
       </div>
-      <div style={{position:"relative",color:"#eafdff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:14,fontWeight:700,lineHeight:1.1,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow: hov ? `0 0 18px ${col}, 0 0 8px ${col}` : `0 0 10px ${col}66`,transition:"text-shadow .25s"}}>{shipName}</div>
+      <div style={{position:"relative",color:"#eafdff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:14,fontWeight:700,lineHeight:1.1,textAlign:"center",wordBreak:"break-word",width:"100%",letterSpacing:0.5,textShadow: hov ? `0 0 18px ${col}, 0 0 8px ${col}` : `0 0 10px ${col}66`,transition:"text-shadow .25s"}}>{shipName}</div>
     </div>
   );
 }
@@ -2560,7 +2557,7 @@ function MoneyBanner({ totalEarned, profiles, onClick, isDesktop }) {
       <div style={{position:"relative",display:"flex",alignItems:"center",gap:isDesktop?20:14,minWidth:0}}>
         <div style={{flexShrink:0}}><TileIcon kind="gold" color="#ffcc00" size={isDesktop?60:48}/></div>
         <div style={{minWidth:0}}>
-          <div style={{color:"#ffcc00",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?14:12,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Total Gagné</div>
+          <div style={{color:"#ffcc00",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?18:12,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Total Gagné</div>
           <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?34:26,fontWeight:900,textShadow:"0 0 18px #ffcc0088",letterSpacing:isDesktop?0:-0.5,whiteSpace:"nowrap"}}>{fmt(totalEarned)} <span style={{fontSize:isDesktop?18:14,color:"#ffcc00aa"}}>aUEC</span></div>
         </div>
       </div>
@@ -2648,10 +2645,10 @@ function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, 
       style={{ ...S.hexTile, padding:isDesktop?"22px 14px":"16px 10px", borderColor:hov?color:color+"66", boxShadow:hov?`0 0 32px ${color}88,0 0 8px ${color}44 inset`:`0 0 12px ${color}33`, transform:hov?"scale(1.04) translateY(-2px)":"scale(1)", background:hov?"#0a1628dd":"#07111fcc", cursor:onClick?"pointer":"default", animation:pulse?"pulse 2s ease-in-out infinite":"none" }}>
       {iconKind
         ? <div style={{marginBottom:isDesktop?8:6}}><TileIcon kind={iconKind} color={color} size={isDesktop?56:46}/></div>
-        : <div style={{fontSize:isDesktop?42:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
-      <div style={{color,fontSize:isDesktop?15:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?26:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
-      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?13:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
+        : <div style={{fontSize:isDesktop?52:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
+      <div style={{color,fontSize:isDesktop?20:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?34:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
+      {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?17:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
 }
@@ -2669,8 +2666,8 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
           onClick={onHangar}
         />
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
-          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?22:18,fontWeight:700}}>{profile.name}</div>
-          <div style={{color:"#8899bb",fontSize:isDesktop?13:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
+          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?28:18,fontWeight:700}}>{profile.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?15:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
       </div>
@@ -2697,12 +2694,12 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
         <div style={{flex:1}}>
-          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?16:14,fontWeight:600}}>{mission.name}</div>
-          <div style={{color:"#8899bb",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
+          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?20:14,fontWeight:600}}>{mission.name}</div>
+          <div style={{color:"#8899bb",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?15:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
-          {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?12:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
+          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?20:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+          {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
       {exp&&(
@@ -2725,7 +2722,7 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
           {mission.note&&<div style={{color:"#8899bb",fontSize:isDesktop?13:11,marginBottom:10,fontFamily:"'Rajdhani',sans-serif"}}>📝 {mission.note}</div>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {isPending && onValidate && (
-              <button onClick={e=>{e.stopPropagation();onValidate(mission.id);}} style={{background:"linear-gradient(135deg,#00ff9d22,#0a1628)",border:"1px solid #00ff9d88",color:"#00ff9d",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?13:11,fontWeight:700,boxShadow:"0 0 10px #00ff9d33",flex:1}}>
+              <button onClick={e=>{e.stopPropagation();onValidate(mission.id);}} style={{background:"linear-gradient(135deg,#00ff9d22,#0a1628)",border:"1px solid #00ff9d88",color:"#00ff9d",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:11,fontWeight:700,boxShadow:"0 0 10px #00ff9d33",flex:1}}>
                 ✅ VALIDER + DISTRIBUER {fmt(mission.amount)} aUEC
               </button>
             )}
@@ -2891,7 +2888,7 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
                   return (
                     <div key={p.id} style={{background:"#07111f",borderRadius:8,padding:10,border:`1px solid ${p.color}44`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                        <div style={{color:p.color,fontSize:12,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{p.name}</div>
+                        <div style={{color:p.color,fontSize:16,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{p.name}</div>
                         <div style={{color:p.color,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pPct}%</div>
                       </div>
                       <div style={{...S.progressBar,height:7,borderRadius:4,position:"relative",overflow:"hidden",marginBottom:5}}>
@@ -3998,6 +3995,7 @@ export default function App() {
   const [fleets,    setFleets,    fleetLoaded, saveFleets    ] = useFirestore("fleets",     DEFAULT_FLEETS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
+  const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const prevChatLen = useRef(0);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -4333,7 +4331,7 @@ export default function App() {
             </div>
             <div style={{display:"flex",flexDirection:"column",alignItems:isDesktop?"flex-end":"center",gap:3,minWidth:0,maxWidth:isDesktop?360:"100%",width:isDesktop?"auto":"100%"}}>
               {isDesktop && <SyncBadge synced={loaded}/>}
-              <div style={{fontSize:isDesktop?12:11,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textAlign:isDesktop?"right":"center"}}>FORTUNE TOTALE</div>
+              <div style={{fontSize:isDesktop?16:11,color:"#8899bb",letterSpacing:2,fontFamily:"'Rajdhani',sans-serif",textAlign:isDesktop?"right":"center"}}>FORTUNE TOTALE</div>
               <FortuneAmount amount={(p1?.aUEC||0)+(p2?.aUEC||0)} isDesktop={isDesktop}/>
             </div>
           </div>
@@ -4369,7 +4367,7 @@ export default function App() {
             {isDesktop ? (
               <>
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
-                <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(160px,1fr))`,gap:14,marginBottom:20}}>
+                <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(200px,1fr))`,gap:16,marginBottom:20}}>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
                   <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
                   <HexTile iconKind="pad" label="Missions" value={validatedMissions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
@@ -4379,7 +4377,7 @@ export default function App() {
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                   ))}
                   <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
-                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
                 </div>
               </>
             ) : (
@@ -4401,14 +4399,14 @@ export default function App() {
                   <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
                 </div>
                 <div style={{marginBottom:20}}>
-                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
                 </div>
               </>
             )}
             <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
               <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,width:"auto",fontSize:isDesktop?16:14,padding:isDesktop?"14px 48px":"12px 32px",letterSpacing:2}}>➕ NOUVELLE MISSION</button>
             </div>
-            <div style={{...S.sectionTitle,fontSize:isDesktop?15:13}}>📋 MISSIONS RÉCENTES</div>
+            <div style={{...S.sectionTitle,fontSize:isDesktop?20:13}}>📋 MISSIONS RÉCENTES</div>
             {pendingMissions.length>0&&<div style={{background:"#ffcc0011",border:"1px solid #ffcc0044",borderRadius:10,padding:"10px 16px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:18}}>⏳</span>
               <div style={{flex:1}}>
@@ -4417,7 +4415,7 @@ export default function App() {
               </div>
             </div>}
             {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} isDesktop={isDesktop}/>)}
-            {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?15:13}}>Aucune mission — commencez à jouer !</div>}
+            {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?20:13}}>Aucune mission — commencez à jouer !</div>}
             {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
         )}
@@ -4540,7 +4538,7 @@ const S={
   profileCard:{background:"#07111fcc",border:"1px solid",borderRadius:14,padding:14,transition:"all .3s",backdropFilter:"blur(12px)",minWidth:0,overflow:"hidden"},
   statRow:{display:"flex",gap:8,alignItems:"stretch"},
   statItem:{flex:1,minWidth:0,background:"#0a1628",borderRadius:8,padding:"8px 10px",overflow:"hidden",display:"flex",flexDirection:"column",justifyContent:"flex-start",gap:3},
-  statLabel:{color:"#8899bb",fontSize:12,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
+  statLabel:{color:"#8899bb",fontSize:15,letterSpacing:2,fontFamily:"'Rajdhani',sans-serif"},
   hexTile:{background:"#07111fcc",border:"1px solid",borderRadius:12,padding:"14px 10px",textAlign:"center",transition:"all .25s",backdropFilter:"blur(8px)"},
   missionItem:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:10,padding:14,marginBottom:8,cursor:"pointer",backdropFilter:"blur(8px)"},
   calcBox:{background:"#07111fcc",border:"1px solid #1a2a4488",borderRadius:12,padding:18,backdropFilter:"blur(8px)"},
@@ -4549,10 +4547,10 @@ const S={
   progressFill:{height:"100%",borderRadius:4,transition:"width .4s ease"},
   resultBox:{background:"#0a1628",border:"1px solid #00d4ff44",borderRadius:10,padding:"10px 14px"},
   shipChip:{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#8899bb",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",transition:"all .2s"},
-  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:15,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
-  label:{display:"block",color:"#8899bb",fontSize:13,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
-  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"10px 14px",color:"#e8f4ff",fontSize:15,outline:"none",marginBottom:4},
-  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
+  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:18,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
+  label:{display:"block",color:"#8899bb",fontSize:16,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
+  input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"12px 16px",color:"#e8f4ff",fontSize:17,outline:"none",marginBottom:4},
+  primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"13px 24px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
   dangerBtn:{background:"transparent",border:"1px solid #ff446644",color:"#ff4466",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontSize:12,fontFamily:"'Rajdhani',sans-serif"},
   ghostBtn:{background:"transparent",border:"1px solid #1a2a44",color:"#8899bb",borderRadius:8,padding:"9px 18px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13},
   editBtn:{background:"transparent",border:"1px solid",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
@@ -4564,6 +4562,6 @@ const S={
   modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
   modalBox:{background:"#07111f",border:"1px solid #00d4ff44",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflow:"hidden",display:"flex",flexDirection:"column"},
   modalHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 22px",borderBottom:"1px solid #1a2a44"},
-  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:15,color:"#00d4ff",fontWeight:700},
+  modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:"#00d4ff",fontWeight:700},
   modalBody:{padding:"18px 22px",overflowY:"auto",flex:1},
 };
