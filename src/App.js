@@ -1512,18 +1512,40 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose })
       {/* Fond animé */}
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
       {/* Header */}
-      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.95)", borderBottom: "1px solid #a78bfa44", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #a78bfa)" }}>💬</div>
-          <div>
-            <div style={{ color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>CHAT · MEMO</div>
-            <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>{messages.length} MESSAGE{messages.length !== 1 ? "S" : ""}</div>
+      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.95)", borderBottom: "1px solid #a78bfa44", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
+        {/* Ligne 1 : titre + fermer */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ fontSize: 24, filter: "drop-shadow(0 0 8px #a78bfa)" }}>💬</div>
+            <div>
+              <div style={{ color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 2 }}>CHAT · MEMO</div>
+              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 1 }}>{messages.length} MESSAGE{messages.length !== 1 ? "S" : ""}</div>
+            </div>
           </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>✕</button>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Vider</button>}
-          {onMarkRead && <button onClick={onMarkRead} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>✓ Marquer lu</button>}
-          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
+        {/* Ligne 2 : actions */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Bouton notification — toujours visible et bien lisible */}
+          {typeof Notification !== "undefined" && Notification.permission === "default" && (
+            <button onClick={() => Notification.requestPermission()} style={{ flex: 1, minWidth: 0, background: "linear-gradient(135deg,#a78bfa33,#0a1628)", border: "1px solid #a78bfa88", color: "#a78bfa", borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, boxShadow: "0 0 10px #a78bfa44", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              🔔 ACTIVER LES NOTIFICATIONS
+            </button>
+          )}
+          {typeof Notification !== "undefined" && Notification.permission === "granted" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#00ff9d11", border: "1px solid #00ff9d44", borderRadius: 8, padding: "7px 12px" }}>
+              <span style={{ fontSize: 14 }}>🔔</span>
+              <span style={{ color: "#00ff9d", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, fontWeight: 700 }}>NOTIFICATIONS ACTIVES</span>
+            </div>
+          )}
+          {typeof Notification !== "undefined" && Notification.permission === "denied" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#ff446611", border: "1px solid #ff446644", borderRadius: 8, padding: "7px 12px" }}>
+              <span style={{ fontSize: 14 }}>🔕</span>
+              <span style={{ color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 11 }}>Bloquées — autoriser dans les réglages navigateur</span>
+            </div>
+          )}
+          {onMarkRead && <button onClick={onMarkRead} style={{ background: "transparent", border: "1px solid #a78bfa44", color: "#a78bfa", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>✓ Marquer lu</button>}
+          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑</button>}
         </div>
       </div>
       {/* Messages */}
@@ -3801,6 +3823,41 @@ export default function App() {
   const [fleets,    setFleets,    fleetLoaded, saveFleets    ] = useFirestore("fleets",     DEFAULT_FLEETS);
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
+  const prevChatLen = useRef(0);
+
+  // Notification navigateur quand nouveau message reçu
+  useEffect(() => {
+    if (chatMsgs.length > prevChatLen.current && prevChatLen.current > 0) {
+      const newest = chatMsgs[chatMsgs.length - 1];
+      if (newest && !chatOpen) {
+        // Son de notification
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+        } catch {}
+        // Notification popup
+        if (Notification.permission === "granted") {
+          try {
+            new Notification("💬 Star YeUv — Nouveau message", {
+              body: `${newest.author} : ${newest.text.slice(0, 80)}`,
+              icon: "/favicon.ico",
+              badge: "/favicon.ico",
+              vibrate: [200, 100, 200],
+            });
+          } catch {}
+        }
+      }
+    }
+    prevChatLen.current = chatMsgs.length;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatMsgs.length]);
 
   // Dernier lu par appareil (localStorage)
   const [lastRead, setLastRead] = useState(() => { try { return parseInt(localStorage.getItem("chat_lastRead") || "0"); } catch { return 0; } });
