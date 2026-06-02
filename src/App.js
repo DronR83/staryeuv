@@ -1455,6 +1455,9 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const rafRef    = useRef(null);
   const swipeY    = useRef(null);
   const swipeX    = useRef(null);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [closing, setClosing] = useState(false);
   const scrollRef = useRef(null);
   const inputRef  = useRef(null);
 
@@ -1464,18 +1467,37 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   // Scroll auto
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Swipe gauche → droite pour fermer
   function onTouchStart2(e){
     swipeX.current = e.touches[0].clientX;
     swipeY.current = e.touches[0].clientY;
+    setIsDragging(false);
+    setDragX(0);
+  }
+  function onTouchMove2(e){
+    if(swipeX.current===null) return;
+    const dx = e.touches[0].clientX - swipeX.current;
+    const dy = Math.abs(e.touches[0].clientY - swipeY.current);
+    if(dx > 8 && dy < dx * 0.7){
+      setIsDragging(true);
+      setDragX(Math.max(0, dx));
+      e.stopPropagation();
+    }
   }
   function onTouchEnd2(e){
     if(swipeX.current===null) return;
     const dx = e.changedTouches[0].clientX - swipeX.current;
     const dy = Math.abs(e.changedTouches[0].clientY - swipeY.current);
     swipeX.current = null; swipeY.current = null;
-    // Ferme si swipe droite > 80px ET plus horizontal que vertical
-    if(dx > 80 && dy < dx * 0.6) onClose();
+    setIsDragging(false);
+    if(dx > 80 && dy < dx * 0.7){
+      // Lancer l'animation de fermeture
+      setClosing(true);
+      setDragX(window.innerWidth);
+      setTimeout(() => onClose(), 320);
+    } else {
+      // Rebond — retour position initiale
+      setDragX(0);
+    }
   }
 
   // Fond animé particules
@@ -1546,13 +1568,37 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const grouped=messages.reduce((acc,m)=>{ const d=m.date||""; if(!acc[d])acc[d]=[]; acc[d].push(m); return acc; },{});
   const authorP=profiles.find(p=>p.id===author);
 
+  const progress = Math.min(1, dragX / (window.innerWidth * 0.7)); // 0→1
+
   return (
     <div
-      onTouchStart={onTouchStart2} onTouchEnd={onTouchEnd2}
-      style={{
-        position:"fixed",inset:0,zIndex:999,display:"flex",flexDirection:"column",
-        transform: slideIn?"translateY(0)":"translateY(100%)",
-        transition:"transform .38s cubic-bezier(.32,1,.4,1)",
+      onTouchStart={onTouchStart2}
+      onTouchMove={onTouchMove2}
+      onTouchEnd={onTouchEnd2}
+      style={{ position:"fixed", inset:0, zIndex:999 }}>
+
+      {/* Backdrop — menu visible derrière, s'éclaircit au swipe */}
+      <div style={{
+        position:"absolute", inset:0,
+        background:`rgba(3,7,16,${1 - progress * 0.7})`,
+        transform:`scale(${0.94 + progress * 0.06})`,
+        transition: isDragging ? "none" : "all .32s cubic-bezier(.32,1,.4,1)",
+        pointerEvents:"none",
+      }}>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#040816,#07041a)",opacity:1-progress}}/>
+        {/* Halo "menu derrière" */}
+        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",opacity:progress,transition:isDragging?"none":"opacity .3s"}}>
+          <div style={{color:"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:16,letterSpacing:4,textShadow:"0 0 20px #a78bfa",opacity:Math.max(0,progress-0.3)/0.7}}>← HOME</div>
+        </div>
+      </div>
+
+      {/* Panel chat qui suit le doigt */}
+      <div style={{
+        position:"absolute", inset:0, display:"flex", flexDirection:"column",
+        transform: `translateX(${dragX}px)`,
+        transition: isDragging ? "none" : closing ? "transform .32s cubic-bezier(.4,0,.8,.5)" : "transform .38s cubic-bezier(.32,1,.4,1)",
+        boxShadow: dragX > 0 ? `-8px 0 40px rgba(0,0,0,${0.5 - progress * 0.3})` : "none",
+        willChange:"transform",
       }}>
       {/* Fond canvas */}
       <canvas ref={bgRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
@@ -1689,7 +1735,8 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
             }}
           >{sending?"…":"↑"}</button>
         </div>
-      </div>
+      </div>{/* fin zone saisie */}
+      </div>{/* fin panel chat */}
     </div>
   );
 }
