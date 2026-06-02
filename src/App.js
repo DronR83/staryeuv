@@ -8,7 +8,7 @@ const DEFAULT_PROFILES = [
 ];
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
-const DEFAULT_SETTINGS   = { appIcon: null };
+const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "" };
 // Flotte par joueur : { p1: [...], p2: [...] }
 const DEFAULT_FLEETS = {
   p1: [
@@ -3766,6 +3766,7 @@ function ConcessionTab({ profiles, fleets, setFleets }) {
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
+  const [ntfyInput,setNtfyInput]=useState(settings.ntfyTopic||"");
   return (
     <div>
       <div style={S.sectionTitle}>⚙️ PERSONNALISATION</div>
@@ -3775,6 +3776,28 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         <button onClick={()=>setSettings(p=>({...p,appIcon:urlIcon}))} style={{...S.primaryBtn,width:"auto",marginTop:0}}>Appliquer</button>
       </div>
       {settings.appIcon&&<img src={settings.appIcon} alt="icon" style={{height:60,borderRadius:8,border:"1px solid #00d4ff44",marginBottom:16}}/>}
+
+      {/* Section ntfy */}
+      <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #a78bfa44",borderRadius:10,padding:16}}>
+        <div style={{...S.sectionTitle,color:"#a78bfa"}}>🔔 NOTIFICATIONS (ntfy)</div>
+        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,lineHeight:1.6,marginBottom:12}}>
+          <div>1. Installe l'app <strong style={{color:"#a78bfa"}}>ntfy</strong> sur ton téléphone (App Store / Play Store)</div>
+          <div>2. Dans ntfy → <strong style={{color:"#e8f4ff"}}>+ Abonnement</strong> → entre un topic unique</div>
+          <div>3. Colle ce même topic ici et clique Appliquer</div>
+          <div style={{color:"#4a5a6a",fontSize:11,marginTop:4}}>Ex: staryeuv-drone-leuxys-2024 (garde-le secret)</div>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <input value={ntfyInput} onChange={e=>setNtfyInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="ex: staryeuv-mongroupe"/>
+          <button onClick={()=>setSettings(p=>({...p,ntfyTopic:ntfyInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#a78bfa22",borderColor:"#a78bfa",color:"#a78bfa"}}>Appliquer</button>
+        </div>
+        {settings.ntfyTopic
+          ? <div style={{display:"flex",alignItems:"center",gap:8,color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>
+              <span>✅</span> Topic actif : <strong style={{color:"#a78bfa"}}>{settings.ntfyTopic}</strong>
+              <button onClick={()=>{ const t=settings.ntfyTopic; fetch(`https://ntfy.sh/${t}`,{method:"POST",headers:{"Title":"🔔 Test Star YeUv","Tags":"white_check_mark"},body:"Notifications actives !"}).catch(()=>{}); }} style={{background:"transparent",border:"1px solid #00ff9d44",color:"#00ff9d",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginLeft:4}}>Tester</button>
+            </div>
+          : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun topic configuré</div>
+        }
+      </div>
 
       <div style={{marginTop:24}}>
         <div style={S.sectionTitle}>👤 AVATARS PROFILS</div>
@@ -3825,7 +3848,7 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const prevChatLen = useRef(0);
 
-  // Notification navigateur quand nouveau message reçu
+  // Notification navigateur + ntfy quand nouveau message reçu
   useEffect(() => {
     if (chatMsgs.length > prevChatLen.current && prevChatLen.current > 0) {
       const newest = chatMsgs[chatMsgs.length - 1];
@@ -3842,7 +3865,7 @@ export default function App() {
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
           osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
         } catch {}
-        // Notification popup
+        // Notification navigateur
         if (Notification.permission === "granted") {
           try {
             new Notification("💬 Star YeUv — Nouveau message", {
@@ -3852,6 +3875,20 @@ export default function App() {
               vibrate: [200, 100, 200],
             });
           } catch {}
+        }
+        // Notification ntfy
+        const topic = settings?.ntfyTopic?.trim();
+        if (topic) {
+          fetch(`https://ntfy.sh/${topic}`, {
+            method: "POST",
+            headers: {
+              "Title": `💬 Star YeUv — ${newest.author}`,
+              "Tags": "speech_balloon",
+              "Priority": "default",
+              "Content-Type": "text/plain",
+            },
+            body: newest.text.slice(0, 200),
+          }).catch(() => {});
         }
       }
     }
