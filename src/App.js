@@ -1261,7 +1261,7 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 
   return (
     <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
-      <div style={{...S.modalBox,maxWidth:560}}>
+      <div style={{...S.modalBox,maxWidth:780}}>
         <div style={S.modalHeader}>
           <div style={S.modalTitle}>💰 HISTORIQUE DES GAINS</div>
           <button onClick={onClose} style={S.closeBtn}>✕</button>
@@ -1913,7 +1913,7 @@ function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHisto
 
       {open && (
         <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setOpen(false)}}>
-          <div style={{...S.modalBox,maxWidth:480}}>
+          <div style={{...S.modalBox,maxWidth:680}}>
             <div style={S.modalHeader}>
               <div style={S.modalTitle}>💳 DÉPENSES DIVERSES</div>
               <button onClick={()=>setOpen(false)} style={S.closeBtn}>✕</button>
@@ -2159,7 +2159,7 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
 
       {open && (
         <div style={S.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setOpen(false)}}>
-          <div style={{...S.modalBox,maxWidth:480}}>
+          <div style={{...S.modalBox,maxWidth:680}}>
             <div style={S.modalHeader}>
               <div style={S.modalTitle}>💸 VIREMENT aUEC</div>
               <button onClick={()=>setOpen(false)} style={S.closeBtn}>✕</button>
@@ -2315,7 +2315,7 @@ function FortuneAmount({ amount, isDesktop }) {
       if (!box || !num) return;
       const avail = box.clientWidth;
       if (avail <= 0) return;
-      const maxF = isDesktop ? 32 : 30;
+      const maxF = isDesktop ? Math.round(window.innerWidth / 40) : 30;
       const minF = isDesktop ? 14 : 14;
       num.style.fontSize = maxF + "px";
       const wAt = num.scrollWidth;
@@ -2357,7 +2357,7 @@ function MoneyBox({ amount, color, isDesktop }) {
       if (!box || !num) return;
       const avail = box.clientWidth - 8;
       if (avail <= 0) return;
-      const maxF = isDesktop ? 40 : 32;
+      const maxF = isDesktop ? Math.round(window.innerWidth / 30) : 32;
       const minF = isDesktop ? 15 : 12;
       // mesure à taille de référence puis met à l'échelle
       num.style.fontSize = maxF + "px";
@@ -4348,7 +4348,11 @@ export default function App() {
         </div>
 
         {/* Contenu avec swipe */}
-        <div style={{...S.content, padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px", animation: slideHome ? "slideToHome 0.38s cubic-bezier(.4,0,.2,1) forwards" : undefined}} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
+        <div style={{...S.content,
+          padding: isDesktop ? "40px 56px 100px" : "24px 20px 100px",
+          animation: slideHome ? "slideToHome 0.38s cubic-bezier(.4,0,.2,1) forwards" : undefined,
+          zoom: isDesktop ? Math.min(2.2, Math.max(1.2, window.innerWidth / 900)) : 1,
+        }} className="desktop-main-content" onTouchStart={onSwipeStart} onTouchEnd={onSwipeEnd}>
 
         {/* DASHBOARD */}
         {tab==="dashboard"&&(
@@ -4560,7 +4564,7 @@ const S={
   badgeCommon:{background:"#ffcc0022",border:"1px solid #ffcc0055",color:"#ffcc00",borderRadius:10,padding:"2px 9px",fontSize:10,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
   badgePersonal:{background:"transparent",border:"1px solid",borderRadius:10,padding:"2px 9px",fontSize:10,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif"},
   modalOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
-  modalBox:{background:"#07111f",border:"1px solid #00d4ff44",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:520,maxHeight:"90vh",overflow:"hidden",display:"flex",flexDirection:"column"},
+  modalBox:{background:"#07111f",border:"1px solid #00d4ff44",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:720,maxHeight:"92vh",overflow:"hidden",display:"flex",flexDirection:"column"},
   modalHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 22px",borderBottom:"1px solid #1a2a44"},
   modalTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:"#00d4ff",fontWeight:700},
   modalBody:{padding:"18px 22px",overflowY:"auto",flex:1},
