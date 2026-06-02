@@ -3790,10 +3790,19 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
           <input value={ntfyInput} onChange={e=>setNtfyInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="ex: staryeuv-mongroupe"/>
           <button onClick={()=>setSettings(p=>({...p,ntfyTopic:ntfyInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#a78bfa22",borderColor:"#a78bfa",color:"#a78bfa"}}>Appliquer</button>
         </div>
-        {settings.ntfyTopic
-          ? <div style={{display:"flex",alignItems:"center",gap:8,color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>
-              <span>✅</span> Topic actif : <strong style={{color:"#a78bfa"}}>{settings.ntfyTopic}</strong>
-              <button onClick={()=>{ const t=settings.ntfyTopic; fetch(`https://ntfy.sh/${t}`,{method:"POST",headers:{"Title":"🔔 Test Star YeUv","Tags":"white_check_mark"},body:"Notifications actives !"}).catch(()=>{}); }} style={{background:"transparent",border:"1px solid #00ff9d44",color:"#00ff9d",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginLeft:4}}>Tester</button>
+          {settings.ntfyTopic
+          ? <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
+              <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Topic actif : <strong style={{color:"#a78bfa"}}>{settings.ntfyTopic}</strong></span>
+              <button onClick={()=>{
+                const t=settings.ntfyTopic.trim();
+                fetch(`https://ntfy.sh/${encodeURIComponent(t)}`,{
+                  method:"POST",
+                  headers:{"Title":"🔔 Test Star YeUv","Tags":"white_check_mark","Content-Type":"text/plain"},
+                  body:"Test notifications OK !"
+                })
+                .then(r=>{ if(r.ok) alert("✅ Notification envoyée ! Vérifie ntfy sur ton téléphone."); else alert("⚠️ Erreur "+r.status+" — vérifie ton topic."); })
+                .catch(()=>alert("❌ Impossible de contacter ntfy.sh — vérifie ta connexion."));
+              }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
             </div>
           : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun topic configuré</div>
         }
@@ -3847,6 +3856,8 @@ export default function App() {
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const prevChatLen = useRef(0);
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
 
   // Notification navigateur + ntfy quand nouveau message reçu
   useEffect(() => {
@@ -3877,9 +3888,9 @@ export default function App() {
           } catch {}
         }
         // Notification ntfy
-        const topic = settings?.ntfyTopic?.trim();
+        const topic = settingsRef.current?.ntfyTopic?.trim();
         if (topic) {
-          fetch(`https://ntfy.sh/${topic}`, {
+          fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
             method: "POST",
             headers: {
               "Title": `💬 Star YeUv — ${newest.author}`,
