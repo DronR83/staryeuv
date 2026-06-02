@@ -3795,12 +3795,8 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
               <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Topic actif : <strong style={{color:"#a78bfa"}}>{settings.ntfyTopic}</strong></span>
               <button onClick={()=>{
                 const t=settings.ntfyTopic.trim();
-                fetch(`https://ntfy.sh/${encodeURIComponent(t)}`,{
-                  method:"POST",
-                  mode:"no-cors",
-                  headers:{"Title":"🔔 Test Star YeUv","Tags":"white_check_mark","Content-Type":"text/plain"},
-                  body:"Test notifications OK !"
-                })
+                const testUrl = `https://ntfy.sh/${encodeURIComponent(t)}?title=${encodeURIComponent("🔔 Test Star YeUv")}&tags=white_check_mark`;
+                fetch(testUrl,{method:"POST",mode:"no-cors",body:"Notifications actives ✅"})
                 .then(()=>alert("✅ Requête envoyée ! Vérifie ntfy sur ton téléphone dans 5 secondes."))
                 .catch(()=>alert("❌ Erreur réseau — vérifie ta connexion internet."));
               }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
@@ -3891,15 +3887,10 @@ export default function App() {
         // Notification ntfy
         const topic = settingsRef.current?.ntfyTopic?.trim();
         if (topic) {
-          fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+          const ntfyUrl = `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+newest.author)}&tags=speech_balloon&priority=default`;
+          fetch(ntfyUrl, {
             method: "POST",
             mode: "no-cors",
-            headers: {
-              "Title": `💬 Star YeUv — ${newest.author}`,
-              "Tags": "speech_balloon",
-              "Priority": "default",
-              "Content-Type": "text/plain",
-            },
             body: newest.text.slice(0, 200),
           }).catch(() => {});
         }
