@@ -1454,6 +1454,8 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
   const swipeY    = useRef(null);
+  const swipeX    = useRef(null);
+  const scrollRef = useRef(null);
   const inputRef  = useRef(null);
 
   // Entrée animée
@@ -1462,13 +1464,18 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   // Scroll auto
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Swipe bas pour fermer
-  function onTouchStart2(e){ swipeY.current = e.touches[0].clientY; }
+  // Swipe gauche → droite pour fermer
+  function onTouchStart2(e){
+    swipeX.current = e.touches[0].clientX;
+    swipeY.current = e.touches[0].clientY;
+  }
   function onTouchEnd2(e){
-    if(swipeY.current===null) return;
-    const dy = e.changedTouches[0].clientY - swipeY.current;
-    swipeY.current = null;
-    if(dy > 90) onClose();
+    if(swipeX.current===null) return;
+    const dx = e.changedTouches[0].clientX - swipeX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeY.current);
+    swipeX.current = null; swipeY.current = null;
+    // Ferme si swipe droite > 80px ET plus horizontal que vertical
+    if(dx > 80 && dy < dx * 0.6) onClose();
   }
 
   // Fond animé particules
@@ -1562,7 +1569,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
             <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#a78bfa33,#3b1f8a44)",border:"1px solid #a78bfa55",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:"0 0 12px #a78bfa44"}}>💬</div>
             <div>
               <div style={{color:"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,letterSpacing:2,textShadow:"0 0 10px #a78bfa66"}}>CHAT · MEMO</div>
-              <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>{messages.length} message{messages.length!==1?"s":""} · swipe ↓ pour fermer</div>
+              <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>{messages.length} message{messages.length!==1?"s":""} · swipe → pour fermer</div>
             </div>
           </div>
           <button onClick={onClose} style={{width:32,height:32,borderRadius:"50%",background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",color:"#a78bfa",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
@@ -1584,7 +1591,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
       </div>
 
       {/* Zone messages */}
-      <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"16px 14px",display:"flex",flexDirection:"column",gap:2}}>
+      <div ref={scrollRef} style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"16px 14px",display:"flex",flexDirection:"column",gap:2}}>
         {messages.length===0&&(
           <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,gap:12}}>
             <div style={{fontSize:52,opacity:0.2,filter:"drop-shadow(0 0 12px #a78bfa)"}}>💬</div>
