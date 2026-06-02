@@ -1445,7 +1445,7 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic }) {
   const [text, setText] = useState("");
   const [author, setAuthor] = useState(profiles[0]?.id || "");
   const endRef = useRef(null);
@@ -1495,6 +1495,12 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose })
     const next = [...messages, msg];
     setMessages(next);
     setText("");
+    // Notification ntfy envoyée par l'expéditeur → reçue par l'autre même app fermée
+    const topic = ntfyTopic?.trim();
+    if (topic) {
+      const ntfyUrl = `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+msg.author)}&tags=speech_balloon&priority=default`;
+      fetch(ntfyUrl, { method: "POST", mode: "no-cors", body: msg.text.slice(0, 200) }).catch(() => {});
+    }
   }
 
   function del(id) {
@@ -4285,7 +4291,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
