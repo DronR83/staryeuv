@@ -1340,7 +1340,7 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 
 // ─── HOOK SWIPE CLOSE (ultra-fluide, pointer events + RAF) ───────────────────
 function useSwipeClose(onClose, options = {}) {
-  const { threshold = 80, axis = "x" } = options;
+  const { threshold = 80 } = options;
   const panelRef    = useRef(null);
   const backdropRef = useRef(null);
   const hintRef     = useRef(null);
