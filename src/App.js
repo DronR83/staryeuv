@@ -1446,173 +1446,241 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
 }
 
 function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic }) {
-  const [text, setText] = useState("");
+  const [text, setText]   = useState("");
   const [author, setAuthor] = useState(profiles[0]?.id || "");
-  const endRef = useRef(null);
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
+  const [sending, setSending] = useState(false);
+  const [slideIn, setSlideIn] = useState(false);
+  const endRef    = useRef(null);
+  const bgRef     = useRef(null);
+  const rafRef    = useRef(null);
+  const swipeY    = useRef(null);
+  const inputRef  = useRef(null);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Entrée animée
+  useEffect(() => { setTimeout(() => setSlideIn(true), 10); }, []);
 
-  // Fond animé interface chat
+  // Scroll auto
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Swipe bas pour fermer
+  function onTouchStart2(e){ swipeY.current = e.touches[0].clientY; }
+  function onTouchEnd2(e){
+    if(swipeY.current===null) return;
+    const dy = e.changedTouches[0].clientY - swipeY.current;
+    swipeY.current = null;
+    if(dy > 90) onClose();
+  }
+
+  // Fond animé particules
   useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
+    const canvas = bgRef.current; if(!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
-    function resize() { canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    function resize(){ canvas.width=canvas.offsetWidth*dpr; canvas.height=canvas.offsetHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
     resize();
-    const w = () => canvas.offsetWidth, h = () => canvas.offsetHeight;
-    let t2 = 0;
-    const stars2 = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.5, ph: Math.random() * 6 }));
-    function frame2() {
-      t2 += 0.012; ctx.clearRect(0, 0, w(), h());
-      const bg2 = ctx.createLinearGradient(0, 0, 0, h());
-      bg2.addColorStop(0, "rgb(5,8,24)"); bg2.addColorStop(1, "rgb(8,4,20)");
-      ctx.fillStyle = bg2; ctx.fillRect(0, 0, w(), h());
-      // grille holographique
-      ctx.strokeStyle = "rgba(167,139,250,0.04)"; ctx.lineWidth = 0.8;
-      const gap2 = 32;
-      for (let x2 = 0; x2 < w() + gap2; x2 += gap2) { ctx.beginPath(); ctx.moveTo(x2, 0); ctx.lineTo(x2, h()); ctx.stroke(); }
-      for (let y2 = 0; y2 < h() + gap2; y2 += gap2) { ctx.beginPath(); ctx.moveTo(0, y2); ctx.lineTo(w(), y2); ctx.stroke(); }
-      // étoiles
-      stars2.forEach(s => {
-        const al3 = 0.2 + 0.3 * Math.abs(Math.sin(t2 * 0.8 + s.ph));
-        ctx.fillStyle = `rgba(200,220,255,${al3})`;
-        ctx.beginPath(); ctx.arc(s.x * w(), s.y * h(), s.r, 0, Math.PI * 2); ctx.fill();
+    const W=()=>canvas.offsetWidth, H=()=>canvas.offsetHeight;
+    let t=0;
+    const stars=Array.from({length:55},()=>({ x:Math.random(), y:Math.random(), r:0.4+Math.random()*1.4, ph:Math.random()*6, sp:0.0003+Math.random()*0.0008 }));
+    const lines=Array.from({length:5},()=>({ y:Math.random(), sp:0.00015+Math.random()*0.0003, ph:Math.random()*6 }));
+    function frame(){
+      t+=0.012;
+      const w=W(),h=H();
+      ctx.clearRect(0,0,w,h);
+      // fond dégradé profond
+      const bg=ctx.createLinearGradient(0,0,0,h);
+      bg.addColorStop(0,"#040816"); bg.addColorStop(1,"#07041a");
+      ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+      // grille fine
+      ctx.strokeStyle="rgba(167,139,250,0.04)"; ctx.lineWidth=0.7;
+      for(let x=0;x<w;x+=36){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke(); }
+      for(let y=0;y<h;y+=36){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke(); }
+      // lignes lumineuses horizontales
+      lines.forEach(l=>{ l.y+=l.sp; if(l.y>1)l.y=0;
+        const al=0.06+0.04*Math.abs(Math.sin(t*0.4+l.ph));
+        const gy=ctx.createLinearGradient(0,0,w,0);
+        gy.addColorStop(0,"transparent"); gy.addColorStop(0.3,`rgba(167,139,250,${al})`);
+        gy.addColorStop(0.7,`rgba(100,180,255,${al})`); gy.addColorStop(1,"transparent");
+        ctx.strokeStyle=gy; ctx.lineWidth=0.8;
+        ctx.beginPath();ctx.moveTo(0,l.y*h);ctx.lineTo(w,l.y*h);ctx.stroke();
       });
-      rafRef.current = requestAnimationFrame(frame2);
+      // étoiles
+      stars.forEach(s=>{ s.x-=s.sp; if(s.x<0){s.x=1;s.y=Math.random();}
+        const al=0.15+0.2*Math.abs(Math.sin(t*0.6+s.ph));
+        ctx.fillStyle=`rgba(220,230,255,${al})`;
+        ctx.beginPath();ctx.arc(s.x*w,s.y*h,s.r,0,Math.PI*2);ctx.fill();
+      });
+      // halo central gauche (aurora)
+      const au=ctx.createRadialGradient(w*0.1,h*0.5,0,w*0.1,h*0.5,w*0.6);
+      au.addColorStop(0,`rgba(167,139,250,${0.04+0.02*Math.sin(t*0.2)})`);
+      au.addColorStop(1,"transparent");
+      ctx.fillStyle=au; ctx.fillRect(0,0,w,h);
+      rafRef.current=requestAnimationFrame(frame);
     }
-    frame2();
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+    frame();
+    return ()=>cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   function send() {
-    if (!text.trim() || !author) return;
-    const p = profiles.find(p2 => p2.id === author);
-    const msg = { id: Date.now(), author: p?.name || author, color: p?.color || "#a78bfa", text: text.trim(), time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("fr-FR") };
-    const next = [...messages, msg];
+    if(!text.trim()||!author) return;
+    setSending(true);
+    const p=profiles.find(p2=>p2.id===author);
+    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:text.trim(),time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
+    const next=[...messages,msg];
     setMessages(next);
     setText("");
-    // Notification ntfy envoyée par l'expéditeur → reçue par l'autre même app fermée
-    const topic = ntfyTopic?.trim();
-    if (topic) {
-      const ntfyUrl = `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+msg.author)}&tags=speech_balloon&priority=default`;
-      fetch(ntfyUrl, { method: "POST", mode: "no-cors", body: msg.text.slice(0, 200) }).catch(() => {});
-    }
+    setSending(false);
+    const topic=ntfyTopic?.trim();
+    if(topic){ fetch(`https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+msg.author)}&tags=speech_balloon&priority=default`,{method:"POST",mode:"no-cors",body:msg.text.slice(0,200)}).catch(()=>{}); }
   }
 
-  function del(id) {
-    const next = messages.filter(m => m.id !== id);
-    setMessages(next);
-  }
+  function del(id){ setMessages(messages.filter(m=>m.id!==id)); }
 
-  // grouper par date
-  const grouped = messages.reduce((acc, m) => {
-    const d = m.date || ""; if (!acc[d]) acc[d] = []; acc[d].push(m); return acc;
-  }, {});
+  const grouped=messages.reduce((acc,m)=>{ const d=m.date||""; if(!acc[d])acc[d]=[]; acc[d].push(m); return acc; },{});
+  const authorP=profiles.find(p=>p.id===author);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column" }}>
-      {/* Fond animé */}
-      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+    <div
+      onTouchStart={onTouchStart2} onTouchEnd={onTouchEnd2}
+      style={{
+        position:"fixed",inset:0,zIndex:999,display:"flex",flexDirection:"column",
+        transform: slideIn?"translateY(0)":"translateY(100%)",
+        transition:"transform .38s cubic-bezier(.32,1,.4,1)",
+      }}>
+      {/* Fond canvas */}
+      <canvas ref={bgRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+
+      {/* Drag handle (swipe bas) */}
+      <div style={{position:"relative",zIndex:1,display:"flex",justifyContent:"center",paddingTop:10,paddingBottom:4,flexShrink:0}}>
+        <div style={{width:40,height:4,borderRadius:2,background:"rgba(167,139,250,0.4)"}}/>
+      </div>
+
       {/* Header */}
-      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.95)", borderBottom: "1px solid #a78bfa44", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
-        {/* Ligne 1 : titre + fermer */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 24, filter: "drop-shadow(0 0 8px #a78bfa)" }}>💬</div>
+      <div style={{position:"relative",zIndex:1,padding:"10px 18px 12px",background:"rgba(4,8,22,0.85)",borderBottom:"1px solid rgba(167,139,250,0.2)",backdropFilter:"blur(20px)",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#a78bfa33,#3b1f8a44)",border:"1px solid #a78bfa55",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,boxShadow:"0 0 12px #a78bfa44"}}>💬</div>
             <div>
-              <div style={{ color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 2 }}>CHAT · MEMO</div>
-              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 1 }}>{messages.length} MESSAGE{messages.length !== 1 ? "S" : ""}</div>
+              <div style={{color:"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,letterSpacing:2,textShadow:"0 0 10px #a78bfa66"}}>CHAT · MEMO</div>
+              <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>{messages.length} message{messages.length!==1?"s":""} · swipe ↓ pour fermer</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "1px solid #a78bfa55", color: "#a78bfa", borderRadius: 8, padding: "8px 14px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>✕</button>
+          <button onClick={onClose} style={{width:32,height:32,borderRadius:"50%",background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",color:"#a78bfa",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
         </div>
-        {/* Ligne 2 : actions */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {/* Bouton notification — toujours visible et bien lisible */}
-          {typeof Notification !== "undefined" && Notification.permission === "default" && (
-            <button onClick={() => Notification.requestPermission()} style={{ flex: 1, minWidth: 0, background: "linear-gradient(135deg,#a78bfa33,#0a1628)", border: "1px solid #a78bfa88", color: "#a78bfa", borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, boxShadow: "0 0 10px #a78bfa44", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              🔔 ACTIVER LES NOTIFICATIONS
-            </button>
+        {/* Actions */}
+        <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+          {typeof Notification!=="undefined"&&Notification.permission==="default"&&(
+            <button onClick={()=>Notification.requestPermission()} style={{flex:1,background:"linear-gradient(135deg,#a78bfa22,#3b1f8a22)",border:"1px solid #a78bfa66",color:"#a78bfa",borderRadius:20,padding:"6px 12px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700,letterSpacing:1}}>🔔 Activer notifications</button>
           )}
-          {typeof Notification !== "undefined" && Notification.permission === "granted" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#00ff9d11", border: "1px solid #00ff9d44", borderRadius: 8, padding: "7px 12px" }}>
-              <span style={{ fontSize: 14 }}>🔔</span>
-              <span style={{ color: "#00ff9d", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, fontWeight: 700 }}>NOTIFICATIONS ACTIVES</span>
+          {typeof Notification!=="undefined"&&Notification.permission==="granted"&&(
+            <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(0,255,157,0.06)",border:"1px solid rgba(0,255,157,0.25)",borderRadius:20,padding:"5px 10px"}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"#00ff9d",boxShadow:"0 0 6px #00ff9d",animation:"badgePop 2s ease-in-out infinite"}}/>
+              <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:11,fontWeight:700}}>NOTIFS ACTIVES</span>
             </div>
           )}
-          {typeof Notification !== "undefined" && Notification.permission === "denied" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#ff446611", border: "1px solid #ff446644", borderRadius: 8, padding: "7px 12px" }}>
-              <span style={{ fontSize: 14 }}>🔕</span>
-              <span style={{ color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 11 }}>Bloquées — autoriser dans les réglages navigateur</span>
-            </div>
-          )}
-          {onMarkRead && <button onClick={onMarkRead} style={{ background: "transparent", border: "1px solid #a78bfa44", color: "#a78bfa", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>✓ Marquer lu</button>}
-          {messages.length > 0 && <button onClick={() => { if (window.confirm("Effacer tous les messages ?")) { setMessages([]); } }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 8, padding: "7px 12px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑</button>}
+          {onMarkRead&&<button onClick={onMarkRead} style={{background:"rgba(167,139,250,0.06)",border:"1px solid rgba(167,139,250,0.2)",color:"#8877bb",borderRadius:20,padding:"5px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>✓ Lu</button>}
+          {messages.length>0&&<button onClick={()=>{if(window.confirm("Effacer tous ?"))setMessages([]);}} style={{background:"rgba(255,68,102,0.06)",border:"1px solid rgba(255,68,102,0.2)",color:"#ff4466",borderRadius:20,padding:"5px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>🗑</button>}
         </div>
       </div>
-      {/* Messages */}
-      <div style={{ position: "relative", zIndex: 1, flex: 1, overflowY: "auto", padding: "20px 16px" }}>
-        {messages.length === 0 && (
-          <div style={{ textAlign: "center", padding: "80px 20px" }}>
-            <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>💬</div>
-            <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 16, letterSpacing: 1 }}>Aucun message — commencez à écrire !</div>
+
+      {/* Zone messages */}
+      <div style={{position:"relative",zIndex:1,flex:1,overflowY:"auto",padding:"16px 14px",display:"flex",flexDirection:"column",gap:2}}>
+        {messages.length===0&&(
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,gap:12}}>
+            <div style={{fontSize:52,opacity:0.2,filter:"drop-shadow(0 0 12px #a78bfa)"}}>💬</div>
+            <div style={{color:"#2a3a5a",fontFamily:"'Orbitron',sans-serif",fontSize:12,letterSpacing:2,textAlign:"center"}}>AUCUN MESSAGE</div>
+            <div style={{color:"#1a2a3a",fontFamily:"'Rajdhani',sans-serif",fontSize:13,textAlign:"center"}}>Commencez à communiquer</div>
           </div>
         )}
-        {Object.entries(grouped).map(([date, msgs]) => (
+        {Object.entries(grouped).map(([date,msgs])=>(
           <div key={date}>
-            <div style={{ textAlign: "center", margin: "16px 0 12px", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,transparent,#a78bfa33)" }} />
-              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 2 }}>{date}</div>
-              <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,#a78bfa33,transparent)" }} />
+            {/* Séparateur date */}
+            <div style={{display:"flex",alignItems:"center",gap:10,margin:"12px 0 10px"}}>
+              <div style={{flex:1,height:1,background:"linear-gradient(90deg,transparent,rgba(167,139,250,0.2))"}}/>
+              <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:20,padding:"3px 10px",color:"#6655aa",fontFamily:"'Rajdhani',sans-serif",fontSize:10,letterSpacing:2}}>{date}</div>
+              <div style={{flex:1,height:1,background:"linear-gradient(90deg,rgba(167,139,250,0.2),transparent)"}}/>
             </div>
-            {msgs.map((m, mi) => {
-              const isFirst = mi === 0 || msgs[mi - 1]?.author !== m.author;
+            {msgs.map((m,mi)=>{
+              const isFirst=mi===0||msgs[mi-1]?.author!==m.author;
+              const col=m.color||"#a78bfa";
+              const [r,g,b]=hexToRgb(col);
               return (
-                <div key={m.id} style={{ marginBottom: 6, animation: "fadeIn .3s ease" }}>
-                  {isFirst && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, marginTop: mi > 0 ? 12 : 0 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: `radial-gradient(circle,${m.color}44,#0a1628)`, border: `1.5px solid ${m.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, boxShadow: `0 0 8px ${m.color}66` }}>👤</div>
-                      <div style={{ color: m.color, fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>{m.author}</div>
-                      <div style={{ color: "#4a5a6a", fontFamily: "'Rajdhani',sans-serif", fontSize: 10 }}>{m.time}</div>
+                <div key={m.id} style={{marginBottom:isFirst&&mi>0?2:1,animation:"fadeIn .25s ease"}}>
+                  {isFirst&&(
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginTop:mi>0?14:4,marginBottom:5}}>
+                      <div style={{width:30,height:30,borderRadius:"50%",background:`radial-gradient(circle,${col}44,#0a1628)`,border:`1.5px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,boxShadow:`0 0 10px ${col}55,0 0 3px ${col}99`,flexShrink:0}}>👤</div>
+                      <div style={{color:col,fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700,textShadow:`0 0 8px ${col}88`}}>{m.author}</div>
+                      <div style={{color:"#2a3a5a",fontFamily:"'Rajdhani',sans-serif",fontSize:10}}>{m.time}</div>
                     </div>
                   )}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, paddingLeft: 36 }}>
-                    <div style={{ flex: 1, background: `linear-gradient(135deg,${m.color}0f,#0a162888)`, border: `1px solid ${m.color}33`, borderRadius: "0 12px 12px 12px", padding: "8px 12px", backdropFilter: "blur(4px)" }}>
-                      <div style={{ color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, lineHeight: 1.5, wordBreak: "break-word" }}>{m.text}</div>
+                  <div style={{display:"flex",alignItems:"flex-end",gap:6,paddingLeft:38}}>
+                    <div style={{
+                      flex:1,
+                      background:`linear-gradient(135deg,rgba(${r},${g},${b},0.1),rgba(${r},${g},${b},0.05))`,
+                      border:`1px solid rgba(${r},${g},${b},0.25)`,
+                      borderRadius: isFirst?"4px 14px 14px 14px":"4px 14px 14px 14px",
+                      padding:"9px 13px",
+                      backdropFilter:"blur(8px)",
+                      boxShadow:`0 2px 12px rgba(${r},${g},${b},0.1), inset 0 0 20px rgba(${r},${g},${b},0.03)`,
+                      position:"relative",overflow:"hidden",
+                    }}>
+                      {/* reflet interne */}
+                      <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,rgba(${r},${g},${b},0.4),transparent)`}}/>
+                      <div style={{color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,lineHeight:1.55,wordBreak:"break-word",letterSpacing:0.2}}>{m.text}</div>
                     </div>
-                    <button onClick={() => del(m.id)} style={{ background: "transparent", border: "none", color: "#4a5a6a", cursor: "pointer", fontSize: 13, padding: "4px", opacity: 0.5, flexShrink: 0 }} title="Supprimer">🗑</button>
+                    <button onClick={()=>del(m.id)} style={{background:"transparent",border:"none",color:"rgba(255,68,102,0.2)",cursor:"pointer",fontSize:12,padding:"4px",flexShrink:0,transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="rgba(255,68,102,0.7)"} onMouseLeave={e=>e.target.style.color="rgba(255,68,102,0.2)"}>×</button>
                   </div>
                 </div>
               );
             })}
           </div>
         ))}
-        <div ref={endRef} />
+        <div ref={endRef}/>
       </div>
-      {/* Input */}
-      <div style={{ position: "relative", zIndex: 1, background: "rgba(5,8,24,0.97)", borderTop: "1px solid #a78bfa33", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <select value={author} onChange={e => setAuthor(e.target.value)} style={{ background: "#0a1628", border: "1px solid #a78bfa44", borderRadius: 8, color: "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 12, padding: "8px 12px", cursor: "pointer", flex: "0 0 auto" }}>
-            {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+
+      {/* Zone saisie */}
+      <div style={{position:"relative",zIndex:1,background:"rgba(4,8,22,0.92)",borderTop:"1px solid rgba(167,139,250,0.15)",backdropFilter:"blur(20px)",padding:"10px 14px 16px",flexShrink:0}}>
+        {/* Sélecteur auteur */}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:authorP?.color||"#a78bfa",boxShadow:`0 0 6px ${authorP?.color||"#a78bfa"}`}}/>
+          <span style={{color:"#3a4a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,letterSpacing:1}}>ENVOYER EN TANT QUE</span>
+          <select value={author} onChange={e=>setAuthor(e.target.value)} style={{background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:20,color:authorP?.color||"#a78bfa",fontFamily:"'Orbitron',sans-serif",fontSize:11,padding:"4px 10px",cursor:"pointer",outline:"none"}}>
+            {profiles.map(p=><option key={p.id} value={p.id} style={{background:"#07111f",color:p.color}}>{p.name}</option>)}
           </select>
-          <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, alignSelf: "center", flexShrink: 0 }}>écrit en tant que :</div>
-          <div style={{ color: profiles.find(p => p.id === author)?.color || "#a78bfa", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700, alignSelf: "center" }}>{profiles.find(p => p.id === author)?.name}</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            style={{ flex: 1, background: "#0a1628", border: "1px solid #a78bfa44", borderRadius: 10, padding: "11px 14px", color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, outline: "none" }}
-            placeholder="Écrire un message… (Entrée pour envoyer)"
-          />
-          <button onClick={send} disabled={!text.trim()} style={{ background: text.trim() ? "linear-gradient(135deg,#a78bfa33,#0a1628)" : "#0a1628", border: `1px solid ${text.trim() ? "#a78bfa" : "#1a2a44"}`, color: text.trim() ? "#a78bfa" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: text.trim() ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: text.trim() ? "0 0 12px #a78bfa44" : "none" }}>
-            ENVOYER
-          </button>
+        {/* Champ texte + bouton */}
+        <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+          <div style={{flex:1,position:"relative"}}>
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={e=>setText(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
+              placeholder="Message..."
+              style={{
+                width:"100%",background:"rgba(167,139,250,0.07)",
+                border:`1px solid ${text?"rgba(167,139,250,0.4)":"rgba(167,139,250,0.15)"}`,
+                borderRadius:22,padding:"11px 18px",color:"#d4e8ff",
+                fontFamily:"'Rajdhani',sans-serif",fontSize:15,outline:"none",
+                boxSizing:"border-box",boxShadow:text?"0 0 12px rgba(167,139,250,0.15)":"none",
+                transition:"all .2s",
+              }}
+            />
+          </div>
+          <button
+            onClick={send}
+            disabled={!text.trim()||sending}
+            style={{
+              width:44,height:44,borderRadius:"50%",flexShrink:0,
+              background:text.trim()?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.1)",
+              border:`1px solid ${text.trim()?"#a78bfa":"rgba(167,139,250,0.2)"}`,
+              color:"#fff",cursor:text.trim()?"pointer":"default",
+              fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",
+              boxShadow:text.trim()?"0 0 16px #a78bfa66":"none",
+              transition:"all .2s",
+              transform:text.trim()?"scale(1.05)":"scale(1)",
+            }}
+          >{sending?"…":"↑"}</button>
         </div>
       </div>
     </div>
