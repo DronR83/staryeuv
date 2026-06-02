@@ -1449,7 +1449,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const [text, setText]   = useState("");
   const [author, setAuthor] = useState(profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
-  const [slideIn, setSlideIn] = useState(false);
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
@@ -1460,9 +1459,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
   const [closing, setClosing] = useState(false);
   const scrollRef = useRef(null);
   const inputRef  = useRef(null);
-
-  // Entrée animée
-  useEffect(() => { setTimeout(() => setSlideIn(true), 10); }, []);
 
   // Scroll auto
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -1595,6 +1591,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
       {/* Panel chat qui suit le doigt */}
       <div style={{
         position:"absolute", inset:0, display:"flex", flexDirection:"column",
+        background:"#040816",
         transform: `translateX(${dragX}px)`,
         transition: isDragging ? "none" : closing ? "transform .32s cubic-bezier(.4,0,.8,.5)" : "transform .38s cubic-bezier(.32,1,.4,1)",
         boxShadow: dragX > 0 ? `-8px 0 40px rgba(0,0,0,${0.5 - progress * 0.3})` : "none",
