@@ -1769,6 +1769,175 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
 }
 
 
+// ─── HOSPITAL TILE ────────────────────────────────────────────────────────────
+function HospitalTile({ profiles, hospitalData, setHospitalData, isDesktop }) {
+  const [open, setOpen] = useState(false);
+  const [hov, setHov] = useState(false);
+  const ref = useRef(null);
+  const raf = useRef(null);
+
+  const totalDeaths = profiles.reduce((a, p) => a + (hospitalData[p.id] || 0), 0);
+
+  // Animation canvas croix médicale
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize() { canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    resize();
+    let t = 0;
+    const particles = Array.from({ length: 16 }, (_, i) => ({ a: (i / 16) * Math.PI * 2, r: 0.2 + Math.random() * 0.6, sp: 0.006 + Math.random() * 0.006, sz: 1 + Math.random() * 2.5, ph: Math.random() * 6 }));
+    function frame() {
+      const w = canvas.offsetWidth, h = canvas.offsetHeight, cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.36;
+      t += 0.02; ctx.clearRect(0, 0, w, h);
+      // Halo pulsant
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.06);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.2);
+      g.addColorStop(0, `rgba(236,72,153,${0.18 * pulse})`); g.addColorStop(0.5, `rgba(220,38,127,${0.06 * pulse})`); g.addColorStop(1, "transparent");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.2, 0, Math.PI * 2); ctx.fill();
+      // Cercle orbital
+      ctx.save(); ctx.translate(cx, cy);
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.88, 0, Math.PI * 2);
+      const rg = ctx.createLinearGradient(-R, 0, R, 0);
+      rg.addColorStop(0, "rgba(236,72,153,0)"); rg.addColorStop(0.4, `rgba(236,72,153,${0.6 + 0.3 * pulse})`);
+      rg.addColorStop(0.6, `rgba(255,100,180,${0.8 + 0.2 * pulse})`); rg.addColorStop(1, "rgba(236,72,153,0)");
+      ctx.strokeStyle = rg; ctx.lineWidth = 1.8; ctx.stroke(); ctx.restore();
+      // Particules en orbite
+      particles.forEach(p => {
+        p.a += p.sp;
+        const px = cx + Math.cos(p.a) * R * p.r * 0.9, py = cy + Math.sin(p.a) * R * p.r * 0.32;
+        const d = (Math.sin(p.a) + 1) / 2, al = 0.25 + d * 0.75;
+        ctx.fillStyle = `rgba(236,72,153,${al})`;
+        ctx.beginPath(); ctx.arc(px, py, p.sz * (0.5 + d * 0.5), 0, Math.PI * 2); ctx.fill();
+      });
+      // Croix médicale centrale
+      const cs = R * 0.38, cw = R * 0.14;
+      ctx.shadowColor = "#ec4899"; ctx.shadowBlur = 16 + 8 * pulse;
+      ctx.fillStyle = `rgba(236,72,153,${0.85 + 0.15 * pulse})`;
+      // horizontal
+      ctx.beginPath(); ctx.roundRect(cx - cs, cy - cw, cs * 2, cw * 2, cw * 0.4); ctx.fill();
+      // vertical
+      ctx.beginPath(); ctx.roundRect(cx - cw, cy - cs, cw * 2, cs * 2, cw * 0.4); ctx.fill();
+      ctx.shadowBlur = 0;
+      // Reflet croix
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.beginPath(); ctx.roundRect(cx - cs + 2, cy - cw + 2, cs - 4, cw * 0.7, 2); ctx.fill();
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const base = { position: "relative", overflow: "hidden", cursor: "pointer", background: "#07111fcc", borderRadius: 12, transition: "all .25s", backdropFilter: "blur(8px)", border: `1px solid ${hov ? "#ec489977" : "#ec489933"}`, boxShadow: hov ? "0 0 32px #ec489988, 0 0 8px #ec489944 inset" : "0 0 12px #ec489933" };
+
+  return (
+    <>
+      {isDesktop ? (
+        <div style={{ ...base, padding: "20px 14px", textAlign: "center", transform: hov ? "scale(1.04) translateY(-2px)" : "scale(1)" }}
+          onClick={() => setOpen(true)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+          {totalDeaths > 0 && <div style={{ position: "absolute", top: 8, right: 8, background: "#ec4899", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 11, fontWeight: 900, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 10px #ec4899", animation: "badgePop 1.5s ease-in-out infinite", zIndex: 2 }}>{totalDeaths}</div>}
+          <canvas ref={ref} style={{ width: "100%", height: 110, display: "block", borderRadius: 8, marginBottom: 8 }} />
+          <div style={{ color: "#ec4899", fontSize: "clamp(13px,1vw,16px)", fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>HÔPITAL</div>
+          <div style={{ color: "#e8f4ff", fontSize: "clamp(18px,1.5vw,26px)", fontWeight: 700, fontFamily: "'Orbitron',sans-serif", margin: "3px 0" }}>{totalDeaths}</div>
+          <div style={{ color: "#8899bb", fontSize: "clamp(11px,0.8vw,14px)", fontFamily: "'Rajdhani',sans-serif" }}>Séjours totaux</div>
+        </div>
+      ) : (
+        <div style={{ ...base, padding: "16px 18px", display: "flex", alignItems: "center", gap: 16, transform: hov ? "scale(1.01)" : "scale(1)" }}
+          onClick={() => setOpen(true)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+          {totalDeaths > 0 && <div style={{ position: "absolute", top: 8, right: 8, background: "#ec4899", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 11, fontWeight: 900, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 10px #ec4899", animation: "badgePop 1.5s ease-in-out infinite", zIndex: 2 }}>{totalDeaths}</div>}
+          <canvas ref={ref} style={{ width: 90, height: 90, display: "block", flexShrink: 0, borderRadius: 10 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#ec4899", fontSize: 13, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 2 }}>HÔPITAL</div>
+            <div style={{ color: "#e8f4ff", fontSize: 22, fontWeight: 700, fontFamily: "'Orbitron',sans-serif", marginBottom: 2 }}>{totalDeaths} séjour{totalDeaths !== 1 ? "s" : ""}</div>
+            <div style={{ color: "#8899bb", fontSize: 12, fontFamily: "'Rajdhani',sans-serif" }}>Décès & hospitalisations</div>
+          </div>
+          <div style={{ color: "#ec4899", fontSize: 28, opacity: 0.6 }}>+</div>
+        </div>
+      )}
+
+      {/* Modal compteur hôpital */}
+      {open && (
+        <div style={S.modalOverlay} onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div style={{ ...S.modalBox, maxWidth: 480 }}>
+            <div style={S.modalHeader}>
+              <div style={{ ...S.modalTitle, color: "#ec4899" }}>🏥 SÉJOURS HÔPITAL</div>
+              <button onClick={() => setOpen(false)} style={S.closeBtn}>✕</button>
+            </div>
+            <div style={S.modalBody}>
+              {/* Canvas dans modal */}
+              <div style={{ width: "100%", height: 110, borderRadius: 12, overflow: "hidden", marginBottom: 20, background: "#030b1a", border: "1px solid #ec489922", position: "relative" }}>
+                <HospitalMiniCanvas />
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", pointerEvents: "none" }}>
+                  <div style={{ color: "#ec4899", fontFamily: "'Orbitron',sans-serif", fontSize: 28, fontWeight: 900, textShadow: "0 0 16px #ec489988" }}>{totalDeaths}</div>
+                  <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 2 }}>SÉJOUR{totalDeaths !== 1 ? "S" : ""} TOTAL</div>
+                </div>
+              </div>
+              {/* Compteur par joueur */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {profiles.map(p => {
+                  const count = hospitalData[p.id] || 0;
+                  return (
+                    <div key={p.id} style={{ background: "#0a1628", border: `1px solid ${p.color}33`, borderRadius: 12, padding: "14px 18px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <div style={{ color: p.color, fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700 }}>{p.name}</div>
+                        <div style={{ color: "#ec4899", fontFamily: "'Orbitron',sans-serif", fontSize: 22, fontWeight: 900, textShadow: "0 0 10px #ec489966" }}>{count}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <button onClick={() => setHospitalData({ ...hospitalData, [p.id]: Math.max(0, count - 1) })}
+                          style={{ flex: 1, background: "#07111f", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 8, padding: "10px 0", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 20, fontWeight: 700, transition: "all .15s" }}>−</button>
+                        <div style={{ flex: 2, display: "flex", alignItems: "center", justifyContent: "center", background: "#ec489911", border: "1px solid #ec489944", borderRadius: 8, color: "#ec4899", fontFamily: "'Orbitron',sans-serif", fontSize: 28, fontWeight: 900 }}>{count}</div>
+                        <button onClick={() => setHospitalData({ ...hospitalData, [p.id]: count + 1 })}
+                          style={{ flex: 1, background: "linear-gradient(135deg,#ec489922,#0a1628)", border: "1px solid #ec489966", color: "#ec4899", borderRadius: 8, padding: "10px 0", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 20, fontWeight: 700, boxShadow: "0 0 10px #ec489933", transition: "all .15s" }}>+</button>
+                      </div>
+                      <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, marginTop: 8, textAlign: "center" }}>
+                        {count === 0 ? "Aucun séjour enregistré" : `${count} séjour${count > 1 ? "s" : ""} à l'hôpital`}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button onClick={() => { if (window.confirm("Remettre tous les compteurs à zéro ?")) setHospitalData({}); }} style={{ ...S.dangerBtn, width: "100%", marginTop: 16, padding: "10px 0" }}>🗑 Remettre à zéro</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function HospitalMiniCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight, cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.4;
+    let t = 0;
+    const pts = Array.from({ length: 24 }, (_, i) => ({ a: (i / 24) * Math.PI * 2, sp: 0.007 + Math.random() * 0.006, r: R * (0.55 + Math.random() * 0.45), sz: 1 + Math.random() * 2.5 }));
+    function frame() {
+      t += 0.02; ctx.clearRect(0, 0, w, h);
+      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      bg.addColorStop(0, `rgba(236,72,153,${0.12 + 0.06 * Math.sin(t * 0.05)})`); bg.addColorStop(1, "transparent");
+      ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.translate(cx, cy);
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.85, 0, Math.PI * 2);
+      const rg = ctx.createLinearGradient(-R, 0, R, 0);
+      rg.addColorStop(0, "rgba(236,72,153,0)"); rg.addColorStop(.5, `rgba(236,72,153,${0.8 + 0.2 * Math.sin(t * 0.05)})`); rg.addColorStop(1, "rgba(236,72,153,0)");
+      ctx.strokeStyle = rg; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      pts.forEach(p => { p.a += p.sp; const x = cx + Math.cos(p.a) * p.r, y = cy + Math.sin(p.a) * p.r * 0.28; const d = (Math.sin(p.a) + 1) / 2, al = 0.25 + d * 0.75; ctx.fillStyle = `rgba(236,72,153,${al})`; ctx.beginPath(); ctx.arc(x, y, p.sz * (0.5 + d * 0.5), 0, Math.PI * 2); ctx.fill(); });
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  }, []);
+  return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} />;
+}
+
+
 // ─── DÉPENSES TILE ────────────────────────────────────────────────────────────
 function DepensesCanvas() {
   const ref = useRef(null);
@@ -2558,7 +2727,7 @@ function MoneyBanner({ totalEarned, profiles, onClick, isDesktop }) {
         <div style={{flexShrink:0}}><TileIcon kind="gold" color="#ffcc00" size={isDesktop?60:48}/></div>
         <div style={{minWidth:0}}>
           <div style={{color:"#ffcc00",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?18:12,letterSpacing:3,textTransform:"uppercase",fontWeight:600}}>Total Gagné</div>
-          <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?34:26,fontWeight:900,textShadow:"0 0 18px #ffcc0088",letterSpacing:isDesktop?0:-0.5,whiteSpace:"nowrap"}}>{fmt(totalEarned)} <span style={{fontSize:isDesktop?18:14,color:"#ffcc00aa"}}>aUEC</span></div>
+          <div style={{color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(24px,2.2vw,42px)":26,fontWeight:900,textShadow:"0 0 18px #ffcc0088",letterSpacing:isDesktop?0:-0.5,whiteSpace:"nowrap"}}>{fmt(totalEarned)} <span style={{fontSize:isDesktop?18:14,color:"#ffcc00aa"}}>aUEC</span></div>
         </div>
       </div>
       <div style={{position:"relative",display:isDesktop?"flex":"none",gap:14,flexShrink:0}}>
@@ -2646,8 +2815,8 @@ function HexTile({ icon, iconKind, label, value, sub, color="#00d4ff", onClick, 
       {iconKind
         ? <div style={{marginBottom:isDesktop?8:6}}><TileIcon kind={iconKind} color={color} size={isDesktop?56:46}/></div>
         : <div style={{fontSize:isDesktop?40:34,marginBottom:isDesktop?8:6}}>{icon}</div>}
-      <div style={{color,fontSize:isDesktop?16:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
-      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?28:21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
+      <div style={{color,fontSize:isDesktop?"clamp(13px,1.1vw,18px)":13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1.5,textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{label}</div>
+      {value!==undefined&&<div style={{color:"#e8f4ff",fontSize:isDesktop?"clamp(20px,2vw,34px)":21,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:isDesktop?"5px 0":"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",letterSpacing:-0.5}}>{value}</div>}
       {sub&&<div style={{color:"#8899bb",fontSize:isDesktop?14:12,fontFamily:"'Rajdhani',sans-serif"}}>{sub}</div>}
     </div>
   );
@@ -2666,7 +2835,7 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
           onClick={onHangar}
         />
         <div onClick={onHangar} title="Ouvrir le hangar" style={{flex:1,cursor:"pointer"}}>
-          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?24:18,fontWeight:700}}>{profile.name}</div>
+          <div style={{color:profile.color,fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(18px,1.6vw,28px)":18,fontWeight:700}}>{profile.name}</div>
           <div style={{color:"#8899bb",fontSize:isDesktop?15:11,fontFamily:"'Rajdhani',sans-serif",letterSpacing:1}}>🚀 VOIR LE HANGAR</div>
         </div>
         <button onClick={onEdit} style={{...S.editBtn,borderColor:profile.color,color:profile.color,fontSize:isDesktop?15:12}}>✏️</button>
@@ -2694,11 +2863,11 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
         <div style={{flex:1}}>
-          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?18:14,fontWeight:600}}>{mission.name}</div>
+          <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":14,fontWeight:600}}>{mission.name}</div>
           <div style={{color:"#8899bb",fontSize:isDesktop?13:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?18:13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
           {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
@@ -3996,6 +4165,7 @@ export default function App() {
   const [settings,  setSettings,  settLoaded,  saveSettings  ] = useFirestore("settings",   DEFAULT_SETTINGS);
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
+  const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
   const prevChatLen = useRef(0);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -4271,17 +4441,16 @@ export default function App() {
             display:flex; flex-direction:column;
             position:fixed; left:0; top:0; bottom:0; width:260px;
             background:rgba(2,5,16,0.97); border-right:1px solid #00d4ff33;
-            backdropFilter:blur(20px); padding-top:110px; z-index:98;
+            backdrop-filter:blur(20px); padding-top:110px; z-index:98;
           }
           .sidebar .nav-tab{
             flex:none; width:100%;
             flex-direction:row; justify-content:flex-start;
             gap:18px; padding:20px 32px;
             border-bottom:none; border-left:4px solid transparent;
-            font-size:16px; letter-spacing:1.5px;
+            letter-spacing:1.5px;
           }
-          .sidebar .nav-tab .icon{font-size:28px;}
-          .sidebar .nav-tab .label{font-size:15px;letter-spacing:2px;font-weight:700;}
+          .sidebar .nav-tab .label{font-size:clamp(13px,1vw,17px);letter-spacing:2px;font-weight:700;}
           .sidebar .nav-tab.active{
             border-left:4px solid #00d4ff; border-bottom:none;
             background:linear-gradient(90deg,#00d4ff22,transparent);
@@ -4289,15 +4458,16 @@ export default function App() {
           }
           .top-nav{display:none!important;}
           .desktop-shift{margin-left:260px;}
-          .desktop-main-content{max-width:100%!important; padding:40px 56px 100px!important;}
-          /* Scaling desktop global */
-          @media(min-width:900px){
-            .desktop-main-content { font-size: clamp(15px, 1vw, 20px); }
+          .desktop-main-content{
+            max-width:100%!important;
+            padding:clamp(24px,3vw,56px) clamp(24px,4vw,72px) 100px!important;
+            font-size:clamp(14px,1.1vw,22px);
           }
-          .desktop-header-inner{padding:20px 40px!important;}
-          .desktop-header-title{font-size:32px!important; letter-spacing:4px!important;}
-          .desktop-header-sub{font-size:13px!important; letter-spacing:4px!important;}
-          .desktop-fortune{font-size:20px!important;}
+          /* Toutes les tailles de texte desktop scalent avec le viewport */
+          .desktop-main-content h1,.desktop-main-content h2{font-size:clamp(18px,1.8vw,32px)!important;}
+          .desktop-header-inner{padding:clamp(14px,1.5vw,24px) clamp(24px,3vw,56px)!important;}
+          .desktop-header-title{font-size:clamp(22px,2.2vw,38px)!important; letter-spacing:4px!important;}
+          .desktop-header-sub{font-size:clamp(11px,0.8vw,15px)!important; letter-spacing:4px!important;}
         }
 
         /* PROFILES GRID */
@@ -4385,6 +4555,7 @@ export default function App() {
                   ))}
                   <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
                   <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
             ) : (
@@ -4407,6 +4578,7 @@ export default function App() {
                 </div>
                 <div style={{marginBottom:20}}>
                   <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
             )}
@@ -4554,7 +4726,7 @@ const S={
   progressFill:{height:"100%",borderRadius:4,transition:"width .4s ease"},
   resultBox:{background:"#0a1628",border:"1px solid #00d4ff44",borderRadius:10,padding:"10px 14px"},
   shipChip:{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#8899bb",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",transition:"all .2s"},
-  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
+  sectionTitle:{fontFamily:"'Orbitron',sans-serif",fontSize:"clamp(14px,1.2vw,20px)",fontWeight:700,color:"#00d4ff",letterSpacing:3,marginBottom:14,textTransform:"uppercase"},
   label:{display:"block",color:"#8899bb",fontSize:14,letterSpacing:1.5,marginBottom:4,marginTop:10,fontFamily:"'Rajdhani',sans-serif",textTransform:"uppercase"},
   input:{width:"100%",background:"#0a1628",border:"1px solid #1a2a44",borderRadius:8,padding:"10px 14px",color:"#e8f4ff",fontSize:15,outline:"none",marginBottom:4},
   primaryBtn:{background:"linear-gradient(135deg,#00d4ff22,#0a1628)",border:"1px solid #00d4ff66",color:"#00d4ff",borderRadius:8,padding:"11px 20px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,letterSpacing:1,transition:"all .2s",marginTop:10,width:"100%"},
