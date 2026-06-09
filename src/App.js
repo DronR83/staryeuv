@@ -4772,12 +4772,18 @@ export default function App() {
   const [tab,setTab]=useState("dashboard");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
   const [currentUser, setCurrentUser] = useState(() => {
-    try { const u=localStorage.getItem("sc_user"); return u?JSON.parse(u):null; } catch { return null; }
+    try {
+      const u = localStorage.getItem("sc_user");
+      return u ? JSON.parse(u) : null;
+    } catch { return null; }
   });
 
   function handleLogin(profile) {
-    setCurrentUser(profile);
-    try { localStorage.setItem("sc_user", JSON.stringify(profile)); } catch {}
+    // Récupérer le profil frais depuis Firestore avant de sauvegarder
+    const fresh = profiles.find(p => p.id === profile.id) || profile;
+    setCurrentUser(fresh);
+    try { localStorage.setItem("sc_user", JSON.stringify({id: fresh.id})); } catch {}
+    // Ne stocker que l'ID — recharger le profil complet depuis Firestore à chaque fois
   }
   function handleLogout() {
     setCurrentUser(null);
@@ -4920,7 +4926,7 @@ export default function App() {
     try { localStorage.setItem("chat_lastRead", String(now)); } catch {}
   }
   const [addMissionModal,setAddMissionModal]= useState(false);
-  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:currentUser?.id||"p1",note:""});
+  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:validatedUser?.id||"p1",note:""});
 
   const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
   const validatedMissions = missions.filter(m=>m.status==="validated");
@@ -4935,13 +4941,14 @@ export default function App() {
     setMissions(prev=>[m,...prev]);
     saveMissions([m,...missions]);
     setAddMissionModal(false);
-    setMissionForm({name:"",amount:"",split:true,assignee:currentUser?.id||"p1",note:""});
+    setMissionForm({name:"",amount:"",split:true,assignee:validatedUser?.id||"p1",note:""});
   }
 
   function validateMission(id){
     const m=missions.find(x=>x.id===id); if(!m||m.status==="validated") return;
     const half=Math.floor(m.amount/2);
-    setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; }));
+    const newProfs=profiles.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; });
+    setProfiles(newProfs); saveProfiles(newProfs);
     const updated=missions.map(x=>x.id===id?{...x,status:"validated"}:x);
     setMissions(updated); saveMissions(updated);
   }
@@ -4951,13 +4958,14 @@ export default function App() {
     // Rembourse seulement si déjà validée
     if(m.status==="validated"){
       const half=Math.floor(m.amount/2);
-      setProfiles(prev=>prev.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; }));
+      const newProfs2=profiles.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC-half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC-m.amount}; return p; });
+      setProfiles(newProfs2); saveProfiles(newProfs2);
     }
     const updated=missions.filter(x=>x.id!==id);
     setMissions(updated); saveMissions(updated);
   }
 
-  const isAdmin = currentUser?.id === "p1";
+  const isAdmin = validatedUser?.id === "p1";
   const TABS=[
     {id:"dashboard",   icon:"🏠", label:"HOME"},
     {id:"concession",  icon:"🚀", label:"CONCESSION"},
@@ -4992,8 +5000,21 @@ export default function App() {
     if (dx > 0 && idx > 0)               setTab(TABS[idx - 1].id);
   }
 
-  // Écran de connexion si pas identifié
-  if (!currentUser) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
+  // Valide le currentUser stocké contre les vrais profils Firestore (au cas où changement)
+  const validatedUser = currentUser && profiles.length > 0
+    ? profiles.find(p => p.id === currentUser.id) || null
+    : currentUser;
+
+  // Attendre que les profils soient chargés AVANT d'afficher le login
+  if (!profLoaded) return (
+    <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <CosmicBackground/>
+      <div style={{position:"relative",zIndex:1,color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:14,letterSpacing:3,animation:"neonFlicker 2s linear infinite"}}>CHARGEMENT...</div>
+    </div>
+  );
+
+  // Écran de connexion si pas identifié (ou identifiant invalide)
+  if (!validatedUser) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -5141,9 +5162,9 @@ export default function App() {
               </div>
               {!isDesktop && <SyncBadge synced={loaded}/>}
               {/* Utilisateur connecté */}
-              <button onClick={handleLogout} style={{ background:"transparent", border:`1px solid ${currentUser?.color||"#00d4ff"}44`, borderRadius:20, padding:"4px 10px", color:currentUser?.color||"#00d4ff", fontFamily:"'Rajdhani',sans-serif", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
-                <span style={{width:6,height:6,borderRadius:"50%",background:currentUser?.color||"#00d4ff",boxShadow:`0 0 6px ${currentUser?.color||"#00d4ff"}`,flexShrink:0}}/>
-                {currentUser?.name}
+              <button onClick={handleLogout} style={{ background:"transparent", border:`1px solid ${currentUser?.color||"#00d4ff"}44`, borderRadius:20, padding:"4px 10px", color:validatedUser?.color||"#00d4ff", fontFamily:"'Rajdhani',sans-serif", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:validatedUser?.color||"#00d4ff",boxShadow:`0 0 6px ${validatedUser?.color||"#00d4ff"}`,flexShrink:0}}/>
+                {validatedUser?.name}
                 <span style={{color:"#4a5a6a"}}>✕</span>
               </button>
             </div>
@@ -5197,8 +5218,8 @@ export default function App() {
                   {profiles.map(p=>(
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                   ))}
-                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
-                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                  <VirementTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
+                  <DepensesTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
@@ -5218,10 +5239,10 @@ export default function App() {
                   ))}
                 </div>
                 <div style={{marginBottom:20}}>
-                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
+                  <VirementTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
                 </div>
                 <div style={{marginBottom:20}}>
-                  <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                  <DepensesTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
@@ -5243,16 +5264,16 @@ export default function App() {
           </div>
         )}
 
-        {tab==="concession"&&<div style={{animation:"fadeIn .4s ease"}}><ConcessionTab profiles={profiles} fleets={fleets} setFleets={setFleets}/></div>}
+        {tab==="concession"&&<div style={{animation:"fadeIn .4s ease"}}><ConcessionTab profiles={profiles} fleets={fleets} setFleets={(v)=>{setFleets(v);saveFleets(v);}}/></div>}
 
-        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={setObjectives} profiles={profiles} setProfiles={setProfiles}/></div>}
+        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={(v)=>{setObjectives(v);saveObjectives(v);}} profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}}/></div>}
         {tab==="calc"&&<div style={{animation:"fadeIn .4s ease"}}><CalcTab fleets={fleets} profiles={profiles}/></div>}
-        {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={setSettings} profiles={profiles} setProfiles={setProfiles}/></div>}
+        {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={(v)=>{setSettings(v);saveSettings(v);}} profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}}/></div>}
       </div>{/* /content */}
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} defaultAuthor={currentUser?.id}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} defaultAuthor={validatedUser?.id}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
@@ -5279,10 +5300,11 @@ export default function App() {
         <HangarPage
           profile={hangarProfile}
           ships={fleets[hangarProfile.id] || []}
-          setShips={(updater) => setFleets(prev => ({
-            ...prev,
-            [hangarProfile.id]: typeof updater === "function" ? updater(prev[hangarProfile.id] || []) : updater
-          }))}
+          setShips={(updater) => {
+            const newFleets = {...fleets, [hangarProfile.id]: typeof updater === "function" ? updater(fleets[hangarProfile.id] || []) : updater};
+            setFleets(newFleets);
+            saveFleets(newFleets);
+          }}
           onClose={()=>setHangarProfile(null)}
         />
       )}
@@ -5305,7 +5327,7 @@ export default function App() {
           />
           <label style={S.label}>Couleur du profil</label>
           <input type="color" value={editProfile.color} onChange={e=>setEditProfile(p=>({...p,color:e.target.value}))} style={{...S.input,height:44,padding:4}}/>
-          <button onClick={()=>{setProfiles(prev=>prev.map(x=>x.id===editProfile.id?editProfile:x));setEditProfile(null);}} style={S.primaryBtn}>💾 Sauvegarder</button>
+          <button onClick={()=>{const np=profiles.map(x=>x.id===editProfile.id?editProfile:x);setProfiles(np);saveProfiles(np);setEditProfile(null);}} style={S.primaryBtn}>💾 Sauvegarder</button>
         </Modal>
       )}
 
