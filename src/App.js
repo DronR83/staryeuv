@@ -4783,22 +4783,17 @@ function LoginScreen({ profiles, onLogin }) {
 export default function App() {
   const [tab,setTab]=useState("dashboard");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const u = localStorage.getItem("sc_user");
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
+  const [storedUserId, setStoredUserId] = useState(() => {
+    try { const u = localStorage.getItem("sc_user"); return u ? JSON.parse(u)?.id || null : null; } catch { return null; }
   });
 
   function handleLogin(profile) {
-    // Récupérer le profil frais depuis Firestore avant de sauvegarder
     const fresh = profiles.find(p => p.id === profile.id) || profile;
-    setCurrentUser(fresh);
+    setStoredUserId(fresh.id);
     try { localStorage.setItem("sc_user", JSON.stringify({id: fresh.id})); } catch {}
-    // Ne stocker que l'ID — recharger le profil complet depuis Firestore à chaque fois
   }
   function handleLogout() {
-    setCurrentUser(null);
+    setStoredUserId(null);
     try { localStorage.removeItem("sc_user"); } catch {}
   }
 
@@ -5012,10 +5007,10 @@ export default function App() {
     if (dx > 0 && idx > 0)               setTab(TABS[idx - 1].id);
   }
 
-  // Valide le currentUser stocké contre les vrais profils Firestore (au cas où changement)
-  const validatedUser = currentUser && profiles.length > 0
-    ? profiles.find(p => p.id === currentUser.id) || null
-    : currentUser;
+  // Résoudre le profil complet depuis Firestore à chaque chargement
+  const validatedUser = storedUserId && profiles.length > 0
+    ? profiles.find(p => p.id === storedUserId) || null
+    : null;
 
   // Attendre que les profils soient chargés AVANT d'afficher le login
   if (!profLoaded) return (
@@ -5174,7 +5169,7 @@ export default function App() {
               </div>
               {!isDesktop && <SyncBadge synced={loaded}/>}
               {/* Utilisateur connecté */}
-              <button onClick={handleLogout} style={{ background:"transparent", border:`1px solid ${currentUser?.color||"#00d4ff"}44`, borderRadius:20, padding:"4px 10px", color:validatedUser?.color||"#00d4ff", fontFamily:"'Rajdhani',sans-serif", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+              <button onClick={handleLogout} style={{ background:"transparent", border:`1px solid ${validatedUser?.color||"#00d4ff"}44`, borderRadius:20, padding:"4px 10px", color:validatedUser?.color||"#00d4ff", fontFamily:"'Rajdhani',sans-serif", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
                 <span style={{width:6,height:6,borderRadius:"50%",background:validatedUser?.color||"#00d4ff",boxShadow:`0 0 6px ${validatedUser?.color||"#00d4ff"}`,flexShrink:0}}/>
                 {validatedUser?.name}
                 <span style={{color:"#4a5a6a"}}>✕</span>
