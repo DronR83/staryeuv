@@ -25,30 +25,23 @@ const DEFAULT_FLEETS = {
 function useFirestore(collection, defaultValue) {
   const [data,   setData]   = useState(defaultValue);
   const [loaded, setLoaded] = useState(false);
-  const skipNext = useRef(false); // évite la boucle écriture → snapshot → setData
 
-  // Écoute temps réel
+  // Écoute temps réel — pas de skip, toujours accepter les updates Firestore
   useEffect(() => {
     const unsub = fsListen(collection, (remote) => {
-      if (skipNext.current) { skipNext.current = false; return; }
       const val = remote?.value ?? defaultValue;
       setData(val);
       if (!loaded) setLoaded(true);
     });
-    // Fallback si le document n'existe pas encore
     fsGet(collection).then((d) => {
-      if (!d) setLoaded(true); // rien dans Firestore → utilise le défaut
+      if (!d) setLoaded(true);
     });
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection]);
 
-  // Écriture debounced
   const save = useCallback(
-    (val) => {
-      skipNext.current = true;
-      fsSet(collection, { value: val });
-    },
+    (val) => { fsSet(collection, { value: val }); },
     [collection]
   );
 
@@ -4901,19 +4894,7 @@ export default function App() {
     return () => window.removeEventListener("staryeuv_trade_validated", onTradeValidated);
   }, []); // eslint-disable-line
 
-  // Sync vers Firebase à chaque changement (avec debounce 600ms)
-  const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; };
-  const dSaveProfiles   = useCallback(debounce(saveProfiles,   600), [saveProfiles]);   // eslint-disable-line
-  const dSaveMissions   = useCallback(debounce(saveMissions,   600), [saveMissions]);   // eslint-disable-line
-  const dSaveObjectives = useCallback(debounce(saveObjectives, 600), [saveObjectives]); // eslint-disable-line
-  const dSaveFleets     = useCallback(debounce(saveFleets,     600), [saveFleets]);     // eslint-disable-line
-  const dSaveSettings   = useCallback(debounce(saveSettings,   600), [saveSettings]);   // eslint-disable-line
-
-  useEffect(() => { if (loaded) dSaveProfiles(profiles);     }, [profiles,   loaded]); // eslint-disable-line
-  useEffect(() => { if (loaded) dSaveMissions(missions);     }, [missions,   loaded]); // eslint-disable-line
-  useEffect(() => { if (loaded) dSaveObjectives(objectives); }, [objectives, loaded]); // eslint-disable-line
-  useEffect(() => { if (loaded) dSaveFleets(fleets);         }, [fleets,     loaded]); // eslint-disable-line
-  useEffect(() => { if (loaded) dSaveSettings(settings);     }, [settings,   loaded]); // eslint-disable-line
+  // Les saves sont maintenant appelés directement à chaque mutation — pas de debounce auto
 
   // Modals
   const [editProfile,    setEditProfile]    = useState(null);
