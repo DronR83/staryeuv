@@ -4679,18 +4679,30 @@ function LoginScreen({ profiles, onLogin }) {
   }
 
   const isAdmin = (p) => p.id === "p1";
+  const isMob = window.innerWidth < 600;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
       <canvas ref={bgRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
 
-      <div style={{ position: "relative", zIndex: 1, textAlign: "center", marginBottom: "clamp(24px,4vh,48px)" }}>
-        <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(28px,4vw,56px)", fontWeight: 900, color: "#caf4ff", animation: "neonFlicker 4s linear infinite", letterSpacing: "clamp(4px,1vw,10px)", marginBottom: 8 }}>STAR YeUv</div>
-        <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(12px,1.5vw,18px)", letterSpacing: "clamp(3px,0.8vw,8px)" }}>COMPANION APP · IDENTIFICATION</div>
-        <div style={{ width: "clamp(60px,8vw,120px)", height: 1, background: "linear-gradient(90deg,transparent,#00d4ff,transparent)", margin: "16px auto" }} />
+      {/* Titre */}
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", marginBottom: isMob ? 16 : "clamp(20px,3vh,40px)", padding: "0 16px" }}>
+        <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: isMob ? 26 : "clamp(28px,4vw,56px)", fontWeight: 900, color: "#caf4ff", animation: "neonFlicker 4s linear infinite", letterSpacing: isMob ? 4 : "clamp(4px,1vw,10px)", marginBottom: 6 }}>STAR YeUv</div>
+        <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: isMob ? 11 : "clamp(12px,1.5vw,18px)", letterSpacing: isMob ? 2 : "clamp(3px,0.8vw,8px)" }}>COMPANION APP · IDENTIFICATION</div>
+        <div style={{ width: isMob ? 60 : "clamp(60px,8vw,120px)", height: 1, background: "linear-gradient(90deg,transparent,#00d4ff,transparent)", margin: "10px auto" }} />
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, display: "flex", gap: "clamp(16px,4vw,60px)", flexWrap: "wrap", justifyContent: "center", padding: "0 20px" }}>
+      {/* Cartes joueurs */}
+      <div style={{
+        position: "relative", zIndex: 1,
+        display: "flex",
+        flexDirection: isMob ? "column" : "row",
+        gap: isMob ? 12 : "clamp(16px,4vw,60px)",
+        padding: isMob ? "0 14px" : "0 20px",
+        width: "100%", maxWidth: 900,
+        boxSizing: "border-box",
+        overflowY: isMob ? "auto" : "visible",
+      }}>
         {profiles.map(p => {
           const isHov = hovered === p.id;
           const isSel = selecting === p.id;
@@ -4701,58 +4713,58 @@ function LoginScreen({ profiles, onLogin }) {
               onMouseEnter={() => setHovered(p.id)}
               onMouseLeave={() => setHovered(null)}
               style={{
-                display: "flex", flexDirection: "column", alignItems: "center",
+                flex: isMob ? "none" : 1,
                 cursor: "pointer",
-                transform: isSel ? "scale(1.06) translateY(-8px)" : isHov ? "scale(1.03) translateY(-5px)" : "scale(1)",
+                transform: isSel ? "scale(1.03)" : isHov ? "scale(1.02)" : "scale(1)",
                 transition: "transform .3s cubic-bezier(.32,1,.4,1)",
-                animation: isSel ? "pulse 0.5s ease-in-out" : "none",
               }}>
-              {/* Carte personnage */}
               <div style={{
                 position: "relative",
                 background: `linear-gradient(160deg,${col}18,#07111fdd)`,
-                border: `1px solid ${isHov || isSel ? col : col + "44"}`,
-                borderRadius: 20,
-                padding: "clamp(12px,2vw,24px) clamp(16px,2.5vw,32px)",
-                boxShadow: isHov || isSel ? `0 0 40px ${col}66, 0 0 80px ${col}22` : `0 0 20px ${col}22`,
+                border: `1.5px solid ${isHov || isSel ? col : col + "44"}`,
+                borderRadius: 16,
+                boxShadow: isHov || isSel ? `0 0 32px ${col}55, 0 0 60px ${col}18` : `0 0 16px ${col}18`,
                 backdropFilter: "blur(12px)",
                 transition: "all .3s ease",
                 overflow: "hidden",
+                display: "flex",
+                flexDirection: isMob ? "row" : "column",
+                alignItems: "center",
+                padding: isMob ? "12px 16px" : "20px 24px",
+                gap: isMob ? 14 : 0,
               }}>
                 {/* Reflet haut */}
                 <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg,transparent,${col}88,transparent)` }} />
+                {/* Badge */}
+                <div style={{ position: "absolute", top: 10, right: 10, background: isAdmin(p) ? "linear-gradient(135deg,#ffcc00,#ff8800)" : `${col}33`, border: isAdmin(p) ? "none" : `1px solid ${col}66`, borderRadius: 20, padding: "2px 8px", fontFamily: "'Orbitron',sans-serif", fontSize: 8, fontWeight: 900, color: isAdmin(p) ? "#000" : col, letterSpacing: 1 }}>{isAdmin(p) ? "ADMIN" : "PILOTE"}</div>
 
-                {/* Badge admin */}
-                {isAdmin(p) && (
-                  <div style={{ position: "absolute", top: 12, right: 12, background: "linear-gradient(135deg,#ffcc00,#ff8800)", borderRadius: 20, padding: "2px 10px", fontFamily: "'Orbitron',sans-serif", fontSize: 9, fontWeight: 900, color: "#000", letterSpacing: 1 }}>ADMIN</div>
-                )}
-                {!isAdmin(p) && (
-                  <div style={{ position: "absolute", top: 12, right: 12, background: `${col}33`, border: `1px solid ${col}66`, borderRadius: 20, padding: "2px 10px", fontFamily: "'Orbitron',sans-serif", fontSize: 9, fontWeight: 700, color: col, letterSpacing: 1 }}>PILOTE</div>
-                )}
-
-                {/* Avatar 3D canvas */}
-                <div style={{ display: "flex", justifyContent: "center", filter: `drop-shadow(0 0 ${isHov ? "20px" : "8px"} ${col})` }}>
-                  <ArmorCanvas playerId={p.id} hovered={isHov || isSel} />
+                {/* Avatar — plus petit sur mobile */}
+                <div style={{ flexShrink: 0, display: "flex", justifyContent: "center", filter: `drop-shadow(0 0 ${isHov ? "16px" : "6px"} ${col})` }}>
+                  <div style={{ width: isMob ? 80 : 220, height: isMob ? 116 : 320, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ transform: isMob ? "scale(0.364)" : "scale(1)", transformOrigin: "center center" }}>
+                      <ArmorCanvas playerId={p.id} hovered={isHov || isSel} />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Nom */}
-                <div style={{ textAlign: "center", marginTop: 8 }}>
-                  <div style={{ color: col, fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(16px,2vw,24px)", fontWeight: 900, letterSpacing: 2, textShadow: `0 0 12px ${col}88` }}>{p.name}</div>
-                  <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(11px,1vw,14px)", letterSpacing: 2, marginTop: 4 }}>{isAdmin(p) ? "ADMINISTRATEUR · COMMANDANT" : "PILOTE · UTILISATEUR"}</div>
-                </div>
-
-                {/* Bouton connexion */}
-                <div style={{
-                  marginTop: "clamp(12px,2vh,20px)",
-                  background: isHov || isSel ? `linear-gradient(135deg,${col}44,${col}22)` : "transparent",
-                  border: `1px solid ${isHov || isSel ? col : col + "44"}`,
-                  borderRadius: 30, padding: "10px 0", textAlign: "center",
-                  color: col, fontFamily: "'Orbitron',sans-serif",
-                  fontSize: "clamp(11px,1vw,14px)", fontWeight: 700, letterSpacing: 2,
-                  boxShadow: isHov || isSel ? `0 0 16px ${col}44` : "none",
-                  transition: "all .25s",
-                }}>
-                  {isSel ? "CONNEXION..." : "SE CONNECTER"}
+                {/* Infos + bouton */}
+                <div style={{ flex: 1, textAlign: isMob ? "left" : "center" }}>
+                  <div style={{ color: col, fontFamily: "'Orbitron',sans-serif", fontSize: isMob ? 18 : "clamp(16px,2vw,24px)", fontWeight: 900, letterSpacing: 2, textShadow: `0 0 10px ${col}88`, marginBottom: 4 }}>{p.name}</div>
+                  <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: isMob ? 10 : "clamp(11px,1vw,13px)", letterSpacing: 1.5, marginBottom: isMob ? 10 : 16 }}>{isAdmin(p) ? "ADMINISTRATEUR · COMMANDANT" : "PILOTE · UTILISATEUR"}</div>
+                  <div style={{
+                    background: isHov || isSel ? `linear-gradient(135deg,${col}44,${col}22)` : "transparent",
+                    border: `1px solid ${isHov || isSel ? col : col + "44"}`,
+                    borderRadius: 30,
+                    padding: isMob ? "8px 20px" : "10px 0",
+                    textAlign: "center",
+                    color: col, fontFamily: "'Orbitron',sans-serif",
+                    fontSize: isMob ? 11 : "clamp(11px,1vw,14px)", fontWeight: 700, letterSpacing: 2,
+                    boxShadow: isHov || isSel ? `0 0 14px ${col}44` : "none",
+                    transition: "all .25s",
+                    display: "inline-block",
+                  }}>
+                    {isSel ? "CONNEXION..." : "SE CONNECTER"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -4760,7 +4772,7 @@ function LoginScreen({ profiles, onLogin }) {
         })}
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, marginTop: "clamp(24px,4vh,48px)", color: "#2a3a5a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(11px,1vw,14px)", letterSpacing: 2 }}>
+      <div style={{ position: "relative", zIndex: 1, marginTop: isMob ? 14 : "clamp(20px,3vh,40px)", color: "#2a3a5a", fontFamily: "'Rajdhani',sans-serif", fontSize: isMob ? 10 : "clamp(11px,1vw,14px)", letterSpacing: 2 }}>
         STAR CITIZEN COMPANION · ACCÈS SÉCURISÉ
       </div>
     </div>
