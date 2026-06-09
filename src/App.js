@@ -2684,7 +2684,7 @@ function VirementTile({ profiles, setProfiles, isDesktop, history = [], setHisto
                 {sending?"⏳ TRANSFERT EN COURS...":"💸 CONFIRMER LE VIREMENT"}
               </button>
             </>}
-            </div>}
+            </div>
 
             {/* ── ONGLET HISTORIQUE ── */}
             {activeTab==="historique" && <div style={{...S.modalBody, paddingTop:8}}>
