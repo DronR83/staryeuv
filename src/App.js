@@ -1523,9 +1523,9 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic, defaultAuthor }) {
   const [text, setText]   = useState("");
-  const [author, setAuthor] = useState(profiles[0]?.id || "");
+  const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
@@ -2212,7 +2212,7 @@ function VirementCanvas() {
   return <canvas ref={ref} style={{width:"100%",height:"100%",display:"block"}}/>;
 }
 
-function VirementTile({ profiles, setProfiles, isDesktop }) {
+function VirementTile({ profiles, setProfiles, isDesktop, history = [], setHistory }) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("virement");
   const [from, setFrom] = useState("");
@@ -2221,10 +2221,6 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null);
   const [hov, setHov] = useState(false);
-  const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("virement_history") || "[]"); }
-    catch { return []; }
-  });
   const canvasRef = useRef(null);
   const rafRef    = useRef(null);
 
@@ -2293,7 +2289,6 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
       const entry = { id: Date.now(), date: new Date().toLocaleString("fr-FR"), from: fromName, to: toName, fromColor: fromP?.color||"#00d4ff", toColor: toP?.color||"#00ff9d", net: num, fee, total };
       setHistory(prev => {
         const next = [entry, ...prev].slice(0, 50);
-        try { localStorage.setItem("virement_history", JSON.stringify(next)); } catch {}
         return next;
       });
       setSuccess({net:num,fee}); setSending(false); setAmount("");
@@ -2425,7 +2420,7 @@ function VirementTile({ profiles, setProfiles, isDesktop }) {
                 <>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                     <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1}}>{history.length} TRANSACTION{history.length>1?"S":""}</div>
-                    <button onClick={()=>{setHistory([]);try{localStorage.removeItem("virement_history")}catch{}}} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
+                    <button onClick={()=>{setHistory([])}} style={{...S.dangerBtn,fontSize:11,padding:"3px 10px"}}>🗑 Vider</button>
                   </div>
                   {history.map((h,i)=>(
                     <div key={h.id} style={{background:"#0a1628",border:"1px solid #1a2a4488",borderRadius:10,padding:"12px 14px",marginBottom:8,animation:`fadeIn .${3+i%5}s ease`}}>
@@ -4148,9 +4143,370 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function ArmorCanvas({ playerId, hovered }) {
+  const ref = useRef(null);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = 220, H = 320;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    const isDronR = playerId === "p1";
+    // DronR: purple/silver/gold — Leuxys: red/black/teal
+    const primary   = isDronR ? "#9b59ff" : "#ef4444";
+    const secondary = isDronR ? "#c8a84b" : "#1a1a2e";
+    const accent    = isDronR ? "#d4b8ff" : "#22d3ee";
+    const glow      = isDronR ? "#8b5cf6" : "#ef4444";
+
+    let t = 0;
+    cancelAnimationFrame(raf.current);
+
+    function frame() {
+      t += 0.018;
+      ctx.clearRect(0, 0, W, H);
+      const cx = W / 2, cy = H / 2;
+      const bob = Math.sin(t * 0.8) * 3;
+      const rot = Math.sin(t * 0.4) * 0.04;
+
+      ctx.save();
+      ctx.translate(cx, cy + bob);
+      ctx.rotate(rot);
+
+      // ─── AURA SOL ───
+      const groundGlow = ctx.createRadialGradient(0, 118, 0, 0, 118, 70);
+      groundGlow.addColorStop(0, `${glow}44`);
+      groundGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = groundGlow;
+      ctx.beginPath(); ctx.ellipse(0, 118, 70, 14, 0, 0, Math.PI * 2); ctx.fill();
+
+      // ─── JAMBES ───
+      // jambe gauche
+      ctx.fillStyle = isDronR ? "#6a6a8a" : "#2a2a2a";
+      ctx.shadowColor = primary; ctx.shadowBlur = 4;
+      ctx.beginPath(); ctx.roundRect(-24, 40, 20, 60, 4); ctx.fill();
+      ctx.fillStyle = primary + "88";
+      ctx.beginPath(); ctx.roundRect(-24, 60, 20, 8, 2); ctx.fill();
+      // jambe droite
+      ctx.fillStyle = isDronR ? "#6a6a8a" : "#2a2a2a";
+      ctx.beginPath(); ctx.roundRect(4, 40, 20, 60, 4); ctx.fill();
+      ctx.fillStyle = primary + "88";
+      ctx.beginPath(); ctx.roundRect(4, 60, 20, 8, 2); ctx.fill();
+
+      // ─── BOTTES (glow sol pour DronR) ───
+      ctx.shadowBlur = isDronR ? 12 : 4;
+      ctx.shadowColor = isDronR ? "#bf5fff" : primary;
+      ctx.fillStyle = isDronR ? "#4a3a7a" : "#1a0a0a";
+      ctx.beginPath(); ctx.roundRect(-26, 96, 24, 22, [0, 0, 4, 4]); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(2, 96, 24, 22, [0, 0, 4, 4]); ctx.fill();
+      // ligne glow botte
+      if (isDronR) {
+        const bootGrad = ctx.createLinearGradient(-26, 116, -2, 116);
+        bootGrad.addColorStop(0, "#bf5fff"); bootGrad.addColorStop(0.5, "#e0aaff"); bootGrad.addColorStop(1, "#bf5fff");
+        ctx.strokeStyle = bootGrad; ctx.lineWidth = 2; ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.moveTo(-26, 116); ctx.lineTo(-2, 116); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(2, 116); ctx.lineTo(26, 116); ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+
+      // ─── TORSE ───
+      const torsoGrad = ctx.createLinearGradient(-30, -50, 30, 30);
+      torsoGrad.addColorStop(0, isDronR ? "#8870c0" : "#550000");
+      torsoGrad.addColorStop(0.4, isDronR ? "#5a4a90" : "#8b0000");
+      torsoGrad.addColorStop(1, isDronR ? "#3a2a60" : "#2a0000");
+      ctx.fillStyle = torsoGrad;
+      ctx.shadowColor = primary; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(-28, 38); ctx.lineTo(-32, -40); ctx.lineTo(32, -40); ctx.lineTo(28, 38);
+      ctx.closePath(); ctx.fill();
+
+      // détails torse
+      ctx.fillStyle = isDronR ? secondary + "aa" : "#c0392b88";
+      ctx.beginPath(); ctx.roundRect(-20, -30, 40, 18, 3); ctx.fill();
+      ctx.strokeStyle = isDronR ? secondary : "#c0392b";
+      ctx.lineWidth = 1.2; ctx.shadowBlur = 6;
+      ctx.beginPath(); ctx.roundRect(-20, -30, 40, 18, 3); ctx.stroke();
+
+      // cristal énergie central
+      const crystalPulse = 0.6 + 0.4 * Math.sin(t * 2.5);
+      ctx.fillStyle = `rgba(${isDronR ? "180,130,255" : "239,68,68"},${crystalPulse})`;
+      ctx.shadowColor = isDronR ? "#9b59ff" : "#ef4444";
+      ctx.shadowBlur = 16 * crystalPulse;
+      ctx.beginPath(); ctx.arc(0, 0, 8 * crystalPulse * 0.9, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // ─── ÉPAULES ───
+      [[-38, -35], [38, -35]].forEach(([sx, sy]) => {
+        const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 16);
+        sg.addColorStop(0, isDronR ? "#a080d0" : "#cc2222");
+        sg.addColorStop(1, isDronR ? "#5a3a90" : "#660000");
+        ctx.fillStyle = sg; ctx.shadowColor = primary; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(sx, sy, 16, 0, Math.PI * 2); ctx.fill();
+        // détail épaule
+        ctx.strokeStyle = isDronR ? accent + "88" : accent + "66"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(sx, sy, 12, -Math.PI * 0.7, Math.PI * 0.2); ctx.stroke();
+      });
+      ctx.shadowBlur = 0;
+
+      // ─── BRAS ───
+      ctx.fillStyle = isDronR ? "#7a6aaa" : "#333";
+      ctx.beginPath(); ctx.roundRect(-46, -28, 14, 50, 4); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(32, -28, 14, 50, 4); ctx.fill();
+      // gants
+      ctx.fillStyle = isDronR ? secondary : "#b8860b44";
+      ctx.beginPath(); ctx.roundRect(-47, 18, 15, 16, 3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(32, 18, 15, 16, 3); ctx.fill();
+
+      // ─── COU ───
+      ctx.fillStyle = isDronR ? "#4a3a70" : "#1a0000";
+      ctx.beginPath(); ctx.roundRect(-8, -48, 16, 10, 2); ctx.fill();
+
+      // ─── CASQUE ───
+      const helmetGrad = ctx.createRadialGradient(-6, -72, 4, 0, -68, 24);
+      if (isDronR) {
+        helmetGrad.addColorStop(0, "#c0a0e8");
+        helmetGrad.addColorStop(0.4, "#7a5ab0");
+        helmetGrad.addColorStop(1, "#3a2060");
+      } else {
+        helmetGrad.addColorStop(0, "#aa2222");
+        helmetGrad.addColorStop(0.4, "#880000");
+        helmetGrad.addColorStop(1, "#1a0000");
+      }
+      ctx.fillStyle = helmetGrad;
+      ctx.shadowColor = primary; ctx.shadowBlur = 10;
+      // forme casque (plus arrondi pour DronR, avec crête pour Leuxys)
+      if (isDronR) {
+        ctx.beginPath();
+        ctx.moveTo(-22, -50); ctx.bezierCurveTo(-26, -80, 26, -80, 22, -50);
+        ctx.lineTo(22, -50); ctx.bezierCurveTo(22, -46, -22, -46, -22, -50);
+        ctx.fill();
+        // visière
+        const vizGrad = ctx.createLinearGradient(-14, -72, 14, -55);
+        vizGrad.addColorStop(0, "#d4b8ff"); vizGrad.addColorStop(1, "#8b5cf6");
+        ctx.fillStyle = vizGrad;
+        ctx.beginPath();
+        ctx.moveTo(-12, -70); ctx.bezierCurveTo(-14, -60, 14, -60, 12, -70);
+        ctx.closePath(); ctx.fill();
+      } else {
+        // casque Leuxys avec capuche/crête
+        ctx.beginPath();
+        ctx.moveTo(-20, -50); ctx.bezierCurveTo(-24, -82, 24, -82, 20, -50);
+        ctx.lineTo(20, -50); ctx.bezierCurveTo(20, -46, -20, -46, -20, -50);
+        ctx.fill();
+        // crête rouge
+        ctx.fillStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.moveTo(-8, -80); ctx.bezierCurveTo(-6, -90, 6, -90, 8, -80);
+        ctx.lineTo(4, -80); ctx.lineTo(-4, -80); ctx.closePath(); ctx.fill();
+        // visière teal
+        const vizGrad2 = ctx.createLinearGradient(-10, -72, 10, -58);
+        vizGrad2.addColorStop(0, "#22d3ee"); vizGrad2.addColorStop(1, "#0891b2");
+        ctx.fillStyle = vizGrad2;
+        ctx.beginPath();
+        ctx.moveTo(-10, -70); ctx.bezierCurveTo(-12, -60, 12, -60, 10, -70);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+
+      // Reflet casque
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.beginPath();
+      ctx.ellipse(-4, isDronR ? -68 : -69, 7, 4, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ─── DÉTAILS LUMINEUX ANIMÉS ───
+      const shimmer = (0.3 + 0.7 * Math.sin(t * 1.5 + (isDronR ? 0 : 1)));
+      ctx.strokeStyle = `rgba(${isDronR ? "200,168,255" : "239,68,68"},${shimmer * 0.6})`;
+      ctx.lineWidth = 1; ctx.shadowColor = primary; ctx.shadowBlur = 6 * shimmer;
+      // lignes armure
+      ctx.beginPath(); ctx.moveTo(-18, -10); ctx.lineTo(18, -10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-15, 5); ctx.lineTo(15, 5); ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+      raf.current = requestAnimationFrame(frame);
+    }
+
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId, hovered]);
+
+  return (
+    <canvas ref={ref}
+      style={{ width: 220, height: 320, display: "block", imageRendering: "pixelated" }}
+      width={440} height={640}
+    />
+  );
+}
+
+function LoginScreen({ profiles, onLogin }) {
+  const [hovered, setHovered] = useState(null);
+  const [selecting, setSelecting] = useState(null);
+  const bgRef = useRef(null);
+  const bgRaf = useRef(null);
+
+  useEffect(() => {
+    const canvas = bgRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize() { canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    resize();
+    window.addEventListener("resize", resize);
+    const stars = Array.from({ length: 120 }, () => ({ x: Math.random(), y: Math.random(), r: 0.3 + Math.random() * 1.4, ph: Math.random() * 6, sp: 0.3 + Math.random() * 0.7 }));
+    const meteors = Array.from({ length: 4 }, (_, i) => ({ x: Math.random(), y: Math.random() * 0.5, sp: 0.003 + Math.random() * 0.004, len: 0.06 + Math.random() * 0.08, ph: i * 1.8 }));
+    let t = 0;
+    function frame() {
+      const W = window.innerWidth, H = window.innerHeight;
+      t += 0.01; ctx.clearRect(0, 0, W, H);
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#020508"); bg.addColorStop(0.5, "#050a18"); bg.addColorStop(1, "#03050e");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      // nébuleuse subtile
+      const neb = ctx.createRadialGradient(W * 0.3, H * 0.4, 0, W * 0.3, H * 0.4, W * 0.5);
+      neb.addColorStop(0, `rgba(60,30,100,${0.06 + 0.03 * Math.sin(t * 0.2)})`);
+      neb.addColorStop(1, "transparent");
+      ctx.fillStyle = neb; ctx.fillRect(0, 0, W, H);
+      const neb2 = ctx.createRadialGradient(W * 0.7, H * 0.6, 0, W * 0.7, H * 0.6, W * 0.4);
+      neb2.addColorStop(0, `rgba(30,60,100,${0.04 + 0.02 * Math.sin(t * 0.15 + 1)})`);
+      neb2.addColorStop(1, "transparent");
+      ctx.fillStyle = neb2; ctx.fillRect(0, 0, W, H);
+      // étoiles
+      stars.forEach(s => {
+        const al = 0.3 + 0.4 * Math.abs(Math.sin(t * s.sp + s.ph));
+        ctx.fillStyle = `rgba(200,220,255,${al})`;
+        ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2); ctx.fill();
+      });
+      // météores
+      meteors.forEach(m => {
+        m.x -= m.sp; m.y += m.sp * 0.5;
+        if (m.x < -0.1) { m.x = 1.1; m.y = Math.random() * 0.4; }
+        const mg = ctx.createLinearGradient(m.x * W, m.y * H, (m.x + m.len) * W, (m.y - m.len * 0.5) * H);
+        mg.addColorStop(0, "transparent"); mg.addColorStop(1, `rgba(180,200,255,${0.4 + 0.2 * Math.sin(t + m.ph)})`);
+        ctx.strokeStyle = mg; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(m.x * W, m.y * H); ctx.lineTo((m.x + m.len) * W, (m.y - m.len * 0.5) * H); ctx.stroke();
+      });
+      bgRaf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => { cancelAnimationFrame(bgRaf.current); window.removeEventListener("resize", resize); };
+  }, []);
+
+  function handleSelect(profile) {
+    setSelecting(profile.id);
+    setTimeout(() => onLogin(profile), 600);
+  }
+
+  const isAdmin = (p) => p.id === "p1";
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      <canvas ref={bgRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", marginBottom: "clamp(24px,4vh,48px)" }}>
+        <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(28px,4vw,56px)", fontWeight: 900, color: "#caf4ff", animation: "neonFlicker 4s linear infinite", letterSpacing: "clamp(4px,1vw,10px)", marginBottom: 8 }}>STAR YeUv</div>
+        <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(12px,1.5vw,18px)", letterSpacing: "clamp(3px,0.8vw,8px)" }}>COMPANION APP · IDENTIFICATION</div>
+        <div style={{ width: "clamp(60px,8vw,120px)", height: 1, background: "linear-gradient(90deg,transparent,#00d4ff,transparent)", margin: "16px auto" }} />
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, display: "flex", gap: "clamp(16px,4vw,60px)", flexWrap: "wrap", justifyContent: "center", padding: "0 20px" }}>
+        {profiles.map(p => {
+          const isHov = hovered === p.id;
+          const isSel = selecting === p.id;
+          const col = p.color || "#00d4ff";
+          return (
+            <div key={p.id}
+              onClick={() => handleSelect(p)}
+              onMouseEnter={() => setHovered(p.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                cursor: "pointer",
+                transform: isSel ? "scale(1.06) translateY(-8px)" : isHov ? "scale(1.03) translateY(-5px)" : "scale(1)",
+                transition: "transform .3s cubic-bezier(.32,1,.4,1)",
+                animation: isSel ? "pulse 0.5s ease-in-out" : "none",
+              }}>
+              {/* Carte personnage */}
+              <div style={{
+                position: "relative",
+                background: `linear-gradient(160deg,${col}18,#07111fdd)`,
+                border: `1px solid ${isHov || isSel ? col : col + "44"}`,
+                borderRadius: 20,
+                padding: "clamp(12px,2vw,24px) clamp(16px,2.5vw,32px)",
+                boxShadow: isHov || isSel ? `0 0 40px ${col}66, 0 0 80px ${col}22` : `0 0 20px ${col}22`,
+                backdropFilter: "blur(12px)",
+                transition: "all .3s ease",
+                overflow: "hidden",
+              }}>
+                {/* Reflet haut */}
+                <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg,transparent,${col}88,transparent)` }} />
+
+                {/* Badge admin */}
+                {isAdmin(p) && (
+                  <div style={{ position: "absolute", top: 12, right: 12, background: "linear-gradient(135deg,#ffcc00,#ff8800)", borderRadius: 20, padding: "2px 10px", fontFamily: "'Orbitron',sans-serif", fontSize: 9, fontWeight: 900, color: "#000", letterSpacing: 1 }}>ADMIN</div>
+                )}
+                {!isAdmin(p) && (
+                  <div style={{ position: "absolute", top: 12, right: 12, background: `${col}33`, border: `1px solid ${col}66`, borderRadius: 20, padding: "2px 10px", fontFamily: "'Orbitron',sans-serif", fontSize: 9, fontWeight: 700, color: col, letterSpacing: 1 }}>PILOTE</div>
+                )}
+
+                {/* Avatar 3D canvas */}
+                <div style={{ display: "flex", justifyContent: "center", filter: `drop-shadow(0 0 ${isHov ? "20px" : "8px"} ${col})` }}>
+                  <ArmorCanvas playerId={p.id} hovered={isHov || isSel} />
+                </div>
+
+                {/* Nom */}
+                <div style={{ textAlign: "center", marginTop: 8 }}>
+                  <div style={{ color: col, fontFamily: "'Orbitron',sans-serif", fontSize: "clamp(16px,2vw,24px)", fontWeight: 900, letterSpacing: 2, textShadow: `0 0 12px ${col}88` }}>{p.name}</div>
+                  <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(11px,1vw,14px)", letterSpacing: 2, marginTop: 4 }}>{isAdmin(p) ? "ADMINISTRATEUR · COMMANDANT" : "PILOTE · UTILISATEUR"}</div>
+                </div>
+
+                {/* Bouton connexion */}
+                <div style={{
+                  marginTop: "clamp(12px,2vh,20px)",
+                  background: isHov || isSel ? `linear-gradient(135deg,${col}44,${col}22)` : "transparent",
+                  border: `1px solid ${isHov || isSel ? col : col + "44"}`,
+                  borderRadius: 30, padding: "10px 0", textAlign: "center",
+                  color: col, fontFamily: "'Orbitron',sans-serif",
+                  fontSize: "clamp(11px,1vw,14px)", fontWeight: 700, letterSpacing: 2,
+                  boxShadow: isHov || isSel ? `0 0 16px ${col}44` : "none",
+                  transition: "all .25s",
+                }}>
+                  {isSel ? "CONNEXION..." : "SE CONNECTER"}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, marginTop: "clamp(24px,4vh,48px)", color: "#2a3a5a", fontFamily: "'Rajdhani',sans-serif", fontSize: "clamp(11px,1vw,14px)", letterSpacing: 2 }}>
+        STAR CITIZEN COMPANION · ACCÈS SÉCURISÉ
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
   const [tab,setTab]=useState("dashboard");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { const u=localStorage.getItem("sc_user"); return u?JSON.parse(u):null; } catch { return null; }
+  });
+
+  function handleLogin(profile) {
+    setCurrentUser(profile);
+    try { localStorage.setItem("sc_user", JSON.stringify(profile)); } catch {}
+  }
+  function handleLogout() {
+    setCurrentUser(null);
+    try { localStorage.removeItem("sc_user"); } catch {}
+  }
+
   useEffect(() => {
     const fn = () => setIsDesktop(window.innerWidth >= 900);
     window.addEventListener("resize", fn);
@@ -4166,6 +4522,7 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
+  const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -4286,7 +4643,7 @@ export default function App() {
     try { localStorage.setItem("chat_lastRead", String(now)); } catch {}
   }
   const [addMissionModal,setAddMissionModal]= useState(false);
-  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:"p1",note:""});
+  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:currentUser?.id||"p1",note:""});
 
   const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
   const validatedMissions = missions.filter(m=>m.status==="validated");
@@ -4301,7 +4658,7 @@ export default function App() {
     setMissions(prev=>[m,...prev]);
     saveMissions([m,...missions]);
     setAddMissionModal(false);
-    setMissionForm({name:"",amount:"",split:true,assignee:"p1",note:""});
+    setMissionForm({name:"",amount:"",split:true,assignee:currentUser?.id||"p1",note:""});
   }
 
   function validateMission(id){
@@ -4323,12 +4680,13 @@ export default function App() {
     setMissions(updated); saveMissions(updated);
   }
 
+  const isAdmin = currentUser?.id === "p1";
   const TABS=[
     {id:"dashboard",   icon:"🏠", label:"HOME"},
     {id:"concession",  icon:"🚀", label:"CONCESSION"},
     {id:"objectives",  icon:"🎯", label:"OBJECTIFS"},
-    {id:"calc",        icon:"⛏", label:"CALCUL"},
-    {id:"settings",    icon:"⚙️", label:"RÉGLAGES"},
+    {id:"calc",        icon:"⛏",  label:"CALCUL"},
+    ...(isAdmin ? [{id:"settings", icon:"⚙️", label:"RÉGLAGES"}] : []),
   ];
 
   // Swipe gauche/droite pour changer d'onglet
@@ -4356,6 +4714,9 @@ export default function App() {
     if (dx < 0 && idx < TABS.length - 1) setTab(TABS[idx + 1].id);
     if (dx > 0 && idx > 0)               setTab(TABS[idx - 1].id);
   }
+
+  // Écran de connexion si pas identifié
+  if (!currentUser) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -4502,6 +4863,12 @@ export default function App() {
                 </div>
               </div>
               {!isDesktop && <SyncBadge synced={loaded}/>}
+              {/* Utilisateur connecté */}
+              <button onClick={handleLogout} style={{ background:"transparent", border:`1px solid ${currentUser?.color||"#00d4ff"}44`, borderRadius:20, padding:"4px 10px", color:currentUser?.color||"#00d4ff", fontFamily:"'Rajdhani',sans-serif", fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:6, flexShrink:0 }}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:currentUser?.color||"#00d4ff",boxShadow:`0 0 6px ${currentUser?.color||"#00d4ff"}`,flexShrink:0}}/>
+                {currentUser?.name}
+                <span style={{color:"#4a5a6a"}}>✕</span>
+              </button>
             </div>
             <div style={{display:"flex",flexDirection:"column",alignItems:isDesktop?"flex-end":"center",gap:3,minWidth:0,maxWidth:isDesktop?360:"100%",width:isDesktop?"auto":"100%"}}>
               {isDesktop && <SyncBadge synced={loaded}/>}
@@ -4553,7 +4920,7 @@ export default function App() {
                   {profiles.map(p=>(
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                   ))}
-                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
                   <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
@@ -4574,7 +4941,7 @@ export default function App() {
                   ))}
                 </div>
                 <div style={{marginBottom:20}}>
-                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop}/>
+                  <VirementTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
                 </div>
                 <div style={{marginBottom:20}}>
                   <DepensesTile profiles={profiles} setProfiles={setProfiles} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
@@ -4608,7 +4975,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} defaultAuthor={currentUser?.id}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
