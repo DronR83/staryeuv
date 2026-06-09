@@ -4933,7 +4933,7 @@ export default function App() {
     try { localStorage.setItem("chat_lastRead", String(now)); } catch {}
   }
   const [addMissionModal,setAddMissionModal]= useState(false);
-  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:validatedUser?.id||"p1",note:""});
+  const [missionForm,    setMissionForm]    = useState({name:"",amount:"",split:true,assignee:storedUserId||"p1",note:""});
 
   const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
   const validatedMissions = missions.filter(m=>m.status==="validated");
@@ -4948,7 +4948,7 @@ export default function App() {
     setMissions(prev=>[m,...prev]);
     saveMissions([m,...missions]);
     setAddMissionModal(false);
-    setMissionForm({name:"",amount:"",split:true,assignee:validatedUser?.id||"p1",note:""});
+    setMissionForm({name:"",amount:"",split:true,assignee:storedUserId||"p1",note:""});
   }
 
   function validateMission(id){
@@ -4972,7 +4972,7 @@ export default function App() {
     setMissions(updated); saveMissions(updated);
   }
 
-  const isAdmin = validatedUser?.id === "p1";
+  const isAdmin = storedUserId === "p1";
   const TABS=[
     {id:"dashboard",   icon:"🏠", label:"HOME"},
     {id:"concession",  icon:"🚀", label:"CONCESSION"},
