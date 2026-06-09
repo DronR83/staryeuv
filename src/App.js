@@ -62,472 +62,472 @@ function CosmicBackground() {
 
   useEffect(() => {
     const canvas = ref.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = Math.min(window.devicePixelRatio||1, 2);
-    let W, H;
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let W = window.innerWidth, H = window.innerHeight;
     function resize() {
       W = window.innerWidth; H = window.innerHeight;
-      canvas.width = W*dpr; canvas.height = H*dpr;
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener('resize', resize);
 
-    // ── ÉTOILES ────────────────────────────────────────────────────
-    const S1=Array.from({length:280},()=>({x:Math.random(),y:Math.random(),r:0.2+Math.random()*0.55,sp:0.000045,al:0.15+Math.random()*0.45,ph:Math.random()*6}));
-    const S2=Array.from({length:90}, ()=>({x:Math.random(),y:Math.random(),r:0.5+Math.random()*1.0, sp:0.0001, al:0.3+Math.random()*0.4,ph:Math.random()*6}));
-    const S3=Array.from({length:25}, ()=>({x:Math.random(),y:Math.random(),r:1.0+Math.random()*1.5, sp:0.00016,al:0.5+Math.random()*0.4,ph:Math.random()*6}));
+    // ── STARFIELD HD ─────────────────────────────────────────────
+    const stars = Array.from({length: 350}, () => ({
+      x: Math.random(), y: Math.random(),
+      z: 0.1 + Math.random() * 0.9, // depth
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.00003 + Math.random() * 0.00012,
+    }));
 
-    // ── ÉTOILES FILANTES ───────────────────────────────────────────
-    const meteors=Array.from({length:4},()=>({active:false,delay:80+Math.random()*350,x:0,y:0,vx:0,vy:0,len:0,life:0}));
+    // ── SHOOTING STARS HD ────────────────────────────────────────
+    const MAX_SHOOTS = 5;
+    const shoots = Array.from({length: MAX_SHOOTS}, (_, i) => ({
+      active: false, delay: i * 90 + Math.random() * 200,
+      x: 0, y: 0, vx: 0, vy: 0, trail: [], maxLen: 0, alpha: 0,
+    }));
 
-    // ── SPAWN VAISSEAU ─────────────────────────────────────────────
-    function spawnShip(type){
-      const fl=Math.random()>0.5;
-      // Tailles réduites et réalistes
-      const speed=type==="capital"?0.00008+Math.random()*0.00005
-               :type==="cargo"  ?0.00022+Math.random()*0.00015
-               :                  0.0004+Math.random()*0.0005;
+    function spawnShoot(s) {
+      s.active = true;
+      s.x = 0.05 + Math.random() * 0.75;
+      s.y = 0.01 + Math.random() * 0.45;
+      const angle = Math.PI * (0.12 + Math.random() * 0.08); // diagonal douce
+      const speed = 0.006 + Math.random() * 0.012;
+      s.vx = -Math.cos(angle) * speed;
+      s.vy =  Math.sin(angle) * speed;
+      s.trail = [];
+      s.maxLen = 14 + Math.floor(Math.random() * 20);
+      s.alpha = 0;
+    }
+
+    // ── SPAWN VAISSEAU ───────────────────────────────────────────
+    function spawnShip(type) {
+      const fl = Math.random() > 0.5;
+      const speed = type === 'capital' ? 0.00012 + Math.random() * 0.00006
+                  : type === 'cargo'   ? 0.00030 + Math.random() * 0.00018
+                  :                      0.00055 + Math.random() * 0.00065;
+      // Tailles visibles mais réalistes
+      const sc = type === 'capital' ? 0.11 + Math.random() * 0.05
+               : type === 'cargo'   ? 0.058 + Math.random() * 0.03
+               :                      0.030 + Math.random() * 0.022;
       return {
-        type,active:false,delay:40+Math.random()*600,
-        fromLeft:fl,x:fl?-0.12:1.12,
-        y:0.04+Math.random()*0.86,
-        vx:fl?speed:-speed,
-        // Échelle très réduite pour réalisme
-        sc: type==="capital"?0.038+Math.random()*0.018
-          : type==="cargo"  ?0.018+Math.random()*0.012
-          :                   0.009+Math.random()*0.007,
-        al: type==="capital"?0.62+Math.random()*0.2
-          : type==="cargo"  ?0.55+Math.random()*0.2
-          :                   0.5+Math.random()*0.25,
-        ph:Math.random()*6,
-        variant:Math.floor(Math.random()*3), // 3 designs par type
+        type, active: false,
+        delay: 20 + Math.random() * 400,
+        fromLeft: fl, x: fl ? -0.15 : 1.15,
+        y: 0.04 + Math.random() * 0.84,
+        vx: fl ? speed : -speed, sc,
+        al: type === 'capital' ? 0.55 + Math.random() * 0.22
+          : type === 'cargo'   ? 0.45 + Math.random() * 0.22
+          :                      0.38 + Math.random() * 0.25,
+        ph: Math.random() * 6,
       };
     }
-    let ships=[
-      spawnShip("capital"),
-      spawnShip("cargo"),spawnShip("cargo"),
-      spawnShip("fighter"),spawnShip("fighter"),spawnShip("fighter"),
-      spawnShip("fighter"),spawnShip("fighter"),spawnShip("fighter"),
+
+    let ships = [
+      spawnShip('capital'),
+      spawnShip('cargo'), spawnShip('cargo'),
+      ...Array.from({length: 6}, () => spawnShip('fighter')),
     ];
 
-    // ── DESSIN VAISSEAUX HD réalistes Star Citizen ─────────────────
-    function drawShip(s, t){
-      const sx=s.x*W, sy=s.y*H;
-      const px=Math.min(W,H)*s.sc;
-      const dir=s.vx>0?1:-1;
-      const j=0.5+0.5*Math.sin(t*0.14+s.ph); // jet flicker
-      const j2=0.5+0.5*Math.sin(t*0.22+s.ph+1.3);
-      ctx.save();
-      ctx.translate(sx,sy);
-      ctx.scale(dir,1);
-      ctx.globalAlpha=s.al;
+    // ── DESSINS VAISSEAUX HD ─────────────────────────────────────
+    function drawFighter(ctx, px, j, j2) {
+      // F7C Hornet / Arrow - vue de côté très détaillée
+      const S = px;
+      ctx.shadowColor = '#40a0ff'; ctx.shadowBlur = 10 * j;
 
-      if(s.type==="fighter"){
-        // ── F7C Hornet / Arrow style ────────────────────────────────
-        const sz=px;
-        ctx.save(); ctx.scale(sz,sz);
+      // --- Jet engine glow ---
+      const eg = ctx.createRadialGradient(-S*1.1, 0, 0, -S*1.1, 0, S*0.55*j);
+      eg.addColorStop(0, `rgba(80,160,255,${0.55*j})`);
+      eg.addColorStop(0.5, `rgba(40,100,220,${0.2*j})`);
+      eg.addColorStop(1, 'transparent');
+      ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(-S*1.1, 0, S*0.55*j, 0, Math.PI*2); ctx.fill();
 
-        // Lueur moteur lointaine
-        const eg=ctx.createRadialGradient(-1.1,0,0,-1.1,0,0.9*j);
-        eg.addColorStop(0,`rgba(80,160,255,${0.6*j})`); eg.addColorStop(0.4,`rgba(40,100,200,${0.2*j})`); eg.addColorStop(1,"transparent");
-        ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(-1.1,0,0.9*j,0,Math.PI*2); ctx.fill();
+      // --- Fuselage principal ---
+      const fg = ctx.createLinearGradient(-S*1.2, -S*0.14, S*0.2, 0);
+      fg.addColorStop(0, '#1a2a3e'); fg.addColorStop(0.35, '#2a4060'); fg.addColorStop(0.7, '#1c3050'); fg.addColorStop(1, '#0f1e2e');
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(S*1.15, 0);
+      ctx.bezierCurveTo(S*0.7, -S*0.075, -S*0.1, -S*0.15, -S*0.45, -S*0.15);
+      ctx.lineTo(-S*1.2, -S*0.075); ctx.lineTo(-S*1.25, 0);
+      ctx.lineTo(-S*1.2,  S*0.075); ctx.lineTo(-S*0.45,  S*0.15);
+      ctx.bezierCurveTo(-S*0.1, S*0.15, S*0.7, S*0.075, S*1.15, 0);
+      ctx.closePath(); ctx.fill();
 
-        // Corps fuselage (cone avant + corps central)
-        const fus=ctx.createLinearGradient(-1.2,-0.16,0.2,0);
-        fus.addColorStop(0,"#1a2a3a"); fus.addColorStop(0.3,"#2a3f55"); fus.addColorStop(0.7,"#1e3048"); fus.addColorStop(1,"#0f1e2e");
-        ctx.fillStyle=fus; ctx.shadowColor="#3a6a9a"; ctx.shadowBlur=3;
-        ctx.beginPath();
-        ctx.moveTo(1.2, 0);
-        ctx.bezierCurveTo(0.8,-0.08, 0,-0.16,-0.4,-0.16);
-        ctx.lineTo(-1.2,-0.08); ctx.lineTo(-1.25,0);
-        ctx.lineTo(-1.2, 0.08); ctx.lineTo(-0.4, 0.16);
-        ctx.bezierCurveTo(0,0.16, 0.8,0.08, 1.2,0);
-        ctx.closePath(); ctx.fill();
+      // Nervure dorsale
+      ctx.fillStyle = '#0c1825';
+      ctx.beginPath(); ctx.moveTo(S*1.0,-S*0.02); ctx.lineTo(-S*0.85,-S*0.055); ctx.lineTo(-S*1.1,-S*0.02); ctx.lineTo(-S*0.85,-S*0.01); ctx.lineTo(S*1.0,-S*0.01); ctx.closePath(); ctx.fill();
 
-        // Nervure dorsale
-        ctx.fillStyle="#0f1e2e";
-        ctx.beginPath(); ctx.moveTo(1.0,-0.02); ctx.lineTo(-0.8,-0.06); ctx.lineTo(-1.1,-0.02); ctx.lineTo(-0.8,-0.01); ctx.lineTo(1.0,-0.01); ctx.closePath(); ctx.fill();
+      // --- Ailes delta ---
+      const wg = ctx.createLinearGradient(0, -S*0.65, 0, -S*0.12);
+      wg.addColorStop(0, '#0a1520'); wg.addColorStop(1, '#1e3048');
+      // Aile sup
+      ctx.fillStyle = wg;
+      ctx.beginPath(); ctx.moveTo(S*0.05,-S*0.15); ctx.lineTo(-S*0.38,-S*0.72); ctx.lineTo(-S*0.78,-S*0.74); ctx.lineTo(-S*1.0,-S*0.14); ctx.lineTo(-S*0.42,-S*0.15); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#2a4a6a'; ctx.lineWidth = S*0.012; ctx.stroke();
+      // Aile inf
+      ctx.beginPath(); ctx.moveTo(S*0.05,S*0.15); ctx.lineTo(-S*0.38,S*0.72); ctx.lineTo(-S*0.78,S*0.74); ctx.lineTo(-S*1.0,S*0.14); ctx.lineTo(-S*0.42,S*0.15); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#2a4a6a'; ctx.stroke();
+      // Dérive verticale
+      ctx.fillStyle = '#12202e';
+      ctx.beginPath(); ctx.moveTo(S*0.0,-S*0.15); ctx.lineTo(-S*0.52,-S*0.40); ctx.lineTo(-S*0.72,-S*0.40); ctx.lineTo(-S*0.94,-S*0.15); ctx.closePath(); ctx.fill();
 
-        // Aile droite (top)
-        const wg=ctx.createLinearGradient(0,-0.6,0,-0.1);
-        wg.addColorStop(0,"#0a1520"); wg.addColorStop(1,"#1e3048");
-        ctx.fillStyle=wg;
-        ctx.beginPath(); ctx.moveTo(0.1,-0.16); ctx.lineTo(-0.35,-0.7); ctx.lineTo(-0.75,-0.72); ctx.lineTo(-0.95,-0.15); ctx.lineTo(-0.4,-0.16); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle="#2a4a6a"; ctx.lineWidth=0.015; ctx.stroke();
-        // Aile gauche (bottom)
-        ctx.fillStyle=wg;
-        ctx.beginPath(); ctx.moveTo(0.1,0.16); ctx.lineTo(-0.35,0.7); ctx.lineTo(-0.75,0.72); ctx.lineTo(-0.95,0.15); ctx.lineTo(-0.4,0.16); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle="#2a4a6a"; ctx.stroke();
+      // Panel lines
+      ctx.strokeStyle = 'rgba(60,110,180,0.3)'; ctx.lineWidth = S*0.008;
+      ctx.beginPath(); ctx.moveTo(S*0.75,-S*0.04); ctx.lineTo(S*0.1,-S*0.1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(S*0.75, S*0.04); ctx.lineTo(S*0.1,  S*0.1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-S*0.22,-S*0.15); ctx.lineTo(-S*0.22,S*0.15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo( S*0.28,-S*0.10); ctx.lineTo( S*0.28,S*0.10); ctx.stroke();
 
-        // Dérive verticale
-        ctx.fillStyle="#12202e";
-        ctx.beginPath(); ctx.moveTo(0,-0.16); ctx.lineTo(-0.5,-0.38); ctx.lineTo(-0.7,-0.38); ctx.lineTo(-0.9,-0.16); ctx.closePath(); ctx.fill();
+      // --- Cockpit bubble HD ---
+      const cg = ctx.createRadialGradient(S*0.48,-S*0.04,S*0.01,S*0.44,-S*0.02,S*0.20);
+      cg.addColorStop(0, 'rgba(180,235,255,0.82)');
+      cg.addColorStop(0.4, 'rgba(60,150,210,0.45)');
+      cg.addColorStop(0.8, 'rgba(15,55,120,0.28)');
+      cg.addColorStop(1, 'transparent');
+      ctx.fillStyle = cg; ctx.shadowColor = '#80ccff'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.ellipse(S*0.46, -S*0.05, S*0.24, S*0.105, -0.12, 0, Math.PI*2); ctx.fill();
+      // Reflet
+      ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.ellipse(S*0.4,-S*0.085, S*0.09, S*0.042, -0.3, 0, Math.PI*2); ctx.fill();
 
-        // Panneaux de carrosserie
-        ctx.strokeStyle="rgba(60,100,150,0.35)"; ctx.lineWidth=0.012;
-        ctx.beginPath(); ctx.moveTo(0.8,-0.04); ctx.lineTo(0.1,-0.1); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0.8, 0.04); ctx.lineTo(0.1, 0.1); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-0.2,-0.16); ctx.lineTo(-0.2,0.16); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo( 0.3,-0.1); ctx.lineTo( 0.3, 0.1); ctx.stroke();
+      // --- Canons ---
+      ctx.fillStyle = '#0d1825'; ctx.strokeStyle = '#1a3a55'; ctx.lineWidth = S*0.018;
+      ctx.beginPath(); ctx.roundRect(S*0.82,-S*0.04, S*0.48, S*0.025, S*0.008); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(S*0.82, S*0.015,S*0.48, S*0.025, S*0.008); ctx.fill(); ctx.stroke();
 
-        // Cockpit (bubble canopy)
-        const cg=ctx.createRadialGradient(0.55,-0.04,0.01,0.5,-0.02,0.17);
-        cg.addColorStop(0,`rgba(180,230,255,${0.75})`); cg.addColorStop(0.4,"rgba(60,140,200,0.45)"); cg.addColorStop(0.8,"rgba(20,60,120,0.3)"); cg.addColorStop(1,"transparent");
-        ctx.fillStyle=cg; ctx.shadowColor="#80c8ff"; ctx.shadowBlur=5;
-        ctx.beginPath(); ctx.ellipse(0.5,-0.05,0.22,0.1,-0.15,0,Math.PI*2); ctx.fill();
-        // reflet cockpit
-        ctx.fillStyle="rgba(255,255,255,0.25)"; ctx.shadowBlur=0;
-        ctx.beginPath(); ctx.ellipse(0.44,-0.08,0.08,0.04,-0.3,0,Math.PI*2); ctx.fill();
+      // --- Réacteur principal ---
+      const rg = ctx.createLinearGradient(-S*1.22,0,-S*(1.22+1.8*j),0);
+      rg.addColorStop(0, `rgba(110,190,255,${j})`);
+      rg.addColorStop(0.2, `rgba(70,140,255,${0.65*j})`);
+      rg.addColorStop(0.5, `rgba(50,100,220,${0.3*j})`);
+      rg.addColorStop(1, 'transparent');
+      ctx.fillStyle = rg; ctx.shadowColor = '#4499ff'; ctx.shadowBlur = 18*j;
+      ctx.beginPath(); ctx.moveTo(-S*1.22,-S*0.065); ctx.lineTo(-S*(1.22+1.8*j),-S*0.01); ctx.lineTo(-S*(1.22+1.8*j),S*0.01); ctx.lineTo(-S*1.22,S*0.065); ctx.closePath(); ctx.fill();
+      // Orifice réacteur
+      ctx.fillStyle = `rgba(100,180,255,${0.9*j})`; ctx.shadowBlur = 12*j;
+      ctx.beginPath(); ctx.ellipse(-S*1.22,0,S*0.068,S*0.068,0,0,Math.PI*2); ctx.fill();
 
-        // Canons (2 sur le nez)
-        ctx.fillStyle="#0d1825"; ctx.strokeStyle="#1a3a55"; ctx.lineWidth=0.02;
-        ctx.beginPath(); ctx.roundRect(0.9,-0.04,0.45,0.025,0.008); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.roundRect(0.9, 0.015,0.45,0.025,0.008); ctx.fill(); ctx.stroke();
-
-        // Réacteur principal + panache
-        ctx.shadowColor=`rgba(60,140,255,${j})`; ctx.shadowBlur=12*j;
-        ctx.fillStyle=`rgba(80,160,255,${0.9*j})`;
-        ctx.beginPath(); ctx.ellipse(-1.22,0,0.07,0.07,0,0,Math.PI*2); ctx.fill();
-        const jg=ctx.createLinearGradient(-1.22,0,-1.22-1.4*j,0);
-        jg.addColorStop(0,`rgba(100,180,255,${0.95*j})`); jg.addColorStop(0.25,`rgba(60,120,255,${0.6*j})`); jg.addColorStop(0.6,`rgba(40,80,200,${0.2*j})`); jg.addColorStop(1,"transparent");
-        ctx.fillStyle=jg;
-        ctx.beginPath(); ctx.moveTo(-1.22,-0.07); ctx.lineTo(-1.22-1.4*j,-0.01); ctx.lineTo(-1.22-1.4*j,0.01); ctx.lineTo(-1.22,0.07); ctx.closePath(); ctx.fill();
-        // Réacteurs ailes
-        [[-0.88,-0.55],[-0.88,0.55]].forEach(([rx,ry])=>{
-          ctx.fillStyle=`rgba(60,130,230,${0.7*j2})`;
-          ctx.beginPath(); ctx.ellipse(rx,ry,0.04,0.04,0,0,Math.PI*2); ctx.fill();
-          const rjg=ctx.createLinearGradient(rx,ry,rx-0.7*j2,ry);
-          rjg.addColorStop(0,`rgba(80,150,255,${0.8*j2})`); rjg.addColorStop(1,"transparent");
-          ctx.fillStyle=rjg; ctx.shadowBlur=6*j2;
-          ctx.beginPath(); ctx.ellipse(rx-0.35*j2,ry,0.35*j2,0.03,0,0,Math.PI*2); ctx.fill();
-        });
-        ctx.shadowBlur=0; ctx.restore();
-
-      } else if(s.type==="cargo"){
-        // ── Constellation / Freelancer style ────────────────────────
-        const sz=px;
-        ctx.save(); ctx.scale(sz,sz);
-
-        // Lueur moteurs
-        [-0.38,-0.15,0.15,0.38].forEach((ry,ri)=>{
-          const eg2=ctx.createRadialGradient(-1.1,ry*2.2,0,-1.1,ry*2.2,0.6*j);
-          eg2.addColorStop(0,`rgba(100,200,255,${0.35*j})`); eg2.addColorStop(1,"transparent");
-          ctx.fillStyle=eg2; ctx.beginPath(); ctx.arc(-1.1,ry*2.2,0.6*j,0,Math.PI*2); ctx.fill();
-        });
-
-        // Nacelles moteurs (2)
-        [-1,1].forEach(side=>{
-          const ny=side*0.85;
-          const ng=ctx.createLinearGradient(-1.1,ny,0.6,ny);
-          ng.addColorStop(0,"#0e1a28"); ng.addColorStop(0.5,"#1a2e44"); ng.addColorStop(1,"#0a1520");
-          ctx.fillStyle=ng; ctx.strokeStyle="#1e3a55"; ctx.lineWidth=0.012;
-          ctx.beginPath(); ctx.roundRect(-1.1,ny-0.22,1.6,0.44,0.06); ctx.fill(); ctx.stroke();
-          // Détails nacelle
-          ctx.strokeStyle="rgba(40,80,130,0.4)"; ctx.lineWidth=0.01;
-          [-0.8,-0.4,0,0.3].forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,ny-0.22);ctx.lineTo(lx,ny+0.22);ctx.stroke();});
-          // Réacteurs nacelle ×2
-          [ny-0.12,ny+0.12].forEach(ry=>{
-            ctx.fillStyle=`rgba(80,170,255,${0.85*j})`;
-            ctx.shadowColor="#50aaff"; ctx.shadowBlur=8*j;
-            ctx.beginPath(); ctx.ellipse(-1.12,ry,0.06,0.06,0,0,Math.PI*2); ctx.fill();
-            const rjg=ctx.createLinearGradient(-1.12,ry,-1.12-1.1*j,ry);
-            rjg.addColorStop(0,`rgba(100,190,255,${0.9*j})`); rjg.addColorStop(0.3,`rgba(60,130,220,${0.4*j})`); rjg.addColorStop(1,"transparent");
-            ctx.fillStyle=rjg; ctx.shadowBlur=10*j;
-            ctx.beginPath(); ctx.moveTo(-1.12,-0.06+ry); ctx.lineTo(-1.12-1.1*j,-0.015+ry); ctx.lineTo(-1.12-1.1*j,0.015+ry); ctx.lineTo(-1.12,0.06+ry); ctx.closePath(); ctx.fill();
-          });
-          ctx.shadowBlur=0;
-        });
-
-        // Coque centrale principale
-        const hull=ctx.createLinearGradient(0,-0.42,0,0.42);
-        hull.addColorStop(0,"#1c2f44"); hull.addColorStop(0.3,"#243c57"); hull.addColorStop(0.7,"#1a2f47"); hull.addColorStop(1,"#0f1e30");
-        ctx.fillStyle=hull; ctx.strokeStyle="#2a4a6a"; ctx.lineWidth=0.014;
-        ctx.beginPath(); ctx.roundRect(-1.05,-0.42,2.1,0.84,0.12); ctx.fill(); ctx.stroke();
-
-        // Pont supérieur (tour)
-        ctx.fillStyle="#152232"; ctx.strokeStyle="#1e3a55"; ctx.lineWidth=0.01;
-        ctx.beginPath(); ctx.roundRect(-0.1,-0.6,0.9,0.2,0.05); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.roundRect(0.05,-0.56,0.65,0.14,0.03); ctx.fill();
-
-        // Panneaux carrosserie
-        ctx.strokeStyle="rgba(40,80,130,0.3)"; ctx.lineWidth=0.01;
-        [-0.7,-0.35,0,0.35,0.7].forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,-0.42);ctx.lineTo(lx,0.42);ctx.stroke();});
-        [-0.2,0.2].forEach(ly=>{ctx.beginPath();ctx.moveTo(-1.05,ly);ctx.lineTo(1.05,ly);ctx.stroke();});
-
-        // Fenêtres illuminées
-        ctx.shadowColor="#aaddff"; ctx.shadowBlur=4;
-        [-0.65,-0.42,-0.18,0.06,0.30,0.54,0.74].forEach((wx,wi)=>{
-          const wal=0.35+0.3*Math.abs(Math.sin(t*0.05+wi*1.1+s.ph));
-          ctx.fillStyle=`rgba(180,220,255,${wal})`;
-          ctx.beginPath(); ctx.roundRect(wx,-0.08,0.08,0.16,0.015); ctx.fill();
-        });
-        ctx.shadowBlur=0;
-
-        // Cockpit avant
-        const cg2=ctx.createRadialGradient(0.85,-0.08,0.01,0.85,-0.05,0.2);
-        cg2.addColorStop(0,`rgba(160,220,255,0.7)`); cg2.addColorStop(0.5,"rgba(60,140,200,0.35)"); cg2.addColorStop(1,"transparent");
-        ctx.fillStyle=cg2; ctx.shadowColor="#80c8ff"; ctx.shadowBlur=6;
-        ctx.beginPath(); ctx.ellipse(0.82,-0.08,0.24,0.12,-0.1,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="rgba(255,255,255,0.2)"; ctx.shadowBlur=0;
-        ctx.beginPath(); ctx.ellipse(0.76,-0.12,0.09,0.05,-0.2,0,Math.PI*2); ctx.fill();
-
-        // Lumières nav
-        const bl=Math.sin(t*0.07+s.ph)>0?0.95:0.12;
-        ctx.fillStyle=`rgba(255,50,50,${bl})`; ctx.shadowColor="#ff3333"; ctx.shadowBlur=6;
-        ctx.beginPath(); ctx.arc(-1.0,0.0,0.04,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle=`rgba(50,50,255,${0.9-bl*0.8+0.1})`; ctx.shadowColor="#3333ff";
-        ctx.beginPath(); ctx.arc(1.0,0.0,0.04,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
-
-        // Réacteur central
-        ctx.fillStyle=`rgba(80,160,255,${0.7*j})`; ctx.shadowColor="#50aaff"; ctx.shadowBlur=10*j;
-        ctx.beginPath(); ctx.ellipse(-1.07,0,0.09,0.09,0,0,Math.PI*2); ctx.fill();
-        const cjg=ctx.createLinearGradient(-1.07,0,-1.07-1.2*j,0);
-        cjg.addColorStop(0,`rgba(100,190,255,${0.9*j})`); cjg.addColorStop(0.3,`rgba(60,130,220,${0.45*j})`); cjg.addColorStop(1,"transparent");
-        ctx.fillStyle=cjg;
-        ctx.beginPath(); ctx.moveTo(-1.07,-0.09); ctx.lineTo(-1.07-1.2*j,-0.02); ctx.lineTo(-1.07-1.2*j,0.02); ctx.lineTo(-1.07,0.09); ctx.closePath(); ctx.fill();
-        ctx.shadowBlur=0; ctx.restore();
-
-      } else {
-        // ── Idris / Hammerhead / Javelin style ─────────────────────
-        const sz=px;
-        ctx.save(); ctx.scale(sz,sz);
-
-        // Aura moteurs
-        [-0.3,-0.15,0,0.15,0.3].forEach((ry,ri)=>{
-          const eg3=ctx.createRadialGradient(-2.4,ry,0,-2.4,ry,0.5*j);
-          eg3.addColorStop(0,`rgba(80,140,255,${0.28*j})`); eg3.addColorStop(1,"transparent");
-          ctx.fillStyle=eg3; ctx.beginPath(); ctx.arc(-2.4,ry,0.5*j,0,Math.PI*2); ctx.fill();
-        });
-
-        // Coque primaire (très allongée)
-        const capHull=ctx.createLinearGradient(0,-0.36,0,0.36);
-        capHull.addColorStop(0,"#1a2a3a"); capHull.addColorStop(0.25,"#22354e"); capHull.addColorStop(0.75,"#1c2f44"); capHull.addColorStop(1,"#0f1e30");
-        ctx.fillStyle=capHull; ctx.strokeStyle="#253d58"; ctx.lineWidth=0.01;
-        ctx.beginPath();
-        ctx.moveTo(-2.5,-0.06); ctx.bezierCurveTo(-2.0,-0.32,1.6,-0.3,2.5,0);
-        ctx.bezierCurveTo(1.6,0.3,-2.0,0.32,-2.5,0.06); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-
-        // Superstructure centrale
-        ctx.fillStyle="#111f30"; ctx.strokeStyle="#1a2e45"; ctx.lineWidth=0.008;
-        ctx.beginPath(); ctx.roundRect(-0.4,-0.44,1.8,0.44,0.05); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.roundRect(0.1,-0.5,0.9,0.08,0.02); ctx.fill();
-
-        // Tourelles (nacelles latérales)
-        [-1.2,-0.5,0.2,0.9].forEach(tx=>{
-          ctx.fillStyle="#0e1c2a"; ctx.strokeStyle="#1a3050"; ctx.lineWidth=0.008;
-          ctx.beginPath(); ctx.roundRect(tx,-0.42,0.35,0.12,0.03); ctx.fill(); ctx.stroke();
-          ctx.beginPath(); ctx.roundRect(tx, 0.30,0.35,0.12,0.03); ctx.fill(); ctx.stroke();
-        });
-
-        // Lignes structurelles
-        ctx.strokeStyle="rgba(30,60,100,0.4)"; ctx.lineWidth=0.008;
-        [-1.8,-1.2,-0.6,0,0.6,1.2,1.8].forEach(lx=>{
-          ctx.beginPath(); ctx.moveTo(lx,-0.28); ctx.lineTo(lx+(lx>0?0.04:-0.04),0.28); ctx.stroke();
-        });
-        // Lignes horizontales
-        [-0.15,0,0.15].forEach(ly=>{
-          ctx.beginPath(); ctx.moveTo(-2.2,ly); ctx.lineTo(2.0,ly); ctx.stroke();
-        });
-
-        // Baies/détails
-        [-1.4,-0.7,0.0,0.7].forEach(bx=>{
-          ctx.fillStyle="rgba(10,25,45,0.8)"; ctx.strokeStyle="rgba(30,70,120,0.5)"; ctx.lineWidth=0.007;
-          ctx.beginPath(); ctx.roundRect(bx,-0.18,0.55,0.36,0.015); ctx.fill(); ctx.stroke();
-        });
-
-        // Antennes et mats
-        [[1.9,-0.3],[2.1,-0.1],[1.7,0.25],[2.2,0.12]].forEach(([ax,ay])=>{
-          ctx.strokeStyle="rgba(30,70,120,0.6)"; ctx.lineWidth=0.008;
-          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax+0.08,ay-0.18); ctx.stroke();
-          const blink2=Math.sin(t*0.09+ax*3)>0.5?0.9:0.15;
-          ctx.fillStyle=`rgba(255,200,80,${blink2})`; ctx.shadowColor="#ffcc44"; ctx.shadowBlur=4;
-          ctx.beginPath(); ctx.arc(ax+0.08,ay-0.18,0.025,0,Math.PI*2); ctx.fill();
-        });
-
-        // Lumières nav
-        const bl3=Math.sin(t*0.055+s.ph)>0?0.9:0.1;
-        ctx.fillStyle=`rgba(255,40,40,${bl3})`; ctx.shadowColor="#ff2222"; ctx.shadowBlur=8;
-        ctx.beginPath(); ctx.arc(-2.45,-0.01,0.05,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle=`rgba(40,40,255,${0.85-bl3*0.75+0.1})`; ctx.shadowColor="#2222ff";
-        ctx.beginPath(); ctx.arc(2.45,-0.01,0.05,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
-
-        // Réacteurs ×5 + panaches
-        ctx.shadowColor="#4488ff"; ctx.shadowBlur=10*j;
-        [-0.28,-0.12,0.04,0.20,0.36].forEach((ry,ri)=>{
-          ctx.fillStyle=`rgba(80,150,255,${0.85*j})`;
-          ctx.beginPath(); ctx.ellipse(-2.48,ry,0.07,0.055,0,0,Math.PI*2); ctx.fill();
-          const rjg5=ctx.createLinearGradient(-2.48,ry,-2.48-1.0*j,ry);
-          rjg5.addColorStop(0,`rgba(100,170,255,${0.9*j})`); rjg5.addColorStop(0.35,`rgba(60,120,230,${0.4*j})`); rjg5.addColorStop(1,"transparent");
-          ctx.fillStyle=rjg5;
-          ctx.beginPath(); ctx.moveTo(-2.48,-0.055+ry); ctx.lineTo(-2.48-1.0*j,-0.01+ry); ctx.lineTo(-2.48-1.0*j,0.01+ry); ctx.lineTo(-2.48,0.055+ry); ctx.closePath(); ctx.fill();
-        });
-        ctx.shadowBlur=0; ctx.restore();
-      }
-
-      ctx.globalAlpha=1;
-      ctx.restore();
+      // --- Réacteurs ailes ---
+      [[-S*0.86,-S*0.56],[-S*0.86,S*0.56]].forEach(([rx,ry]) => {
+        ctx.fillStyle = `rgba(70,140,230,${0.72*j2})`; ctx.shadowBlur = 8*j2;
+        ctx.beginPath(); ctx.ellipse(rx,ry,S*0.038,S*0.038,0,0,Math.PI*2); ctx.fill();
+        const rjg = ctx.createLinearGradient(rx,ry,rx-S*0.7*j2,ry);
+        rjg.addColorStop(0,`rgba(90,160,255,${0.8*j2})`); rjg.addColorStop(1,'transparent');
+        ctx.fillStyle = rjg; ctx.shadowBlur = 7*j2;
+        ctx.beginPath(); ctx.ellipse(rx-S*0.35*j2,ry,S*0.35*j2,S*0.028,0,0,Math.PI*2); ctx.fill();
+      });
+      ctx.shadowBlur = 0;
     }
 
-    // ── TROU NOIR ─────────────────────────────────────────────────
-    let bhA=0;
-    function drawBlackHole(t){
-      const bx=W*0.82, by=H*0.42;
-      const R=Math.min(W,H)*0.21;
-      const rEv=R*0.24, rPh=R*0.30;
-      bhA+=0.004;
+    function drawCargo(ctx, px, j, j2) {
+      const S = px;
+      // --- Nacelles ×2 ---
+      [-1,1].forEach(side => {
+        const ny = side * S * 0.82;
+        const eg2 = ctx.createRadialGradient(-S*1.08,ny,0,-S*1.08,ny,S*0.5*j);
+        eg2.addColorStop(0,`rgba(80,165,255,${0.4*j})`); eg2.addColorStop(1,'transparent');
+        ctx.fillStyle = eg2; ctx.beginPath(); ctx.arc(-S*1.08,ny,S*0.5*j,0,Math.PI*2); ctx.fill();
+        // Corps nacelle
+        const ng = ctx.createLinearGradient(-S*1.1,ny,S*0.6,ny);
+        ng.addColorStop(0,'#0e1a28'); ng.addColorStop(0.5,'#1a2e44'); ng.addColorStop(1,'#0a1520');
+        ctx.fillStyle = ng; ctx.strokeStyle = '#1e3a55'; ctx.lineWidth = S*0.01;
+        ctx.beginPath(); ctx.roundRect(-S*1.05,ny-S*0.20,S*1.55,S*0.40,S*0.06); ctx.fill(); ctx.stroke();
+        // Nervures
+        ctx.strokeStyle = 'rgba(35,75,120,0.35)'; ctx.lineWidth = S*0.008;
+        [-S*0.7,-S*0.35,0,S*0.25].forEach(lx => {ctx.beginPath();ctx.moveTo(lx,ny-S*0.20);ctx.lineTo(lx,ny+S*0.20);ctx.stroke();});
+        // Réacteurs ×2
+        [ny-S*0.11,ny+S*0.11].forEach(ry => {
+          ctx.fillStyle = `rgba(85,175,255,${0.88*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=9*j;
+          ctx.beginPath(); ctx.ellipse(-S*1.07,ry,S*0.058,S*0.058,0,0,Math.PI*2); ctx.fill();
+          const rjg = ctx.createLinearGradient(-S*1.07,ry,-S*(1.07+1.2*j),ry);
+          rjg.addColorStop(0,`rgba(100,190,255,${0.9*j})`); rjg.addColorStop(0.3,`rgba(60,130,220,${0.45*j})`); rjg.addColorStop(1,'transparent');
+          ctx.fillStyle = rjg; ctx.shadowBlur=11*j;
+          ctx.beginPath(); ctx.moveTo(-S*1.07,ry-S*0.058); ctx.lineTo(-S*(1.07+1.2*j),ry-S*0.012); ctx.lineTo(-S*(1.07+1.2*j),ry+S*0.012); ctx.lineTo(-S*1.07,ry+S*0.058); ctx.closePath(); ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+      });
+      // --- Coque centrale ---
+      const hull = ctx.createLinearGradient(0,-S*0.40,0,S*0.40);
+      hull.addColorStop(0,'#1c2f44'); hull.addColorStop(0.3,'#243c57'); hull.addColorStop(0.7,'#1a2f47'); hull.addColorStop(1,'#0f1e30');
+      ctx.fillStyle = hull; ctx.strokeStyle='#2a4a6a'; ctx.lineWidth=S*0.012;
+      ctx.beginPath(); ctx.roundRect(-S*1.02,-S*0.40,S*2.05,S*0.80,S*0.11); ctx.fill(); ctx.stroke();
+      // Pont supérieur
+      ctx.fillStyle='#142030'; ctx.strokeStyle='#1e3a55'; ctx.lineWidth=S*0.008;
+      ctx.beginPath(); ctx.roundRect(-S*0.08,-S*0.58,S*0.88,S*0.20,S*0.04); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(S*0.06,-S*0.54,S*0.65,S*0.13,S*0.03); ctx.fill();
+      // Panneaux
+      ctx.strokeStyle='rgba(38,76,125,0.28)'; ctx.lineWidth=S*0.009;
+      [-S*0.68,-S*0.34,0,S*0.34,S*0.68].forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,-S*0.40);ctx.lineTo(lx,S*0.40);ctx.stroke();});
+      // Fenêtres HD
+      ctx.shadowColor='#aaddff'; ctx.shadowBlur=5;
+      [-S*0.62,-S*0.40,-S*0.16,S*0.06,S*0.29,S*0.52,S*0.72].forEach((wx,wi)=>{
+        const wal=0.38+0.30*Math.abs(Math.sin(t2*0.04+wi*1.1+s2ph));
+        ctx.fillStyle=`rgba(180,220,255,${wal})`;
+        ctx.beginPath(); ctx.roundRect(wx,-S*0.075,S*0.075,S*0.15,S*0.012); ctx.fill();
+      });
+      ctx.shadowBlur=0;
+      // Cockpit
+      const cg2=ctx.createRadialGradient(S*0.82,-S*0.07,0.01,S*0.82,-S*0.04,S*0.22);
+      cg2.addColorStop(0,'rgba(165,225,255,0.75)'); cg2.addColorStop(0.5,'rgba(55,140,200,0.38)'); cg2.addColorStop(1,'transparent');
+      ctx.fillStyle=cg2; ctx.shadowColor='#80c8ff'; ctx.shadowBlur=7;
+      ctx.beginPath(); ctx.ellipse(S*0.80,-S*0.07,S*0.24,S*0.115,-0.08,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.shadowBlur=0;
+      ctx.beginPath(); ctx.ellipse(S*0.74,-S*0.11,S*0.085,S*0.048,-0.18,0,Math.PI*2); ctx.fill();
+      // Nav lights
+      const bl=Math.sin(t2*0.07+s2ph)>0?0.92:0.12;
+      ctx.fillStyle=`rgba(255,48,48,${bl})`; ctx.shadowColor='#ff3333'; ctx.shadowBlur=7;
+      ctx.beginPath(); ctx.arc(-S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=`rgba(48,48,255,${0.88-bl*0.78+0.1})`; ctx.shadowColor='#3333ff';
+      ctx.beginPath(); ctx.arc(S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
+      // Réacteur central
+      ctx.fillStyle=`rgba(85,168,255,${0.78*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=11*j;
+      ctx.beginPath(); ctx.ellipse(-S*1.04,0,S*0.085,S*0.085,0,0,Math.PI*2); ctx.fill();
+      const cjg=ctx.createLinearGradient(-S*1.04,0,-S*(1.04+1.3*j),0);
+      cjg.addColorStop(0,`rgba(105,192,255,${0.92*j})`); cjg.addColorStop(0.3,`rgba(62,130,220,${0.45*j})`); cjg.addColorStop(1,'transparent');
+      ctx.fillStyle=cjg;
+      ctx.beginPath(); ctx.moveTo(-S*1.04,-S*0.085); ctx.lineTo(-S*(1.04+1.3*j),-S*0.018); ctx.lineTo(-S*(1.04+1.3*j),S*0.018); ctx.lineTo(-S*1.04,S*0.085); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur=0;
+    }
 
-      // Nébuleuse fond trou noir
-      const bneb=ctx.createRadialGradient(bx,by,rEv*0.5,bx,by,R*2.2);
-      bneb.addColorStop(0,`rgba(50,25,5,${0.12+0.04*Math.sin(t*0.01)})`);
-      bneb.addColorStop(0.3,`rgba(30,10,30,0.07)`);
-      bneb.addColorStop(1,"transparent");
-      ctx.fillStyle=bneb; ctx.fillRect(0,0,W,H);
+    function drawCapital(ctx, px, j, j2) {
+      const S = px;
+      // Aura réacteurs
+      [-S*0.26,-S*0.10,S*0.06,S*0.22].forEach(ry=>{
+        const eg3=ctx.createRadialGradient(-S*2.45,ry,0,-S*2.45,ry,S*0.55*j);
+        eg3.addColorStop(0,`rgba(75,140,255,${0.32*j})`); eg3.addColorStop(1,'transparent');
+        ctx.fillStyle=eg3; ctx.beginPath(); ctx.arc(-S*2.45,ry,S*0.55*j,0,Math.PI*2); ctx.fill();
+      });
+      // Coque principale
+      const ch=ctx.createLinearGradient(0,-S*0.34,0,S*0.34);
+      ch.addColorStop(0,'#1a2a3a'); ch.addColorStop(0.25,'#22354e'); ch.addColorStop(0.75,'#1c2f44'); ch.addColorStop(1,'#0f1e30');
+      ctx.fillStyle=ch; ctx.strokeStyle='#253d58'; ctx.lineWidth=S*0.008;
+      ctx.beginPath();
+      ctx.moveTo(-S*2.5,-S*0.06); ctx.bezierCurveTo(-S*2.0,-S*0.30,S*1.5,-S*0.28,S*2.5,0);
+      ctx.bezierCurveTo(S*1.5,S*0.28,-S*2.0,S*0.30,-S*2.5,S*0.06); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Superstructure
+      ctx.fillStyle='#111f30'; ctx.strokeStyle='#1a2e45'; ctx.lineWidth=S*0.007;
+      ctx.beginPath(); ctx.roundRect(-S*0.4,-S*0.42,S*1.75,S*0.42,S*0.04); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(S*0.1,-S*0.48,S*0.88,S*0.08,S*0.02); ctx.fill();
+      // Tourelles
+      [-S*1.18,-S*0.48,S*0.22,S*0.92].forEach(tx=>{
+        ctx.fillStyle='#0e1c2a'; ctx.strokeStyle='#1a3050'; ctx.lineWidth=S*0.007;
+        ctx.beginPath(); ctx.roundRect(tx,-S*0.40,S*0.34,S*0.11,S*0.025); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(tx, S*0.29,S*0.34,S*0.11,S*0.025); ctx.fill(); ctx.stroke();
+        // Tourelle canons
+        ctx.fillStyle='#080f1a';
+        ctx.beginPath(); ctx.arc(tx+S*0.17,-S*0.355,S*0.04,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(tx+S*0.17, S*0.325,S*0.04,0,Math.PI*2); ctx.fill();
+      });
+      // Lignes structurelles
+      ctx.strokeStyle='rgba(28,58,98,0.38)'; ctx.lineWidth=S*0.007;
+      [-S*1.8,-S*1.2,-S*0.6,0,S*0.6,S*1.2,S*1.8].forEach(lx=>{
+        ctx.beginPath(); ctx.moveTo(lx,-S*0.26); ctx.lineTo(lx+(lx>0?0.03:-0.03)*S,S*0.26); ctx.stroke();
+      });
+      [-S*0.14,0,S*0.14].forEach(ly=>{
+        ctx.beginPath(); ctx.moveTo(-S*2.2,ly); ctx.lineTo(S*2.0,ly); ctx.stroke();
+      });
+      // Baies hangar
+      [-S*1.38,-S*0.68,0,S*0.70].forEach(bx=>{
+        ctx.fillStyle='rgba(8,22,42,0.85)'; ctx.strokeStyle='rgba(28,68,118,0.5)'; ctx.lineWidth=S*0.006;
+        ctx.beginPath(); ctx.roundRect(bx,-S*0.17,S*0.54,S*0.34,S*0.012); ctx.fill(); ctx.stroke();
+      });
+      // Antennes
+      [[S*1.88,-S*0.28],[S*2.08,-S*0.10],[S*1.68,S*0.24]].forEach(([ax,ay])=>{
+        ctx.strokeStyle='rgba(28,68,118,0.6)'; ctx.lineWidth=S*0.007;
+        ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax+S*0.08,ay-S*0.17); ctx.stroke();
+        const blink=Math.sin(t2*0.09+ax)*0.5+0.5>0.6?0.9:0.15;
+        ctx.fillStyle=`rgba(255,200,80,${blink})`; ctx.shadowColor='#ffcc44'; ctx.shadowBlur=4;
+        ctx.beginPath(); ctx.arc(ax+S*0.08,ay-S*0.17,S*0.022,0,Math.PI*2); ctx.fill();
+      });
+      // Nav lights
+      const bl2=Math.sin(t2*0.055+s2ph)>0?0.9:0.1;
+      ctx.fillStyle=`rgba(255,40,40,${bl2})`; ctx.shadowColor='#ff2222'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.arc(-S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle=`rgba(40,40,255,${0.85-bl2*0.75+0.1})`; ctx.shadowColor='#2222ff';
+      ctx.beginPath(); ctx.arc(S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      // Réacteurs ×5
+      ctx.shadowColor='#4488ff'; ctx.shadowBlur=12*j;
+      [-S*0.26,-S*0.10,S*0.06,S*0.22,S*0.38].forEach(ry=>{
+        ctx.fillStyle=`rgba(85,155,255,${0.88*j})`;
+        ctx.beginPath(); ctx.ellipse(-S*2.47,ry,S*0.068,S*0.052,0,0,Math.PI*2); ctx.fill();
+        const rjg=ctx.createLinearGradient(-S*2.47,ry,-S*(2.47+1.1*j),ry);
+        rjg.addColorStop(0,`rgba(105,175,255,${0.92*j})`); rjg.addColorStop(0.35,`rgba(60,120,230,${0.42*j})`); rjg.addColorStop(1,'transparent');
+        ctx.fillStyle=rjg; ctx.shadowBlur=14*j;
+        ctx.beginPath(); ctx.moveTo(-S*2.47,ry-S*0.052); ctx.lineTo(-S*(2.47+1.1*j),ry-S*0.010); ctx.lineTo(-S*(2.47+1.1*j),ry+S*0.010); ctx.lineTo(-S*2.47,ry+S*0.052); ctx.closePath(); ctx.fill();
+      });
+      ctx.shadowBlur=0;
+    }
 
-      ctx.save(); ctx.translate(bx,by);
+    // Variables pour closures dans drawCargo/drawCapital (t et ph du vaisseau courant)
+    let t2 = 0, s2ph = 0;
 
-      // Disque accrétion (derrière)
-      ctx.save(); ctx.scale(1,0.30);
-      for(let ring=14;ring>=0;ring--){
-        const r1=rEv*1.05+ring*(R*0.95-rEv*1.05)/14;
-        const r2=rEv*1.05+(ring+1)*(R*0.95-rEv*1.05)/14;
-        const heat=1-ring/14;
-        const bright=0.6+0.4*Math.sin(bhA*2.5+ring*0.55+bx*0.001);
-        const ar=ctx.createRadialGradient(0,0,r1*0.96,0,0,r2*1.02);
-        const rr=Math.round(heat>0.7?255:180+75*heat);
-        const gg=Math.round(heat>0.7?Math.round(180*heat):Math.round(60*heat));
-        const bb=Math.round(heat>0.8?80*heat:0);
-        ar.addColorStop(0,`rgba(${rr},${gg},${bb},${(0.18+0.3*heat)*bright})`);
-        ar.addColorStop(0.6,`rgba(${rr},${gg},${bb},${(0.07+0.12*heat)*bright})`);
-        ar.addColorStop(1,"transparent");
-        ctx.fillStyle=ar; ctx.beginPath(); ctx.arc(0,0,r2,0,Math.PI*2); ctx.fill();
+    // ── TROU NOIR HD ─────────────────────────────────────────────
+    let bhA = 0;
+    function drawBlackHole() {
+      const bx = W * 0.82, by = H * 0.42;
+      const R = Math.min(W, H) * 0.21;
+      const rEv = R * 0.24, rPh = R * 0.30;
+      bhA += 0.004;
+      ctx.save(); ctx.translate(bx, by);
+      // Disque accrétion
+      ctx.save(); ctx.scale(1, 0.30);
+      for (let ring = 14; ring >= 0; ring--) {
+        const r1 = rEv*1.05 + ring*(R*0.95-rEv*1.05)/14;
+        const r2 = rEv*1.05 + (ring+1)*(R*0.95-rEv*1.05)/14;
+        const heat = 1 - ring/14;
+        const bright = 0.55 + 0.45*Math.sin(bhA*2.5+ring*0.55);
+        const rr = Math.min(255, Math.round(heat > 0.7 ? 255 : 180+75*heat));
+        const gg = Math.round(heat > 0.7 ? 180*heat : 60*heat);
+        const bb = Math.round(heat > 0.8 ? 80*heat : 0);
+        const ar = ctx.createRadialGradient(0,0,r1*0.96,0,0,r2*1.02);
+        ar.addColorStop(0, `rgba(${rr},${gg},${bb},${(0.18+0.3*heat)*bright})`);
+        ar.addColorStop(0.6, `rgba(${rr},${gg},${bb},${(0.07+0.12*heat)*bright})`);
+        ar.addColorStop(1, 'transparent');
+        ctx.fillStyle = ar; ctx.beginPath(); ctx.arc(0,0,r2,0,Math.PI*2); ctx.fill();
       }
-      // Filaments chauds
-      for(let f=0;f<10;f++){
-        const fa=bhA*1.8+f*(Math.PI*2/10);
-        const fr1=rEv*1.2,fr2=R*0.88;
-        const flAl=0.12+0.12*Math.sin(bhA*4+f*0.7);
-        const flg=ctx.createLinearGradient(Math.cos(fa)*fr1,Math.sin(fa)*fr1,Math.cos(fa)*fr2,Math.sin(fa)*fr2);
-        flg.addColorStop(0,`rgba(255,160,40,${flAl*2})`);
-        flg.addColorStop(0.5,`rgba(255,80,10,${flAl})`);
-        flg.addColorStop(1,"transparent");
-        ctx.strokeStyle=flg; ctx.lineWidth=0.8+Math.sin(bhA*3+f)*0.5;
-        ctx.shadowColor="rgba(255,100,10,0.5)"; ctx.shadowBlur=6;
-        ctx.beginPath(); ctx.moveTo(Math.cos(fa)*fr1,Math.sin(fa)*fr1); ctx.lineTo(Math.cos(fa)*fr2,Math.sin(fa)*fr2); ctx.stroke();
+      // Filaments
+      for (let f = 0; f < 10; f++) {
+        const fa = bhA*1.8 + f*(Math.PI*2/10);
+        const flAl = 0.12 + 0.12*Math.sin(bhA*4+f*0.7);
+        const flg = ctx.createLinearGradient(Math.cos(fa)*rEv*1.2, Math.sin(fa)*rEv*1.2, Math.cos(fa)*R*0.88, Math.sin(fa)*R*0.88);
+        flg.addColorStop(0, `rgba(255,160,40,${flAl*2})`); flg.addColorStop(0.5, `rgba(255,80,10,${flAl})`); flg.addColorStop(1,'transparent');
+        ctx.strokeStyle = flg; ctx.lineWidth = 0.8 + Math.sin(bhA*3+f)*0.5;
+        ctx.shadowColor = 'rgba(255,100,10,0.5)'; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.moveTo(Math.cos(fa)*rEv*1.2, Math.sin(fa)*rEv*1.2); ctx.lineTo(Math.cos(fa)*R*0.88, Math.sin(fa)*R*0.88); ctx.stroke();
       }
-      ctx.shadowBlur=0; ctx.restore(); // fin scale disque
-
-      // Lentille gravitationnelle (arcs)
-      for(let arc=0;arc<8;arc++){
-        const aA=arc*(Math.PI/4)+bhA*0.4+(arc%2===0?0:Math.PI);
-        const aR=rPh*1.04+arc*2.5;
-        const aW=Math.PI*(0.08+0.04*Math.sin(bhA*1.5+arc));
-        ctx.strokeStyle=`rgba(255,${200-arc*15},${130-arc*10},${0.22+0.1*Math.sin(bhA*2+arc)})`;
-        ctx.lineWidth=0.6+arc*0.2;
-        ctx.shadowColor="rgba(255,190,100,0.4)"; ctx.shadowBlur=4;
+      ctx.shadowBlur=0; ctx.restore();
+      // Arcs lentille
+      for (let arc = 0; arc < 8; arc++) {
+        const aA = arc*(Math.PI/4)+bhA*0.4+(arc%2===0?0:Math.PI);
+        const aR = rPh*1.04+arc*2.5, aW = Math.PI*(0.08+0.04*Math.sin(bhA*1.5+arc));
+        ctx.strokeStyle = `rgba(255,${200-arc*14},${125-arc*9},${0.22+0.1*Math.sin(bhA*2+arc)})`;
+        ctx.lineWidth = 0.6+arc*0.2; ctx.shadowColor='rgba(255,185,95,0.4)'; ctx.shadowBlur=4;
         ctx.beginPath(); ctx.arc(0,0,aR,aA,aA+aW); ctx.stroke();
       }
       ctx.shadowBlur=0;
-
       // Anneau photonique
-      const phg=ctx.createRadialGradient(0,0,rPh*0.9,0,0,rPh*1.1);
-      const phB=0.75+0.25*Math.sin(bhA*3.5);
-      phg.addColorStop(0,"transparent"); phg.addColorStop(0.25,`rgba(255,210,130,${phB*0.75})`);
-      phg.addColorStop(0.5,`rgba(255,245,210,${phB})`); phg.addColorStop(0.75,`rgba(255,210,130,${phB*0.75})`); phg.addColorStop(1,"transparent");
-      ctx.strokeStyle=phg; ctx.lineWidth=2.8;
-      ctx.shadowColor="rgba(255,210,100,0.95)"; ctx.shadowBlur=14;
-      ctx.beginPath(); ctx.arc(0,0,rPh,0,Math.PI*2); ctx.stroke();
-      ctx.shadowBlur=0;
-
+      const phg = ctx.createRadialGradient(0,0,rPh*0.9,0,0,rPh*1.1);
+      const phB = 0.75+0.25*Math.sin(bhA*3.5);
+      phg.addColorStop(0,'transparent'); phg.addColorStop(0.25,`rgba(255,210,130,${phB*0.75})`);
+      phg.addColorStop(0.5,`rgba(255,248,215,${phB})`); phg.addColorStop(0.75,`rgba(255,210,130,${phB*0.75})`); phg.addColorStop(1,'transparent');
+      ctx.strokeStyle=phg; ctx.lineWidth=3;
+      ctx.shadowColor='rgba(255,212,100,0.95)'; ctx.shadowBlur=16;
+      ctx.beginPath(); ctx.arc(0,0,rPh,0,Math.PI*2); ctx.stroke(); ctx.shadowBlur=0;
       // Jets relativistes
       [-1,1].forEach(jd=>{
-        const jH=R*1.5;
-        const jPulse=0.5+0.5*Math.sin(bhA*5+jd);
+        const jH=R*1.5, jP=0.5+0.5*Math.sin(bhA*5+jd);
         const jg=ctx.createLinearGradient(0,jd*rEv,0,jd*(rEv+jH));
-        jg.addColorStop(0,`rgba(100,160,255,${0.65*jPulse})`);
-        jg.addColorStop(0.25,`rgba(80,120,255,${0.4*jPulse})`);
-        jg.addColorStop(0.6,`rgba(60,100,220,${0.15*jPulse})`);
-        jg.addColorStop(1,"transparent");
-        ctx.fillStyle=jg; ctx.shadowColor="rgba(100,150,255,0.8)"; ctx.shadowBlur=20*jPulse;
-        ctx.beginPath();
-        ctx.moveTo(-rEv*0.14,jd*rEv);
-        ctx.quadraticCurveTo(rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.07,jd*(rEv+jH));
-        ctx.lineTo(-rEv*0.07,jd*(rEv+jH));
-        ctx.quadraticCurveTo(-rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.14,jd*rEv);
-        ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+        jg.addColorStop(0,`rgba(100,165,255,${0.65*jP})`); jg.addColorStop(0.25,`rgba(80,120,255,${0.4*jP})`); jg.addColorStop(0.6,`rgba(60,100,220,${0.15*jP})`); jg.addColorStop(1,'transparent');
+        ctx.fillStyle=jg; ctx.shadowColor='rgba(100,150,255,0.8)'; ctx.shadowBlur=20*jP;
+        ctx.beginPath(); ctx.moveTo(-rEv*0.14,jd*rEv); ctx.quadraticCurveTo(rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.07,jd*(rEv+jH)); ctx.lineTo(-rEv*0.07,jd*(rEv+jH)); ctx.quadraticCurveTo(-rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.14,jd*rEv); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
       });
-
-      // Horizon des événements
+      // Horizon
       const evS=ctx.createRadialGradient(0,0,rEv*0.65,0,0,rEv*1.25);
-      evS.addColorStop(0,"rgba(0,0,0,1)"); evS.addColorStop(0.72,"rgba(0,0,0,0.95)"); evS.addColorStop(1,"transparent");
+      evS.addColorStop(0,'rgba(0,0,0,1)'); evS.addColorStop(0.72,'rgba(0,0,0,0.95)'); evS.addColorStop(1,'transparent');
       ctx.fillStyle=evS; ctx.beginPath(); ctx.arc(0,0,rEv*1.25,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle="#000"; ctx.beginPath(); ctx.arc(0,0,rEv,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(0,0,rEv,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
 
-    let t=0;
-    function frame(){
-      t++; ctx.clearRect(0,0,W,H);
-      // FOND
+    let t = 0;
+    function frame() {
+      t++; t2 = t;
+      ctx.clearRect(0,0,W,H);
+      // Fond
       const bg=ctx.createRadialGradient(W*0.82,H*0.42,0,W*0.5,H*0.5,Math.max(W,H)*0.9);
-      bg.addColorStop(0,"#060208"); bg.addColorStop(0.3,"#02050e"); bg.addColorStop(0.7,"#020408"); bg.addColorStop(1,"#010204");
+      bg.addColorStop(0,'#060208'); bg.addColorStop(0.3,'#02050e'); bg.addColorStop(0.7,'#020408'); bg.addColorStop(1,'#010204');
       ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-      // Nébuleuse gauche
-      const ln=ctx.createRadialGradient(W*0.1,H*0.5,0,W*0.1,H*0.5,W*0.38);
-      ln.addColorStop(0,`rgba(0,25,70,${0.09+0.03*Math.sin(t*0.007)})`); ln.addColorStop(1,"transparent");
-      ctx.fillStyle=ln; ctx.fillRect(0,0,W,H);
-      // TROU NOIR
-      drawBlackHole(t);
-      // ÉTOILES S1
-      S1.forEach(s=>{s.x-=s.sp;if(s.x<0)s.x=1;const a=s.al*(0.5+0.5*Math.abs(Math.sin(t*0.02+s.ph)));ctx.fillStyle=`rgba(195,210,255,${a})`;ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);ctx.fill();});
-      // ÉTOILES S2
-      S2.forEach(s=>{s.x-=s.sp;if(s.x<0)s.x=1;const a=s.al*(0.55+0.45*Math.abs(Math.sin(t*0.025+s.ph)));ctx.fillStyle=`rgba(215,225,255,${a})`;ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);ctx.fill();});
-      // ÉTOILES S3 (brillantes avec croix)
-      S3.forEach(s=>{
-        s.x-=s.sp;if(s.x<0)s.x=1;
-        const a=s.al*(0.6+0.4*Math.abs(Math.sin(t*0.03+s.ph)));
-        const r=s.r*(0.75+0.25*Math.abs(Math.sin(t*0.02+s.ph)));
-        ctx.fillStyle=`rgba(235,242,255,${a})`;ctx.shadowColor="rgba(200,218,255,0.75)";ctx.shadowBlur=r*2.5;
-        ctx.beginPath();ctx.arc(s.x*W,s.y*H,r,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle=`rgba(200,218,255,${a*0.3})`;ctx.lineWidth=0.5;ctx.shadowBlur=0;
-        ctx.beginPath();ctx.moveTo(s.x*W-r*4.5,s.y*H);ctx.lineTo(s.x*W+r*4.5,s.y*H);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(s.x*W,s.y*H-r*4.5);ctx.lineTo(s.x*W,s.y*H+r*4.5);ctx.stroke();
+      // Nébuleuses
+      [[W*0.1,H*0.5,W*0.38,'rgba(0,22,65,0.09)'],[W*0.5,H*0.1,W*0.30,'rgba(0,18,55,0.06)'],[W*0.3,H*0.75,W*0.28,'rgba(20,0,55,0.06)']].forEach(([nx,ny,nr,nc])=>{
+        const ln=ctx.createRadialGradient(nx,ny,0,nx,ny,nr);
+        ln.addColorStop(0,nc); ln.addColorStop(1,'transparent');
+        ctx.fillStyle=ln; ctx.fillRect(0,0,W,H);
       });
-      ctx.shadowBlur=0;
-      // ÉTOILES FILANTES
-      meteors.forEach(m=>{
-        m.delay--;if(m.delay>0)return;
-        if(!m.active){m.active=true;m.x=0.1+Math.random()*0.75;m.y=Math.random()*0.6;m.vx=-(0.0025+Math.random()*0.004);m.vy=0.0008+Math.random()*0.003;m.len=0.05+Math.random()*0.12;m.life=0;}
-        m.x+=m.vx;m.y+=m.vy;m.life+=0.015;
-        if(m.life>1||m.x<-0.1){m.active=false;m.delay=90+Math.random()*300;return;}
-        const al=Math.sin(m.life*Math.PI)*0.85;
-        const mg=ctx.createLinearGradient(m.x*W,m.y*H,(m.x+m.len)*W,(m.y-m.len*0.38)*H);
-        mg.addColorStop(0,`rgba(255,255,255,${al})`);mg.addColorStop(0.25,`rgba(200,228,255,${al*0.65})`);mg.addColorStop(1,"transparent");
-        ctx.strokeStyle=mg;ctx.lineWidth=1.6;ctx.shadowColor="rgba(220,238,255,0.85)";ctx.shadowBlur=5;
-        ctx.beginPath();ctx.moveTo(m.x*W,m.y*H);ctx.lineTo((m.x+m.len)*W,(m.y-m.len*0.38)*H);ctx.stroke();
+      // Trou noir
+      const bneb=ctx.createRadialGradient(W*0.82,H*0.42,0,W*0.82,H*0.42,W*0.4);
+      bneb.addColorStop(0,`rgba(50,22,4,${0.12+0.04*Math.sin(t*0.01)})`); bneb.addColorStop(0.3,'rgba(28,8,28,0.06)'); bneb.addColorStop(1,'transparent');
+      ctx.fillStyle=bneb; ctx.fillRect(0,0,W,H);
+      drawBlackHole();
+
+      // Étoiles HD
+      stars.forEach(s => {
+        s.x -= s.sp; if (s.x < 0) s.x = 1;
+        const size = s.z * 1.8;
+        const al = s.z * (0.45 + 0.35*Math.abs(Math.sin(t*0.025*s.z+s.ph)));
+        const r=Math.round(195+60*s.z), g2=Math.round(205+50*s.z), b=255;
+        ctx.fillStyle=`rgba(${r},${g2},${b},${al})`;
+        if (s.z > 0.75 && size > 1.2) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur=size*2.5; }
+        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, size*0.6, 0, Math.PI*2); ctx.fill();
+        // Croix pour les plus brillantes
+        if (s.z > 0.85 && size > 1.4) {
+          ctx.strokeStyle=`rgba(${r},${g2},${b},${al*0.28})`;
+          ctx.lineWidth=0.5;
+          const cl=size*5; const sx2=s.x*W, sy2=s.y*H;
+          ctx.beginPath(); ctx.moveTo(sx2-cl,sy2); ctx.lineTo(sx2+cl,sy2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sx2,sy2-cl); ctx.lineTo(sx2,sy2+cl); ctx.stroke();
+        }
         ctx.shadowBlur=0;
       });
-      // VAISSEAUX
-      ships.forEach((s,i)=>{
-        s.delay--;if(s.delay>0)return;
-        if(!s.active){s.active=true;s.x=s.fromLeft?-0.12:1.12;s.y=0.04+Math.random()*0.86;}
-        s.x+=s.vx;
-        if((s.vx>0&&s.x>1.15)||(s.vx<0&&s.x<-0.15)){
-          ships[i]=spawnShip(i<1?"capital":i<3?"cargo":"fighter");return;
+
+      // Étoiles filantes HD
+      shoots.forEach(s => {
+        s.delay--;
+        if (s.delay > 0) return;
+        if (!s.active) spawnShoot(s);
+        s.trail.push({x:s.x,y:s.y});
+        if (s.trail.length > s.maxLen) s.trail.shift();
+        s.x += s.vx; s.y += s.vy;
+        s.alpha = Math.min(1, s.alpha + 0.08);
+        if (s.x < -0.05 || s.y > 1.05 || s.trail.length < 2) {
+          if (s.x < -0.05 || s.y > 1.05) { s.active = false; s.alpha=0; s.delay = 80+Math.random()*280; }
+          return;
         }
-        drawShip(s,t);
+        // Dessiner la traîne avec dégradé HD
+        for (let i = 1; i < s.trail.length; i++) {
+          const prog = i / s.trail.length;
+          const al2 = prog * s.alpha * 0.9;
+          const width = prog * 2.2;
+          ctx.strokeStyle=`rgba(255,255,255,${al2})`;
+          ctx.lineWidth=width;
+          ctx.shadowColor=`rgba(200,225,255,${al2*0.7})`; ctx.shadowBlur=width*2.5;
+          ctx.beginPath(); ctx.moveTo(s.trail[i-1].x*W,s.trail[i-1].y*H); ctx.lineTo(s.trail[i].x*W,s.trail[i].y*H); ctx.stroke();
+        }
+        // Tête brillante
+        ctx.fillStyle=`rgba(255,255,255,${s.alpha})`; ctx.shadowColor='rgba(220,238,255,0.95)'; ctx.shadowBlur=12;
+        ctx.beginPath(); ctx.arc(s.x*W,s.y*H,1.5,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
       });
+
+      // Vaisseaux
+      ships.forEach((sh,i)=>{
+        sh.delay--; if(sh.delay>0) return;
+        if(!sh.active){sh.active=true;sh.x=sh.fromLeft?-0.15:1.15;sh.y=0.04+Math.random()*0.84;}
+        sh.x+=sh.vx;
+        if((sh.vx>0&&sh.x>1.18)||(sh.vx<0&&sh.x<-0.18)){ships[i]=spawnShip(i<1?'capital':i<3?'cargo':'fighter');return;}
+        const dir=sh.vx>0?1:-1;
+        const j3=0.5+0.5*Math.sin(t*0.14+sh.ph);
+        const j4=0.5+0.5*Math.sin(t*0.22+sh.ph+1.3);
+        s2ph=sh.ph;
+        ctx.save(); ctx.translate(sh.x*W,sh.y*H); ctx.scale(dir,1); ctx.globalAlpha=sh.al;
+        if(sh.type==='fighter') drawFighter(ctx,Math.min(W,H)*sh.sc,j3,j4);
+        else if(sh.type==='cargo') drawCargo(ctx,Math.min(W,H)*sh.sc,j3,j4);
+        else drawCapital(ctx,Math.min(W,H)*sh.sc,j3,j4);
+        ctx.globalAlpha=1; ctx.restore();
+      });
+
       raf.current=requestAnimationFrame(frame);
     }
     frame();
-    return()=>{cancelAnimationFrame(raf.current);window.removeEventListener("resize",resize);};
+    return()=>{cancelAnimationFrame(raf.current);window.removeEventListener('resize',resize);};
   },[]);
 
-  return <canvas ref={ref} style={{position:"fixed",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}/>;
+  return <canvas ref={ref} style={{position:'fixed',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:0}}/>;
 }
+
 
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
