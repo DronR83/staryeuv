@@ -1618,25 +1618,22 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 
 
 // ─── HOOK SWIPE CLOSE (touch events + RAF, compatible iOS Safari) ──────────────
-// ─── Hauteur réelle de viewport (gère le clavier mobile) ──────────────────────
-function useViewportHeight() {
-  const [h, setH] = useState(() =>
-    (typeof window !== "undefined" && window.visualViewport) ? window.visualViewport.height : (typeof window !== "undefined" ? window.innerHeight : 800)
-  );
+// ─── Décalage clavier mobile (px) — pour remonter la zone de saisie sans découvrir le fond ──
+function useKeyboardOffset() {
+  const [offset, setOffset] = useState(0);
   useEffect(() => {
     const vv = window.visualViewport;
-    function update() { setH(vv ? vv.height : window.innerHeight); }
-    update();
-    if (vv) {
-      vv.addEventListener("resize", update);
-      vv.addEventListener("scroll", update);
-      return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
-    } else {
-      window.addEventListener("resize", update);
-      return () => window.removeEventListener("resize", update);
+    if (!vv) return;
+    function update() {
+      const o = Math.max(0, window.innerHeight - vv.height - (vv.offsetTop || 0));
+      setOffset(o);
     }
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
   }, []);
-  return h;
+  return offset;
 }
 
 function useSwipeClose(onClose) {
@@ -1836,7 +1833,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   const rafRef = useRef(null);
 
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
-  const vh = useViewportHeight();
+  const kbOffset = useKeyboardOffset();
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
 
@@ -1923,7 +1920,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   }
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: vh, zIndex: 999 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 999 }}>
       {/* Backdrop */}
       <div ref={backdropRef} style={{ position: "absolute", inset: 0, background: "#080502", opacity: 0, transform: "scale(0.94)", pointerEvents: "none", willChange: "transform,opacity" }}>
         <div ref={hintRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0 }}>
@@ -1949,6 +1946,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             {history.length > 0 && <button onClick={() => { if (window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Effacer</button>}
+            <button onClick={onClose} style={{ background: "transparent", border: "1px solid #ffaa3355", color: "#ffaa33", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
           </div>
         </div>
 
@@ -2016,7 +2014,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
         </div>
 
         {/* Input */}
-        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.97)", borderTop: "1px solid #ffaa3333", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
+        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.97)", borderTop: "1px solid #ffaa3333", padding: "12px 16px", paddingBottom: 12 + kbOffset, backdropFilter: "blur(16px)" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               value={text}
@@ -2037,7 +2035,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
 }
 
 // ─── JARVIS FLOATING BUBBLE ─────────────────────────────────────────────────
-function JarvisBubble({ onClick, isOpen }) {
+function JarvisBubble({ onClick }) {
   const SIZE = 60;
   const [pos, setPos] = useState(() => {
     let p;
@@ -2134,8 +2132,8 @@ function JarvisBubble({ onClick, isOpen }) {
         width: SIZE, height: SIZE,
         borderRadius: "50%",
         background: "radial-gradient(circle at 35% 30%, #2a1a08, #0d0701)",
-        border: `2px solid ${isOpen ? "#ff4466" : "#ffaa33"}`,
-        boxShadow: isOpen ? "0 0 22px #ff446688, 0 4px 14px rgba(0,0,0,0.5)" : "0 0 22px #ffaa3388, 0 4px 14px rgba(0,0,0,0.5)",
+        border: "2px solid #ffaa33",
+        boxShadow: "0 0 22px #ffaa3388, 0 4px 14px rgba(0,0,0,0.5)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 28,
         cursor: "grab",
@@ -2146,11 +2144,9 @@ function JarvisBubble({ onClick, isOpen }) {
         willChange: "transform",
         transition: "border-color .2s, box-shadow .2s",
       }}
-      title={isOpen ? "Fermer Jarvis" : "Ouvrir Jarvis"}
+      title="Ouvrir Jarvis"
     >
-      <span style={{ filter: `drop-shadow(0 0 6px ${isOpen ? "#ff4466" : "#ffaa33"})`, pointerEvents: "none" }}>
-        {isOpen ? "✕" : "🤖"}
-      </span>
+      <span style={{ filter: "drop-shadow(0 0 6px #ffaa33)", pointerEvents: "none" }}>🤖</span>
     </div>
   );
 }
@@ -2274,7 +2270,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const inputRef  = useRef(null);
 
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
-  const vh = useViewportHeight();
+  const kbOffset = useKeyboardOffset();
   const { onTouchStart:sTS,onTouchMove:sTM,onTouchEnd:sTE,onTouchCancel:sTC } = swipeHandlers;
 
   // Scroll auto
@@ -2367,7 +2363,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const authorP=profiles.find(p=>p.id===author);
 
   return (
-    <div onTouchStart={sTS} onTouchMove={sTM} onTouchEnd={sTE} onTouchCancel={sTC} style={{ position:"fixed", top:0, left:0, right:0, height: vh, zIndex:999 }}>
+    <div onTouchStart={sTS} onTouchMove={sTM} onTouchEnd={sTE} onTouchCancel={sTC} style={{ position:"fixed", inset:0, zIndex:999 }}>
 
       {/* Backdrop derrière — révèle le menu */}
       <div ref={backdropRef} style={{
@@ -2478,7 +2474,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
       </div>
 
       {/* Zone saisie */}
-      <div style={{position:"relative",zIndex:1,background:"rgba(4,8,22,0.92)",borderTop:"1px solid rgba(167,139,250,0.15)",backdropFilter:"blur(20px)",padding:"10px 14px 16px",flexShrink:0}}>
+      <div style={{position:"relative",zIndex:1,background:"rgba(4,8,22,0.92)",borderTop:"1px solid rgba(167,139,250,0.15)",backdropFilter:"blur(20px)",padding:"10px 14px 16px",paddingBottom:16+kbOffset,flexShrink:0}}>
         {/* Sélecteur auteur */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
           <div style={{width:6,height:6,borderRadius:"50%",background:authorP?.color||"#a78bfa",boxShadow:`0 0 6px ${authorP?.color||"#a78bfa"}`}}/>
@@ -5769,7 +5765,7 @@ export default function App() {
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
 
       {/* Bulle flottante Jarvis — visible partout, déplaçable */}
-      {tab!=="dashboard" && <JarvisBubble onClick={()=>setJarvisOpen(o=>!o)} isOpen={jarvisOpen}/>}
+      {tab!=="dashboard" && !jarvisOpen && <JarvisBubble onClick={()=>setJarvisOpen(true)}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
