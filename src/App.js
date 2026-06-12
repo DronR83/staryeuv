@@ -2003,6 +2003,106 @@ function JarvisInterface({ apiKey, history, setHistory, onClose }) {
   );
 }
 
+// ─── JARVIS FLOATING BUBBLE ─────────────────────────────────────────────────
+function JarvisBubble({ onClick, isOpen }) {
+  const [pos, setPos] = useState(() => {
+    try {
+      const saved = localStorage.getItem("jarvis_bubble_pos");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { x: typeof window !== "undefined" ? window.innerWidth - 76 : 300, y: typeof window !== "undefined" ? window.innerHeight - 140 : 500 };
+  });
+  const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+  const bubbleRef = useRef(null);
+
+  // S'assure que la bulle reste dans l'écran au resize
+  useEffect(() => {
+    function clamp() {
+      setPos(p => {
+        const size = 60;
+        const nx = Math.min(Math.max(p.x, 8), window.innerWidth - size - 8);
+        const ny = Math.min(Math.max(p.y, 8), window.innerHeight - size - 8);
+        return (nx !== p.x || ny !== p.y) ? { x: nx, y: ny } : p;
+      });
+    }
+    clamp();
+    window.addEventListener("resize", clamp);
+    return () => window.removeEventListener("resize", clamp);
+  }, []);
+
+  function savePos(p) {
+    try { localStorage.setItem("jarvis_bubble_pos", JSON.stringify(p)); } catch {}
+  }
+
+  function startDrag(clientX, clientY) {
+    dragRef.current = { dragging: true, moved: false, startX: clientX, startY: clientY, origX: pos.x, origY: pos.y };
+  }
+  function moveDrag(clientX, clientY) {
+    if (!dragRef.current.dragging) return;
+    const dx = clientX - dragRef.current.startX;
+    const dy = clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true;
+    if (dragRef.current.moved) {
+      const size = 60;
+      const nx = Math.min(Math.max(dragRef.current.origX + dx, 8), window.innerWidth - size - 8);
+      const ny = Math.min(Math.max(dragRef.current.origY + dy, 8), window.innerHeight - size - 8);
+      setPos({ x: nx, y: ny });
+    }
+  }
+  function endDrag() {
+    if (!dragRef.current.dragging) return;
+    const wasMoved = dragRef.current.moved;
+    dragRef.current.dragging = false;
+    if (wasMoved) {
+      savePos(pos);
+    } else {
+      onClick();
+    }
+  }
+
+  // Mouse handlers
+  function onMouseDown(e) { e.preventDefault(); startDrag(e.clientX, e.clientY); 
+    const mm = (ev) => moveDrag(ev.clientX, ev.clientY);
+    const mu = () => { endDrag(); window.removeEventListener("mousemove", mm); window.removeEventListener("mouseup", mu); };
+    window.addEventListener("mousemove", mm); window.addEventListener("mouseup", mu);
+  }
+  // Touch handlers
+  function onTouchStart(e) { const t = e.touches[0]; startDrag(t.clientX, t.clientY); }
+  function onTouchMove(e) { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }
+  function onTouchEnd() { endDrag(); }
+
+  return (
+    <div
+      ref={bubbleRef}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{
+        position: "fixed",
+        left: pos.x, top: pos.y,
+        width: 60, height: 60,
+        borderRadius: "50%",
+        background: "radial-gradient(circle at 35% 30%, #2a1a08, #0d0701)",
+        border: `2px solid ${isOpen ? "#ff4466" : "#ffaa33"}`,
+        boxShadow: isOpen ? "0 0 22px #ff446688, 0 4px 14px rgba(0,0,0,0.5)" : "0 0 22px #ffaa3388, 0 4px 14px rgba(0,0,0,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 28,
+        cursor: "grab",
+        zIndex: 1000,
+        userSelect: "none",
+        touchAction: "none",
+        transition: "border-color .2s, box-shadow .2s",
+      }}
+      title={isOpen ? "Fermer Jarvis" : "Ouvrir Jarvis"}
+    >
+      <span style={{ filter: `drop-shadow(0 0 6px ${isOpen ? "#ff4466" : "#ffaa33"})`, pointerEvents: "none" }}>
+        {isOpen ? "✕" : "🤖"}
+      </span>
+    </div>
+  );
+}
+
 
 // ─── CHAT TILE + INTERFACE ────────────────────────────────────────────────────
 function ChatCanvas() {
@@ -5163,7 +5263,7 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
-  const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore("jarvis_chat", []);
+  const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore(`jarvis_chat_${storedUserId||"anon"}`, []);
   const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
 
@@ -5614,6 +5714,9 @@ export default function App() {
       {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
 
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)}/>}
+
+      {/* Bulle flottante Jarvis — visible partout, déplaçable */}
+      <JarvisBubble onClick={()=>setJarvisOpen(o=>!o)} isOpen={jarvisOpen}/>
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
