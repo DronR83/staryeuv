@@ -8,7 +8,7 @@ const DEFAULT_PROFILES = [
 ];
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
-const DEFAULT_SETTINGS   = { appIcon: null, discordWebhook: "", geminiApiKey: "" };
+const DEFAULT_SETTINGS   = { appIcon: null, discordWebhook: "", geminiApiKey: "", giphyApiKey: "" };
 // Flotte par joueur : { p1: [...], p2: [...] }
 const DEFAULT_FLEETS = {
   p1: [
@@ -2259,12 +2259,15 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, discordWebhook, defaultAuthor }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, discordWebhook, giphyApiKey, defaultAuthor }) {
   const [text, setText]   = useState("");
   const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
   const [gifPanelOpen, setGifPanelOpen] = useState(false);
-  const [gifUrl, setGifUrl] = useState("");
+  const [gifQuery, setGifQuery] = useState("");
+  const [gifResults, setGifResults] = useState([]);
+  const [gifLoading, setGifLoading] = useState(false);
+  const gifSearchTimer = useRef(null);
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
@@ -2361,13 +2364,32 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
     setSending(false);
   }
 
-  function sendGif() {
-    const url = gifUrl.trim();
+  function searchGifs(query) {
+    const key = giphyApiKey?.trim();
+    if(!key) return;
+    setGifLoading(true);
+    const endpoint = query.trim()
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${encodeURIComponent(query.trim())}&limit=24&rating=g&lang=fr`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${key}&limit=24&rating=g`;
+    fetch(endpoint)
+      .then(r=>r.json())
+      .then(d=>setGifResults(d?.data||[]))
+      .catch(()=>setGifResults([]))
+      .finally(()=>setGifLoading(false));
+  }
+
+  function onGifQueryChange(v) {
+    setGifQuery(v);
+    clearTimeout(gifSearchTimer.current);
+    gifSearchTimer.current = setTimeout(()=>searchGifs(v), 400);
+  }
+
+  function sendGifResult(gif) {
+    const url = gif?.images?.fixed_height?.url || gif?.images?.original?.url;
     if(!url||!author) return;
     const p=profiles.find(p2=>p2.id===author);
     const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:"",gif:url,time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
     pushMessage(msg, p);
-    setGifUrl("");
     setGifPanelOpen(false);
   }
 
@@ -2502,32 +2524,50 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
           </select>
         </div>
         {/* Panneau GIF */}
+        {/* Panneau GIF */}
         {gifPanelOpen && (
           <div style={{marginBottom:10,background:"rgba(167,139,250,0.06)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:14,padding:10,animation:"fadeIn .2s ease"}}>
-            <div style={{display:"flex",gap:8,marginBottom:gifUrl.trim()?8:0}}>
-              <input
-                value={gifUrl}
-                onChange={e=>setGifUrl(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendGif();}}}
-                placeholder="Colle un lien de GIF (Giphy, Tenor, .gif...)"
-                style={{flex:1,background:"rgba(167,139,250,0.07)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:18,padding:"9px 14px",color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box"}}
-              />
-              <button onClick={sendGif} disabled={!gifUrl.trim()} style={{background:gifUrl.trim()?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.1)",border:`1px solid ${gifUrl.trim()?"#a78bfa":"rgba(167,139,250,0.2)"}`,color:"#fff",borderRadius:18,padding:"9px 16px",cursor:gifUrl.trim()?"pointer":"default",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,flexShrink:0}}>Envoyer</button>
-            </div>
-            {gifUrl.trim() && (
-              <div style={{display:"flex",justifyContent:"center",padding:"4px 0"}}>
-                <img src={gifUrl.trim()} alt="Aperçu" style={{maxWidth:"100%",maxHeight:160,borderRadius:10}} onError={e=>{e.target.style.display="none";}}/>
+            {!giphyApiKey?.trim() ? (
+              <div style={{color:"#ff8855",fontFamily:"'Rajdhani',sans-serif",fontSize:13,padding:"6px 2px"}}>
+                ⚠️ Aucune clé Giphy configurée. Va dans Réglages pour l'ajouter (gratuite sur developers.giphy.com).
               </div>
+            ) : (
+              <>
+                <input
+                  value={gifQuery}
+                  onChange={e=>onGifQueryChange(e.target.value)}
+                  placeholder="Rechercher un GIF... (vide = tendances)"
+                  style={{width:"100%",background:"rgba(167,139,250,0.07)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:18,padding:"9px 14px",color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:8}}
+                />
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:6,maxHeight:200,overflowY:"auto"}}>
+                  {gifLoading && <div style={{color:"#6655aa",fontFamily:"'Rajdhani',sans-serif",fontSize:12,gridColumn:"1/-1",textAlign:"center",padding:10}}>Chargement...</div>}
+                  {!gifLoading && gifResults.length===0 && <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:12,gridColumn:"1/-1",textAlign:"center",padding:10}}>Aucun résultat</div>}
+                  {gifResults.map(g=>(
+                    <img
+                      key={g.id}
+                      src={g.images?.fixed_height_small?.url||g.images?.fixed_height?.url}
+                      alt={g.title||"GIF"}
+                      onClick={()=>sendGifResult(g)}
+                      style={{width:"100%",height:70,objectFit:"cover",borderRadius:8,cursor:"pointer",border:"1px solid rgba(167,139,250,0.15)",transition:"transform .15s, border-color .15s"}}
+                      onMouseEnter={e=>{e.target.style.transform="scale(1.05)";e.target.style.borderColor="#a78bfa";}}
+                      onMouseLeave={e=>{e.target.style.transform="scale(1)";e.target.style.borderColor="rgba(167,139,250,0.15)";}}
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+                <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:10,marginTop:6,textAlign:"right"}}>Powered by GIPHY</div>
+              </>
             )}
-            <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginTop:6}}>
-              💡 Astuce : sur Giphy/Tenor, clic droit sur un GIF → "Copier le lien de l'image" → colle ici
-            </div>
           </div>
         )}
         {/* Champ texte + bouton */}
         <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
           <button
-            onClick={()=>setGifPanelOpen(o=>!o)}
+            onClick={()=>{
+              const opening = !gifPanelOpen;
+              setGifPanelOpen(opening);
+              if(opening && gifResults.length===0) searchGifs("");
+            }}
             title="Insérer un GIF"
             style={{
               width:44,height:44,borderRadius:"50%",flexShrink:0,
@@ -4884,6 +4924,7 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
   const [discordInput,setDiscordInput]=useState(settings.discordWebhook||"");
   const [geminiInput,setGeminiInput]=useState(settings.geminiApiKey||"");
+  const [giphyInput,setGiphyInput]=useState(settings.giphyApiKey||"");
   return (
     <div>
       <div style={S.sectionTitle}>⚙️ PERSONNALISATION</div>
@@ -4939,6 +4980,24 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         </div>
         {settings.geminiApiKey
           ? <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Clé configurée — Jarvis est prêt !</span>
+          : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucune clé configurée</div>
+        }
+      </div>
+
+      {/* Section Giphy */}
+      <div style={{marginTop:16,background:"#1a0f24cc",border:"1px solid #a78bfa44",borderRadius:10,padding:16}}>
+        <div style={{...S.sectionTitle,color:"#a78bfa"}}>🎬 GIFS (Giphy)</div>
+        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,lineHeight:1.6,marginBottom:12}}>
+          <div>1. Va sur <strong style={{color:"#e8f4ff"}}>developers.giphy.com</strong> (gratuit)</div>
+          <div>2. Crée un compte → "Create an App" → choisis <strong style={{color:"#e8f4ff"}}>API</strong></div>
+          <div>3. Copie la clé et colle-la ici</div>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <input type="password" value={giphyInput} onChange={e=>setGiphyInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="Clé API Giphy..."/>
+          <button onClick={()=>setSettings(p=>({...p,giphyApiKey:giphyInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#a78bfa22",borderColor:"#a78bfa",color:"#a78bfa"}}>Appliquer</button>
+        </div>
+        {settings.giphyApiKey
+          ? <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Clé configurée — le bouton GIF du chat est prêt !</span>
           : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucune clé configurée</div>
         }
       </div>
@@ -5814,7 +5873,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} giphyApiKey={settings?.giphyApiKey} defaultAuthor={validatedUser?.id}/>}
 
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
 
