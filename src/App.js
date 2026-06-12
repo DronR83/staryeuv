@@ -1618,6 +1618,27 @@ function GainsHistoryModal({ missions, profiles, totalEarned, onClose }) {
 
 
 // ─── HOOK SWIPE CLOSE (touch events + RAF, compatible iOS Safari) ──────────────
+// ─── Hauteur réelle de viewport (gère le clavier mobile) ──────────────────────
+function useViewportHeight() {
+  const [h, setH] = useState(() =>
+    (typeof window !== "undefined" && window.visualViewport) ? window.visualViewport.height : (typeof window !== "undefined" ? window.innerHeight : 800)
+  );
+  useEffect(() => {
+    const vv = window.visualViewport;
+    function update() { setH(vv ? vv.height : window.innerHeight); }
+    update();
+    if (vv) {
+      vv.addEventListener("resize", update);
+      vv.addEventListener("scroll", update);
+      return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+    } else {
+      window.addEventListener("resize", update);
+      return () => window.removeEventListener("resize", update);
+    }
+  }, []);
+  return h;
+}
+
 function useSwipeClose(onClose) {
   const panelRef    = useRef(null);
   const backdropRef = useRef(null);
@@ -1815,6 +1836,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   const rafRef = useRef(null);
 
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
+  const vh = useViewportHeight();
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
 
@@ -1901,7 +1923,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 999 }}>
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: vh, zIndex: 999 }}>
       {/* Backdrop */}
       <div ref={backdropRef} style={{ position: "absolute", inset: 0, background: "#080502", opacity: 0, transform: "scale(0.94)", pointerEvents: "none", willChange: "transform,opacity" }}>
         <div ref={hintRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0 }}>
@@ -1927,7 +1949,6 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             {history.length > 0 && <button onClick={() => { if (window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Effacer</button>}
-            <button onClick={onClose} style={{ background: "transparent", border: "1px solid #ffaa3355", color: "#ffaa33", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
           </div>
         </div>
 
@@ -2031,9 +2052,8 @@ function JarvisBubble({ onClick, isOpen }) {
     };
   });
   const ref = useRef(null);
-  const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+  const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, dx: 0, dy: 0 });
   const rafRef = useRef(null);
-  const pendingPos = useRef(null);
 
   // Reste dans l'écran si la fenêtre est redimensionnée
   useEffect(() => {
@@ -2053,7 +2073,8 @@ function JarvisBubble({ onClick, isOpen }) {
   }
 
   function startDrag(clientX, clientY) {
-    dragRef.current = { dragging: true, moved: false, startX: clientX, startY: clientY, origX: pos.x, origY: pos.y };
+    dragRef.current = { dragging: true, moved: false, startX: clientX, startY: clientY, dx: 0, dy: 0 };
+    if (ref.current) ref.current.style.transition = "none";
   }
   function moveDrag(clientX, clientY) {
     if (!dragRef.current.dragging) return;
@@ -2061,15 +2082,14 @@ function JarvisBubble({ onClick, isOpen }) {
     const dy = clientY - dragRef.current.startY;
     if (Math.abs(dx) > 6 || Math.abs(dy) > 6) dragRef.current.moved = true;
     if (!dragRef.current.moved) return;
-    const nx = Math.min(Math.max(dragRef.current.origX + dx, 8), window.innerWidth - SIZE - 8);
-    const ny = Math.min(Math.max(dragRef.current.origY + dy, 8), window.innerHeight - SIZE - 8);
-    pendingPos.current = { x: nx, y: ny };
-    // Manipulation directe pour fluidité immédiate (60fps) + state sync via rAF
-    if (ref.current) { ref.current.style.left = nx + "px"; ref.current.style.top = ny + "px"; }
+    dragRef.current.dx = dx; dragRef.current.dy = dy;
     if (rafRef.current === null) {
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
-        if (pendingPos.current) setPos(pendingPos.current);
+        if (ref.current) {
+          // translate3d : compositing GPU, aucun reflow, ultra fluide
+          ref.current.style.transform = `translate3d(${dragRef.current.dx}px, ${dragRef.current.dy}px, 0)`;
+        }
       });
     }
   }
@@ -2077,9 +2097,16 @@ function JarvisBubble({ onClick, isOpen }) {
     if (!dragRef.current.dragging) return;
     const wasMoved = dragRef.current.moved;
     dragRef.current.dragging = false;
+    if (ref.current) ref.current.style.transition = "border-color .2s, box-shadow .2s";
     if (wasMoved) {
-      if (pendingPos.current) { setPos(pendingPos.current); savePos(pendingPos.current); pendingPos.current = null; }
+      const nx = Math.min(Math.max(pos.x + dragRef.current.dx, 8), window.innerWidth - SIZE - 8);
+      const ny = Math.min(Math.max(pos.y + dragRef.current.dy, 8), window.innerHeight - SIZE - 8);
+      if (ref.current) ref.current.style.transform = "translate3d(0,0,0)";
+      const np = { x: nx, y: ny };
+      setPos(np);
+      savePos(np);
     } else {
+      if (ref.current) ref.current.style.transform = "translate3d(0,0,0)";
       onClick();
     }
   }
@@ -2115,7 +2142,8 @@ function JarvisBubble({ onClick, isOpen }) {
         zIndex: 1000,
         userSelect: "none",
         touchAction: "none",
-        willChange: "left, top",
+        transform: "translate3d(0,0,0)",
+        willChange: "transform",
         transition: "border-color .2s, box-shadow .2s",
       }}
       title={isOpen ? "Fermer Jarvis" : "Ouvrir Jarvis"}
@@ -2246,6 +2274,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const inputRef  = useRef(null);
 
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
+  const vh = useViewportHeight();
   const { onTouchStart:sTS,onTouchMove:sTM,onTouchEnd:sTE,onTouchCancel:sTC } = swipeHandlers;
 
   // Scroll auto
@@ -2338,7 +2367,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const authorP=profiles.find(p=>p.id===author);
 
   return (
-    <div onTouchStart={sTS} onTouchMove={sTM} onTouchEnd={sTE} onTouchCancel={sTC} style={{ position:"fixed", inset:0, zIndex:999 }}>
+    <div onTouchStart={sTS} onTouchMove={sTM} onTouchEnd={sTE} onTouchCancel={sTC} style={{ position:"fixed", top:0, left:0, right:0, height: vh, zIndex:999 }}>
 
       {/* Backdrop derrière — révèle le menu */}
       <div ref={backdropRef} style={{
@@ -5740,7 +5769,7 @@ export default function App() {
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
 
       {/* Bulle flottante Jarvis — visible partout, déplaçable */}
-      <JarvisBubble onClick={()=>setJarvisOpen(o=>!o)} isOpen={jarvisOpen}/>
+      {tab!=="dashboard" && <JarvisBubble onClick={()=>setJarvisOpen(o=>!o)} isOpen={jarvisOpen}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
