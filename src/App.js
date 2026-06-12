@@ -28,15 +28,24 @@ function useFirestore(collection, defaultValue) {
 
   // Écoute temps réel — pas de skip, toujours accepter les updates Firestore
   useEffect(() => {
+    let cancelled = false;
+    // Réinitialise immédiatement à la valeur par défaut quand la collection change
+    // (évite d'afficher les données de l'ancienne collection — ex: changement d'utilisateur)
+    setData(defaultValue);
+    setLoaded(false);
+
     const unsub = fsListen(collection, (remote) => {
+      if (cancelled) return;
       const val = remote?.value ?? defaultValue;
       setData(val);
-      if (!loaded) setLoaded(true);
+      setLoaded(true);
     });
+    // Fallback : si le document n'existe pas du tout, on confirme le défaut et marque chargé
     fsGet(collection).then((d) => {
-      if (!d) setLoaded(true);
+      if (cancelled) return;
+      if (!d) { setData(defaultValue); setLoaded(true); }
     });
-    return () => unsub();
+    return () => { cancelled = true; unsub(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection]);
 
@@ -2008,27 +2017,33 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
 
 // ─── JARVIS FLOATING BUBBLE ─────────────────────────────────────────────────
 function JarvisBubble({ onClick, isOpen }) {
+  const SIZE = 60;
   const [pos, setPos] = useState(() => {
+    let p;
     try {
       const saved = localStorage.getItem("jarvis_bubble_pos");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { x: typeof window !== "undefined" ? window.innerWidth - 76 : 300, y: typeof window !== "undefined" ? window.innerHeight - 140 : 500 };
+      p = saved ? JSON.parse(saved) : null;
+    } catch { p = null; }
+    if (!p) p = { x: window.innerWidth - SIZE - 16, y: window.innerHeight - SIZE - 80 };
+    return {
+      x: Math.min(Math.max(p.x, 8), window.innerWidth - SIZE - 8),
+      y: Math.min(Math.max(p.y, 8), window.innerHeight - SIZE - 8),
+    };
   });
+  const ref = useRef(null);
   const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, origX: 0, origY: 0 });
-  const bubbleRef = useRef(null);
+  const rafRef = useRef(null);
+  const pendingPos = useRef(null);
 
-  // S'assure que la bulle reste dans l'écran au resize
+  // Reste dans l'écran si la fenêtre est redimensionnée
   useEffect(() => {
     function clamp() {
       setPos(p => {
-        const size = 60;
-        const nx = Math.min(Math.max(p.x, 8), window.innerWidth - size - 8);
-        const ny = Math.min(Math.max(p.y, 8), window.innerHeight - size - 8);
+        const nx = Math.min(Math.max(p.x, 8), window.innerWidth - SIZE - 8);
+        const ny = Math.min(Math.max(p.y, 8), window.innerHeight - SIZE - 8);
         return (nx !== p.x || ny !== p.y) ? { x: nx, y: ny } : p;
       });
     }
-    clamp();
     window.addEventListener("resize", clamp);
     return () => window.removeEventListener("resize", clamp);
   }, []);
@@ -2044,12 +2059,18 @@ function JarvisBubble({ onClick, isOpen }) {
     if (!dragRef.current.dragging) return;
     const dx = clientX - dragRef.current.startX;
     const dy = clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true;
-    if (dragRef.current.moved) {
-      const size = 60;
-      const nx = Math.min(Math.max(dragRef.current.origX + dx, 8), window.innerWidth - size - 8);
-      const ny = Math.min(Math.max(dragRef.current.origY + dy, 8), window.innerHeight - size - 8);
-      setPos({ x: nx, y: ny });
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) dragRef.current.moved = true;
+    if (!dragRef.current.moved) return;
+    const nx = Math.min(Math.max(dragRef.current.origX + dx, 8), window.innerWidth - SIZE - 8);
+    const ny = Math.min(Math.max(dragRef.current.origY + dy, 8), window.innerHeight - SIZE - 8);
+    pendingPos.current = { x: nx, y: ny };
+    // Manipulation directe pour fluidité immédiate (60fps) + state sync via rAF
+    if (ref.current) { ref.current.style.left = nx + "px"; ref.current.style.top = ny + "px"; }
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (pendingPos.current) setPos(pendingPos.current);
+      });
     }
   }
   function endDrag() {
@@ -2057,26 +2078,25 @@ function JarvisBubble({ onClick, isOpen }) {
     const wasMoved = dragRef.current.moved;
     dragRef.current.dragging = false;
     if (wasMoved) {
-      savePos(pos);
+      if (pendingPos.current) { setPos(pendingPos.current); savePos(pendingPos.current); pendingPos.current = null; }
     } else {
       onClick();
     }
   }
 
-  // Mouse handlers
-  function onMouseDown(e) { e.preventDefault(); startDrag(e.clientX, e.clientY); 
+  function onMouseDown(e) {
+    e.preventDefault(); startDrag(e.clientX, e.clientY);
     const mm = (ev) => moveDrag(ev.clientX, ev.clientY);
     const mu = () => { endDrag(); window.removeEventListener("mousemove", mm); window.removeEventListener("mouseup", mu); };
     window.addEventListener("mousemove", mm); window.addEventListener("mouseup", mu);
   }
-  // Touch handlers
   function onTouchStart(e) { const t = e.touches[0]; startDrag(t.clientX, t.clientY); }
   function onTouchMove(e) { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }
   function onTouchEnd() { endDrag(); }
 
   return (
     <div
-      ref={bubbleRef}
+      ref={ref}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -2084,7 +2104,7 @@ function JarvisBubble({ onClick, isOpen }) {
       style={{
         position: "fixed",
         left: pos.x, top: pos.y,
-        width: 60, height: 60,
+        width: SIZE, height: SIZE,
         borderRadius: "50%",
         background: "radial-gradient(circle at 35% 30%, #2a1a08, #0d0701)",
         border: `2px solid ${isOpen ? "#ff4466" : "#ffaa33"}`,
@@ -2095,6 +2115,7 @@ function JarvisBubble({ onClick, isOpen }) {
         zIndex: 1000,
         userSelect: "none",
         touchAction: "none",
+        willChange: "left, top",
         transition: "border-color .2s, box-shadow .2s",
       }}
       title={isOpen ? "Fermer Jarvis" : "Ouvrir Jarvis"}
