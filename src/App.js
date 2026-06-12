@@ -1797,7 +1797,7 @@ RÈGLES STRICTES :
 - Sois amical mais efficace — comme un véritable copilote IA.
 - Si la question n'a aucun rapport avec Star Citizen, tu peux quand même répondre utilement mais reste dans ton personnage de Jarvis.`;
 
-function JarvisInterface({ apiKey, history, setHistory, onClose }) {
+function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userColor }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1910,7 +1910,10 @@ function JarvisInterface({ apiKey, history, setHistory, onClose }) {
             <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #ffaa33)" }}>🤖</div>
             <div>
               <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>JARVIS</div>
-              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>EXPERT STAR CITIZEN · swipe → pour fermer</div>
+              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>
+                EXPERT STAR CITIZEN · swipe → pour fermer
+                {userName && <span style={{ marginLeft: 8, color: userColor || "#00d4ff" }}>· Connecté : {userName}</span>}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
@@ -5713,7 +5716,7 @@ export default function App() {
       {/* Modal Missions (depuis Home) */}
       {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
 
-      {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)}/>}
+      {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
 
       {/* Bulle flottante Jarvis — visible partout, déplaçable */}
       <JarvisBubble onClick={()=>setJarvisOpen(o=>!o)} isOpen={jarvisOpen}/>
