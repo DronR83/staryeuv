@@ -5596,8 +5596,8 @@ export default function App() {
                   {profiles.map(p=>(
                     <HexTile key={p.id} iconKind="ship" label={p.name} value={(fleets[p.id]||[]).length} sub="vaisseau(x)" color={p.color} onClick={()=>setHangarProfile(p)} isDesktop={isDesktop}/>
                   ))}
-                  <VirementTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
-                  <DepensesTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                  <VirementTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(virHistory):h;setVirHistory(nh);saveVirHistory(nh);}}/>
+                  <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
@@ -5618,10 +5618,10 @@ export default function App() {
                   ))}
                 </div>
                 <div style={{marginBottom:20}}>
-                  <VirementTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{setVirHistory(h);saveVirHistory(h);}}/>
+                  <VirementTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(virHistory):h;setVirHistory(nh);saveVirHistory(nh);}}/>
                 </div>
                 <div style={{marginBottom:20}}>
-                  <DepensesTile profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{setDepHistory(h);saveDepHistory(h);}}/>
+                  <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
                 </div>
               </>
@@ -5643,11 +5643,11 @@ export default function App() {
           </div>
         )}
 
-        {tab==="concession"&&<div style={{animation:"fadeIn .4s ease"}}><ConcessionTab profiles={profiles} fleets={fleets} setFleets={(v)=>{setFleets(v);saveFleets(v);}}/></div>}
+        {tab==="concession"&&<div style={{animation:"fadeIn .4s ease"}}><ConcessionTab profiles={profiles} fleets={fleets} setFleets={(v)=>{const nv=typeof v==="function"?v(fleets):v;setFleets(nv);saveFleets(nv);}}/></div>}
 
-        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={(v)=>{setObjectives(v);saveObjectives(v);}} profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}}/></div>}
+        {tab==="objectives"&&<div style={{animation:"fadeIn .4s ease"}}><ObjectivesTab objectives={objectives} setObjectives={(v)=>{const nv=typeof v==="function"?v(objectives):v;setObjectives(nv);saveObjectives(nv);}} profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}}/></div>}
         {tab==="calc"&&<div style={{animation:"fadeIn .4s ease"}}><CalcTab fleets={fleets} profiles={profiles}/></div>}
-        {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={(v)=>{setSettings(v);saveSettings(v);}} profiles={profiles} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}}/></div>}
+        {tab==="settings"&&<div style={{animation:"fadeIn .4s ease"}}><SettingsTab settings={settings} setSettings={(v)=>{const nv = typeof v==="function" ? v(settings) : v; setSettings(nv); saveSettings(nv);}} profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}}/></div>}
       </div>{/* /content */}
       </div>{/* /desktop-shift */}
 
