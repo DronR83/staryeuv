@@ -8,7 +8,7 @@ const DEFAULT_PROFILES = [
 ];
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
-const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "" };
+const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "", discordWebhook: "" };
 // Flotte par joueur : { p1: [...], p2: [...] }
 const DEFAULT_FLEETS = {
   p1: [
@@ -1793,7 +1793,7 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic, defaultAuthor }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic, discordWebhook, defaultAuthor }) {
   const [text, setText]   = useState("");
   const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
@@ -1870,6 +1870,23 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
     setSending(false);
     const topic=ntfyTopic?.trim();
     if(topic){ fetch(`https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+msg.author)}&tags=speech_balloon&priority=default`,{method:"POST",mode:"no-cors",body:msg.text.slice(0,200)}).catch(()=>{}); }
+    const webhook=discordWebhook?.trim();
+    if(webhook){
+      fetch(webhook,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          username:"Star YeUv · "+msg.author,
+          avatar_url:p?.avatar||undefined,
+          embeds:[{
+            description:msg.text,
+            color:parseInt((p?.color||"#a78bfa").replace("#",""),16),
+            footer:{text:"💬 Chat · Memo"},
+            timestamp:new Date().toISOString(),
+          }],
+        }),
+      }).catch(()=>{});
+    }
   }
 
   function del(id){ setMessages(messages.filter(m=>m.id!==id)); }
@@ -4344,6 +4361,7 @@ function ConcessionTab({ profiles, fleets, setFleets }) {
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
   const [ntfyInput,setNtfyInput]=useState(settings.ntfyTopic||"");
+  const [discordInput,setDiscordInput]=useState(settings.discordWebhook||"");
   return (
     <div>
       <div style={S.sectionTitle}>⚙️ PERSONNALISATION</div>
@@ -4379,6 +4397,36 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
               }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
             </div>
           : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun topic configuré</div>
+        }
+      </div>
+
+      {/* Section Discord */}
+      <div style={{marginTop:16,background:"#07111fcc",border:"1px solid #5865F244",borderRadius:10,padding:16}}>
+        <div style={{...S.sectionTitle,color:"#5865F2"}}>💬 NOTIFICATIONS (Discord)</div>
+        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,lineHeight:1.6,marginBottom:12}}>
+          <div>1. Sur Discord → Salon → ⚙️ → <strong style={{color:"#e8f4ff"}}>Intégrations → Webhooks → Nouveau webhook</strong></div>
+          <div>2. <strong style={{color:"#e8f4ff"}}>Copier l'URL du webhook</strong></div>
+          <div>3. Colle l'URL ici et clique Appliquer</div>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <input value={discordInput} onChange={e=>setDiscordInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="https://discord.com/api/webhooks/..."/>
+          <button onClick={()=>setSettings(p=>({...p,discordWebhook:discordInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#5865F222",borderColor:"#5865F2",color:"#5865F2"}}>Appliquer</button>
+        </div>
+        {settings.discordWebhook
+          ? <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
+              <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Webhook configuré</span>
+              <button onClick={()=>{
+                const w=settings.discordWebhook.trim();
+                fetch(w,{
+                  method:"POST",
+                  headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({username:"Star YeUv",embeds:[{description:"🔔 Test de notification — tout fonctionne !",color:0x00ff9d}]}),
+                })
+                .then(r=>{ if(r.ok) alert("✅ Message envoyé sur Discord !"); else alert("⚠️ Erreur "+r.status+" — vérifie l'URL du webhook."); })
+                .catch(()=>alert("❌ Erreur réseau — vérifie ta connexion internet."));
+              }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
+            </div>
+          : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun webhook configuré</div>
         }
       </div>
 
@@ -5261,7 +5309,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} defaultAuthor={validatedUser?.id}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
