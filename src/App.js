@@ -8,7 +8,7 @@ const DEFAULT_PROFILES = [
 ];
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
-const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "", discordWebhook: "", geminiApiKey: "" };
+const DEFAULT_SETTINGS   = { appIcon: null, discordWebhook: "", geminiApiKey: "" };
 // Flotte par joueur : { p1: [...], p2: [...] }
 const DEFAULT_FLEETS = {
   p1: [
@@ -2111,7 +2111,7 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
   );
 }
 
-function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, ntfyTopic, discordWebhook, defaultAuthor }) {
+function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, discordWebhook, defaultAuthor }) {
   const [text, setText]   = useState("");
   const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
@@ -2186,8 +2186,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
     setMessages(next);
     setText("");
     setSending(false);
-    const topic=ntfyTopic?.trim();
-    if(topic){ fetch(`https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+msg.author)}&tags=speech_balloon&priority=default`,{method:"POST",mode:"no-cors",body:msg.text.slice(0,200)}).catch(()=>{}); }
     const webhook=discordWebhook?.trim();
     if(webhook){
       fetch(webhook,{
@@ -2195,6 +2193,8 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           username:"Star YeUv · "+msg.author,
+          content:"@everyone",
+          allowed_mentions:{parse:["everyone"]},
           embeds:[{
             description:msg.text,
             color:parseInt((p?.color||"#a78bfa").replace("#",""),16),
@@ -4679,7 +4679,6 @@ function ConcessionTab({ profiles, fleets, setFleets }) {
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
 function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
-  const [ntfyInput,setNtfyInput]=useState(settings.ntfyTopic||"");
   const [discordInput,setDiscordInput]=useState(settings.discordWebhook||"");
   const [geminiInput,setGeminiInput]=useState(settings.geminiApiKey||"");
   return (
@@ -4691,34 +4690,6 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         <button onClick={()=>setSettings(p=>({...p,appIcon:urlIcon}))} style={{...S.primaryBtn,width:"auto",marginTop:0}}>Appliquer</button>
       </div>
       {settings.appIcon&&<img src={settings.appIcon} alt="icon" style={{height:60,borderRadius:8,border:"1px solid #00d4ff44",marginBottom:16}}/>}
-
-      {/* Section ntfy */}
-      <div style={{marginTop:24,background:"#07111fcc",border:"1px solid #a78bfa44",borderRadius:10,padding:16}}>
-        <div style={{...S.sectionTitle,color:"#a78bfa"}}>🔔 NOTIFICATIONS (ntfy)</div>
-        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,lineHeight:1.6,marginBottom:12}}>
-          <div>1. Installe l'app <strong style={{color:"#a78bfa"}}>ntfy</strong> sur ton téléphone (App Store / Play Store)</div>
-          <div>2. Dans ntfy → <strong style={{color:"#e8f4ff"}}>+ Abonnement</strong> → entre un topic unique</div>
-          <div>3. Colle ce même topic ici et clique Appliquer</div>
-          <div style={{color:"#4a5a6a",fontSize:11,marginTop:4}}>Ex: staryeuv-drone-leuxys-2024 (garde-le secret)</div>
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:8}}>
-          <input value={ntfyInput} onChange={e=>setNtfyInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="ex: staryeuv-mongroupe"/>
-          <button onClick={()=>setSettings(p=>({...p,ntfyTopic:ntfyInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#a78bfa22",borderColor:"#a78bfa",color:"#a78bfa"}}>Appliquer</button>
-        </div>
-          {settings.ntfyTopic
-          ? <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
-              <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Topic actif : <strong style={{color:"#a78bfa"}}>{settings.ntfyTopic}</strong></span>
-              <button onClick={()=>{
-                const t=settings.ntfyTopic.trim();
-                const testUrl = `https://ntfy.sh/${encodeURIComponent(t)}?title=${encodeURIComponent("🔔 Test Star YeUv")}&tags=white_check_mark`;
-                fetch(testUrl,{method:"POST",mode:"no-cors",body:"Notifications actives ✅"})
-                .then(()=>alert("✅ Requête envoyée ! Vérifie ntfy sur ton téléphone dans 5 secondes."))
-                .catch(()=>alert("❌ Erreur réseau — vérifie ta connexion internet."));
-              }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
-            </div>
-          : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun topic configuré</div>
-        }
-      </div>
 
       {/* Section Discord */}
       <div style={{marginTop:16,background:"#07111fcc",border:"1px solid #5865F244",borderRadius:10,padding:16}}>
@@ -4740,7 +4711,7 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
                 fetch(w,{
                   method:"POST",
                   headers:{"Content-Type":"application/json"},
-                  body:JSON.stringify({username:"Star YeUv",embeds:[{description:"🔔 Test de notification — tout fonctionne !",color:0x00ff9d}]}),
+                  body:JSON.stringify({username:"Star YeUv",content:"@everyone",allowed_mentions:{parse:["everyone"]},embeds:[{description:"🔔 Test de notification — tout fonctionne !",color:0x00ff9d}]}),
                 })
                 .then(r=>{ if(r.ok) alert("✅ Message envoyé sur Discord !"); else alert("⚠️ Erreur "+r.status+" — vérifie l'URL du webhook."); })
                 .catch(()=>alert("❌ Erreur réseau — vérifie ta connexion internet."));
@@ -5195,10 +5166,8 @@ export default function App() {
   const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore("jarvis_chat", []);
   const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
-  const settingsRef = useRef(settings);
-  useEffect(() => { settingsRef.current = settings; }, [settings]);
 
-  // Notification navigateur + ntfy quand nouveau message reçu
+  // Notification navigateur quand nouveau message reçu
   useEffect(() => {
     if (chatMsgs.length > prevChatLen.current && prevChatLen.current > 0) {
       const newest = chatMsgs[chatMsgs.length - 1];
@@ -5225,16 +5194,6 @@ export default function App() {
               vibrate: [200, 100, 200],
             });
           } catch {}
-        }
-        // Notification ntfy
-        const topic = settingsRef.current?.ntfyTopic?.trim();
-        if (topic) {
-          const ntfyUrl = `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent("💬 "+newest.author)}&tags=speech_balloon&priority=default`;
-          fetch(ntfyUrl, {
-            method: "POST",
-            mode: "no-cors",
-            body: newest.text.slice(0, 200),
-          }).catch(() => {});
         }
       }
     }
@@ -5652,7 +5611,7 @@ export default function App() {
       </div>{/* /desktop-shift */}
 
       {/* Modal Missions (depuis Home) */}
-      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
+      {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
 
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)}/>}
 
