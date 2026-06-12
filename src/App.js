@@ -2263,6 +2263,8 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const [text, setText]   = useState("");
   const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
+  const [gifPanelOpen, setGifPanelOpen] = useState(false);
+  const [gifUrl, setGifUrl] = useState("");
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
@@ -2326,17 +2328,14 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  function send() {
-    if(!text.trim()||!author) return;
-    setSending(true);
-    const p=profiles.find(p2=>p2.id===author);
-    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:text.trim(),time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
+  function pushMessage(msg, p) {
     const next=[...messages,msg];
     setMessages(next);
-    setText("");
-    setSending(false);
     const webhook=discordWebhook?.trim();
     if(webhook){
+      const embed = msg.gif
+        ? { image:{url:msg.gif}, color:parseInt((p?.color||"#a78bfa").replace("#",""),16), footer:{text:"💬 Chat · GIF"}, timestamp:new Date().toISOString() }
+        : { description:msg.text, color:parseInt((p?.color||"#a78bfa").replace("#",""),16), footer:{text:"💬 Chat · Memo"}, timestamp:new Date().toISOString() };
       fetch(webhook,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -2344,17 +2343,32 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
           username:"Star YeUv · "+msg.author,
           content:"@everyone",
           allowed_mentions:{parse:["everyone"]},
-          embeds:[{
-            description:msg.text,
-            color:parseInt((p?.color||"#a78bfa").replace("#",""),16),
-            footer:{text:"💬 Chat · Memo"},
-            timestamp:new Date().toISOString(),
-          }],
+          embeds:[embed],
         }),
       }).then(r=>{
         if(!r.ok) console.error("Discord webhook erreur HTTP:", r.status, r.statusText);
       }).catch(e=>console.error("Discord webhook erreur réseau:", e));
     }
+  }
+
+  function send() {
+    if(!text.trim()||!author) return;
+    setSending(true);
+    const p=profiles.find(p2=>p2.id===author);
+    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:text.trim(),time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
+    pushMessage(msg, p);
+    setText("");
+    setSending(false);
+  }
+
+  function sendGif() {
+    const url = gifUrl.trim();
+    if(!url||!author) return;
+    const p=profiles.find(p2=>p2.id===author);
+    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:"",gif:url,time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
+    pushMessage(msg, p);
+    setGifUrl("");
+    setGifPanelOpen(false);
   }
 
   function del(id){ setMessages(messages.filter(m=>m.id!==id)); }
@@ -2461,7 +2475,11 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
                     }}>
                       {/* reflet interne */}
                       <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,rgba(${r},${g},${b},0.4),transparent)`}}/>
-                      <div style={{color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,lineHeight:1.55,wordBreak:"break-word",letterSpacing:0.2}}>{m.text}</div>
+                      <div style={{color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,lineHeight:1.55,wordBreak:"break-word",letterSpacing:0.2}}>
+                        {m.gif
+                          ? <img src={m.gif} alt="GIF" style={{maxWidth:"100%",maxHeight:220,borderRadius:10,display:"block"}} loading="lazy"/>
+                          : m.text}
+                      </div>
                     </div>
                     <button onClick={()=>del(m.id)} style={{background:"transparent",border:"none",color:"rgba(255,68,102,0.2)",cursor:"pointer",fontSize:12,padding:"4px",flexShrink:0,transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="rgba(255,68,102,0.7)"} onMouseLeave={e=>e.target.style.color="rgba(255,68,102,0.2)"}>×</button>
                   </div>
@@ -2483,8 +2501,44 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
             {profiles.map(p=><option key={p.id} value={p.id} style={{background:"#07111f",color:p.color}}>{p.name}</option>)}
           </select>
         </div>
+        {/* Panneau GIF */}
+        {gifPanelOpen && (
+          <div style={{marginBottom:10,background:"rgba(167,139,250,0.06)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:14,padding:10,animation:"fadeIn .2s ease"}}>
+            <div style={{display:"flex",gap:8,marginBottom:gifUrl.trim()?8:0}}>
+              <input
+                value={gifUrl}
+                onChange={e=>setGifUrl(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();sendGif();}}}
+                placeholder="Colle un lien de GIF (Giphy, Tenor, .gif...)"
+                style={{flex:1,background:"rgba(167,139,250,0.07)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:18,padding:"9px 14px",color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box"}}
+              />
+              <button onClick={sendGif} disabled={!gifUrl.trim()} style={{background:gifUrl.trim()?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.1)",border:`1px solid ${gifUrl.trim()?"#a78bfa":"rgba(167,139,250,0.2)"}`,color:"#fff",borderRadius:18,padding:"9px 16px",cursor:gifUrl.trim()?"pointer":"default",fontFamily:"'Orbitron',sans-serif",fontSize:12,fontWeight:700,flexShrink:0}}>Envoyer</button>
+            </div>
+            {gifUrl.trim() && (
+              <div style={{display:"flex",justifyContent:"center",padding:"4px 0"}}>
+                <img src={gifUrl.trim()} alt="Aperçu" style={{maxWidth:"100%",maxHeight:160,borderRadius:10}} onError={e=>{e.target.style.display="none";}}/>
+              </div>
+            )}
+            <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginTop:6}}>
+              💡 Astuce : sur Giphy/Tenor, clic droit sur un GIF → "Copier le lien de l'image" → colle ici
+            </div>
+          </div>
+        )}
         {/* Champ texte + bouton */}
         <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+          <button
+            onClick={()=>setGifPanelOpen(o=>!o)}
+            title="Insérer un GIF"
+            style={{
+              width:44,height:44,borderRadius:"50%",flexShrink:0,
+              background:gifPanelOpen?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.08)",
+              border:`1px solid ${gifPanelOpen?"#a78bfa":"rgba(167,139,250,0.2)"}`,
+              color:gifPanelOpen?"#fff":"#a78bfa",cursor:"pointer",
+              fontSize:11,fontWeight:700,fontFamily:"'Orbitron',sans-serif",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              transition:"all .2s",
+            }}
+          >GIF</button>
           <div style={{flex:1,position:"relative"}}>
             <input
               ref={inputRef}
