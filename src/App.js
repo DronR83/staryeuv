@@ -84,23 +84,29 @@ function CosmicBackground() {
     }));
 
     // ── SHOOTING STARS HD ────────────────────────────────────────
-    const MAX_SHOOTS = 5;
+    const MAX_SHOOTS = 12;
     const shoots = Array.from({length: MAX_SHOOTS}, (_, i) => ({
-      active: false, delay: i * 90 + Math.random() * 200,
+      active: false, delay: i * 45 + Math.random() * 150,
       x: 0, y: 0, vx: 0, vy: 0, trail: [], maxLen: 0, alpha: 0,
+      size: 1, hue: 0, life: 0,
     }));
 
     function spawnShoot(s) {
       s.active = true;
-      s.x = 0.05 + Math.random() * 0.75;
-      s.y = 0.01 + Math.random() * 0.45;
-      const angle = Math.PI * (0.12 + Math.random() * 0.08); // diagonal douce
-      const speed = 0.006 + Math.random() * 0.012;
+      s.x = 0.05 + Math.random() * 0.85;
+      s.y = -0.02 + Math.random() * 0.55;
+      const angle = Math.PI * (0.10 + Math.random() * 0.14); // diagonale variable
+      const speed = 0.005 + Math.random() * 0.022;
       s.vx = -Math.cos(angle) * speed;
       s.vy =  Math.sin(angle) * speed;
       s.trail = [];
-      s.maxLen = 14 + Math.floor(Math.random() * 20);
+      s.maxLen = 16 + Math.floor(Math.random() * 28);
       s.alpha = 0;
+      s.size = 0.6 + Math.random() * 1.8; // épaisseur variable
+      s.life = 0;
+      // teinte variable : blanc-bleu dominant, parfois doré ou rosé
+      const r = Math.random();
+      s.hue = r < 0.6 ? [210,230,255] : r < 0.85 ? [255,225,180] : [255,200,220];
     }
 
     // ── SPAWN VAISSEAU ───────────────────────────────────────────
@@ -483,24 +489,46 @@ function CosmicBackground() {
         s.trail.push({x:s.x,y:s.y});
         if (s.trail.length > s.maxLen) s.trail.shift();
         s.x += s.vx; s.y += s.vy;
-        s.alpha = Math.min(1, s.alpha + 0.08);
-        if (s.x < -0.05 || s.y > 1.05 || s.trail.length < 2) {
-          if (s.x < -0.05 || s.y > 1.05) { s.active = false; s.alpha=0; s.delay = 80+Math.random()*280; }
+        s.life++;
+        s.alpha = Math.min(1, s.alpha + 0.07);
+        if (s.x < -0.06 || s.y > 1.06 || s.trail.length < 2) {
+          if (s.x < -0.06 || s.y > 1.06) { s.active = false; s.alpha=0; s.delay = 40+Math.random()*180; }
           return;
         }
-        // Dessiner la traîne avec dégradé HD
+        const [hr,hg,hb] = s.hue;
+        // Traîne dégradée multi-segments, épaisseur progressive
         for (let i = 1; i < s.trail.length; i++) {
           const prog = i / s.trail.length;
-          const al2 = prog * s.alpha * 0.9;
-          const width = prog * 2.2;
-          ctx.strokeStyle=`rgba(255,255,255,${al2})`;
+          const al2 = prog*prog * s.alpha * 0.95;
+          const width = prog * s.size * 2.4;
+          ctx.strokeStyle=`rgba(${hr},${hg},${hb},${al2})`;
           ctx.lineWidth=width;
-          ctx.shadowColor=`rgba(200,225,255,${al2*0.7})`; ctx.shadowBlur=width*2.5;
+          ctx.shadowColor=`rgba(${hr},${hg},${hb},${al2*0.8})`; ctx.shadowBlur=width*3;
           ctx.beginPath(); ctx.moveTo(s.trail[i-1].x*W,s.trail[i-1].y*H); ctx.lineTo(s.trail[i].x*W,s.trail[i].y*H); ctx.stroke();
         }
-        // Tête brillante
-        ctx.fillStyle=`rgba(255,255,255,${s.alpha})`; ctx.shadowColor='rgba(220,238,255,0.95)'; ctx.shadowBlur=12;
-        ctx.beginPath(); ctx.arc(s.x*W,s.y*H,1.5,0,Math.PI*2); ctx.fill();
+        // Noyau lumineux à la tête (halo + point brillant)
+        const hx=s.x*W, hy=s.y*H;
+        const coreR = s.size * 3.2;
+        const coreGrad = ctx.createRadialGradient(hx,hy,0,hx,hy,coreR*2.5);
+        coreGrad.addColorStop(0, `rgba(255,255,255,${s.alpha})`);
+        coreGrad.addColorStop(0.25, `rgba(${hr},${hg},${hb},${s.alpha*0.85})`);
+        coreGrad.addColorStop(1, "transparent");
+        ctx.fillStyle = coreGrad; ctx.shadowBlur=0;
+        ctx.beginPath(); ctx.arc(hx,hy,coreR*2.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+        ctx.beginPath(); ctx.arc(hx,hy,coreR*0.6,0,Math.PI*2); ctx.fill();
+        // Étincelles dispersées le long de la traîne (effet débris)
+        if (s.size > 1.3 && s.trail.length > 6) {
+          for (let k=0;k<2;k++){
+            const idx = Math.floor(s.trail.length * (0.3 + Math.random()*0.4));
+            const tp = s.trail[idx]; if(!tp) continue;
+            const jitterX = (Math.random()-0.5)*4*s.size;
+            const jitterY = (Math.random()-0.5)*4*s.size;
+            const spAl = s.alpha * (0.3+Math.random()*0.4);
+            ctx.fillStyle = `rgba(${hr},${hg},${hb},${spAl})`;
+            ctx.beginPath(); ctx.arc(tp.x*W+jitterX, tp.y*H+jitterY, 0.6+Math.random()*0.8, 0, Math.PI*2); ctx.fill();
+          }
+        }
         ctx.shadowBlur=0;
       });
 
