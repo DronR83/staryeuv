@@ -8,7 +8,7 @@ const DEFAULT_PROFILES = [
 ];
 const DEFAULT_MISSIONS   = [];
 const DEFAULT_OBJECTIVES = { personal: { p1: [], p2: [] }, common: [] };
-const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "", discordWebhook: "" };
+const DEFAULT_SETTINGS   = { appIcon: null, ntfyTopic: "", discordWebhook: "", geminiApiKey: "" };
 // Flotte par joueur : { p1: [...], p2: [...] }
 const DEFAULT_FLEETS = {
   p1: [
@@ -1685,6 +1685,324 @@ function useSwipeClose(onClose) {
 
   return { panelRef, backdropRef, hintRef, handlers };
 }
+
+// ─── JARVIS CANVAS (cercles holographiques IA) ─────────────────────────────────
+function JarvisCanvas() {
+  const ref = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+    let t = 0;
+    function frame() {
+      t += 0.018; ctx.clearRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.32;
+      // anneaux rotatifs concentriques
+      for (let i = 0; i < 3; i++) {
+        const r = R * (0.5 + i * 0.28);
+        const speed = (i % 2 === 0 ? 1 : -1) * (0.4 + i * 0.15);
+        const al = 0.18 + 0.12 * Math.sin(t * 1.5 + i);
+        ctx.strokeStyle = `rgba(255,180,60,${al})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, t * speed, t * speed + Math.PI * 1.4);
+        ctx.stroke();
+      }
+      // noyau central pulsant
+      const pulse = 0.6 + 0.4 * Math.sin(t * 2);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.45);
+      g.addColorStop(0, `rgba(255,210,100,${0.5 * pulse})`);
+      g.addColorStop(0.5, `rgba(255,150,30,${0.25 * pulse})`);
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.45, 0, Math.PI * 2); ctx.fill();
+      // particules orbitales
+      for (let i = 0; i < 6; i++) {
+        const a = t * 0.8 + i * (Math.PI * 2 / 6);
+        const r2 = R * (0.7 + 0.15 * Math.sin(t + i));
+        const px = cx + Math.cos(a) * r2, py = cy + Math.sin(a) * r2;
+        ctx.fillStyle = `rgba(255,200,80,${0.5 + 0.4 * Math.sin(t * 2 + i)})`;
+        ctx.shadowColor = "#ffaa33"; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      // grille de fond subtile
+      ctx.strokeStyle = "rgba(255,170,50,0.05)"; ctx.lineWidth = 0.5;
+      for (let x = 0; x < w; x += 24) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 24) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      raf.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(raf.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <canvas ref={ref} style={{ width: "100%", height: "100%", display: "block" }} />;
+}
+
+function JarvisTile({ onClick, isDesktop, hasKey }) {
+  const [hov, setHov] = useState(false);
+  const base = {
+    position: "relative", overflow: "hidden", cursor: "pointer",
+    background: "#1a0f05cc", borderRadius: 12, transition: "all .25s",
+    backdropFilter: "blur(8px)",
+    border: `1px solid ${hov ? "#ffaa3399" : "#ffaa3344"}`,
+    boxShadow: hov ? "0 0 32px #ffaa3388, 0 0 8px #ffaa3344 inset" : "0 0 12px #ffaa3333",
+    transform: hov ? "scale(1.03) translateY(-2px)" : "scale(1)",
+  };
+  return isDesktop ? (
+    <div style={{ ...base, padding: "20px 14px", textAlign: "center" }}
+      onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <div style={{ position: "absolute", inset: 0 }}><JarvisCanvas /></div>
+      {!hasKey && (
+        <div style={{ position: "absolute", top: 8, right: 8, background: "#ff4466", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 10, fontWeight: 900, borderRadius: 10, padding: "2px 6px", zIndex: 2 }}>CONFIG</div>
+      )}
+      <div style={{ position: "relative", zIndex: 1, pointerEvents: "none" }}>
+        <div style={{ fontSize: 32, marginBottom: 8, filter: "drop-shadow(0 0 8px #ffaa33)" }}>🤖</div>
+        <div style={{ color: "#ffaa33", fontSize: 15, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>ASSISTANT IA</div>
+        <div style={{ color: "#e8f4ff", fontSize: 22, fontWeight: 700, fontFamily: "'Orbitron',sans-serif", margin: "5px 0" }}>JARVIS</div>
+        <div style={{ color: "#8899bb", fontSize: 12, fontFamily: "'Rajdhani',sans-serif" }}>Expert Star Citizen</div>
+      </div>
+    </div>
+  ) : (
+    <div style={{ ...base, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}
+      onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      <div style={{ position: "absolute", inset: 0 }}><JarvisCanvas /></div>
+      {!hasKey && (
+        <div style={{ position: "absolute", top: 8, right: 8, background: "#ff4466", color: "#fff", fontFamily: "'Orbitron',sans-serif", fontSize: 10, fontWeight: 900, borderRadius: 10, padding: "2px 6px", zIndex: 2 }}>CONFIG</div>
+      )}
+      <div style={{ position: "relative", zIndex: 1, fontSize: 36, filter: "drop-shadow(0 0 10px #ffaa33)", flexShrink: 0 }}>🤖</div>
+      <div style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <div style={{ color: "#ffaa33", fontSize: 14, fontFamily: "'Rajdhani',sans-serif", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 2 }}>ASSISTANT IA · JARVIS</div>
+        <div style={{ color: "#e8f4ff", fontSize: 22, fontWeight: 700, fontFamily: "'Orbitron',sans-serif" }}>Expert Star Citizen</div>
+        <div style={{ color: "#8899bb", fontSize: 12, fontFamily: "'Rajdhani',sans-serif" }}>{hasKey ? "Posez vos questions" : "Configuration requise"}</div>
+      </div>
+      <div style={{ position: "relative", zIndex: 1, color: "#ffaa33", fontSize: 22, opacity: 0.7 }}>→</div>
+    </div>
+  );
+}
+
+// ─── JARVIS INTERFACE ───────────────────────────────────────────────────────────
+const JARVIS_SYSTEM_PROMPT = `Tu es JARVIS, un assistant IA expert de Star Citizen et de l'univers Star Citizen (jeu développé par Cloud Imperium Games / Roberts Space Industries).
+
+RÈGLES STRICTES :
+- Tu es PRÉCIS et FACTUEL. Si tu n'es pas certain d'une information (prix, statistiques de vaisseau, mécanique de jeu récente), dis-le clairement plutôt que d'inventer.
+- Cite TOUJOURS tes sources quand tu utilises la recherche web (RSI officiel, Spectrum, wiki Star Citizen, UEX Corp, Erkul, etc.).
+- Réponds en français, de manière claire, structurée et concise.
+- Tu connais : les vaisseaux et leurs statistiques, le minage, le commerce, les missions, les organisations, le lore, les patchs et mises à jour, les systèmes stellaires (Stanton, Pyro, etc.), l'équipement, les FPS mechanics.
+- Pour les questions sur les prix aUEC, statistiques de vaisseaux ou mécaniques récentes, utilise la recherche web pour vérifier l'information la plus à jour.
+- Sois amical mais efficace — comme un véritable copilote IA.
+- Si la question n'a aucun rapport avec Star Citizen, tu peux quand même répondre utilement mais reste dans ton personnage de Jarvis.`;
+
+function JarvisInterface({ apiKey, history, setHistory, onClose }) {
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const endRef = useRef(null);
+  const bgRef = useRef(null);
+  const rafRef = useRef(null);
+
+  const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
+
+  // Fond animé holographique doré
+  useEffect(() => {
+    const canvas = bgRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    function resize() { canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    resize();
+    const W = () => canvas.offsetWidth, H = () => canvas.offsetHeight;
+    let t = 0;
+    const stars = Array.from({ length: 35 }, () => ({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.5, ph: Math.random() * 6 }));
+    function frame() {
+      t += 0.012; ctx.clearRect(0, 0, W(), H());
+      const bg = ctx.createLinearGradient(0, 0, 0, H());
+      bg.addColorStop(0, "rgb(8,5,2)"); bg.addColorStop(1, "rgb(4,3,1)");
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W(), H());
+      ctx.strokeStyle = "rgba(255,170,50,0.04)"; ctx.lineWidth = 0.8;
+      const gap = 32;
+      for (let x = 0; x < W() + gap; x += gap) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H()); ctx.stroke(); }
+      for (let y = 0; y < H() + gap; y += gap) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W(), y); ctx.stroke(); }
+      stars.forEach(s => {
+        const al = 0.2 + 0.3 * Math.abs(Math.sin(t * 0.8 + s.ph));
+        ctx.fillStyle = `rgba(255,210,150,${al})`;
+        ctx.beginPath(); ctx.arc(s.x * W(), s.y * H(), s.r, 0, Math.PI * 2); ctx.fill();
+      });
+      rafRef.current = requestAnimationFrame(frame);
+    }
+    frame();
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  async function send() {
+    if (!text.trim() || loading) return;
+    if (!apiKey) { setError("Clé API Gemini non configurée. Va dans Réglages."); return; }
+    const userMsg = { role: "user", text: text.trim(), id: Date.now() };
+    const next = [...history, userMsg];
+    setHistory(next);
+    setText("");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const contents = next.map(m => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.text }],
+      }));
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: JARVIS_SYSTEM_PROMPT }] },
+          tools: [{ google_search: {} }],
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Erreur API (${res.status})`);
+      }
+
+      const data = await res.json();
+      const candidate = data?.candidates?.[0];
+      const reply = candidate?.content?.parts?.map(p => p.text).join("") || "Je n'ai pas pu générer de réponse.";
+
+      // Extraction des sources (grounding)
+      const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
+      const sources = groundingChunks
+        .map(c => c?.web ? { title: c.web.title, uri: c.web.uri } : null)
+        .filter(Boolean)
+        .slice(0, 5);
+
+      const aiMsg = { role: "model", text: reply, sources, id: Date.now() + 1 };
+      setHistory([...next, aiMsg]);
+    } catch (e) {
+      setError(e.message || "Erreur de connexion à Jarvis.");
+      setHistory(next); // garde le message utilisateur même en cas d'erreur
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 999 }}>
+      {/* Backdrop */}
+      <div ref={backdropRef} style={{ position: "absolute", inset: 0, background: "#080502", opacity: 0, transform: "scale(0.94)", pointerEvents: "none", willChange: "transform,opacity" }}>
+        <div ref={hintRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0 }}>
+          <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 16, letterSpacing: 4, textShadow: "0 0 20px #ffaa33" }}>← HOME</div>
+        </div>
+      </div>
+
+      {/* Panel */}
+      <div ref={panelRef} {...swipeHandlers} style={{ position: "absolute", inset: 0, background: "#0a0602", display: "flex", flexDirection: "column", willChange: "transform" }}>
+        <canvas ref={bgRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+
+        {/* Header */}
+        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.95)", borderBottom: "1px solid #ffaa3344", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #ffaa33)" }}>🤖</div>
+            <div>
+              <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>JARVIS</div>
+              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>EXPERT STAR CITIZEN · swipe → pour fermer</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {history.length > 0 && <button onClick={() => { if (window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Effacer</button>}
+            <button onClick={onClose} style={{ background: "transparent", border: "1px solid #ffaa3355", color: "#ffaa33", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div style={{ position: "relative", zIndex: 1, flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+          {history.length === 0 && (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 56, marginBottom: 16, filter: "drop-shadow(0 0 16px #ffaa33)" }}>🤖</div>
+              <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Bonjour, je suis Jarvis</div>
+              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 14, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
+                Posez-moi vos questions sur Star Citizen : vaisseaux, prix, minage, missions, lore, patchs, mécaniques de jeu... Je sourcerai mes réponses quand c'est possible.
+              </div>
+              {!apiKey && (
+                <div style={{ marginTop: 20, background: "#ff446611", border: "1px solid #ff446644", borderRadius: 10, padding: "12px 16px", color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, maxWidth: 400, margin: "20px auto 0" }}>
+                  ⚠️ Clé API Gemini non configurée. Va dans <strong>Réglages</strong> pour l'ajouter (gratuite via Google AI Studio).
+                </div>
+              )}
+            </div>
+          )}
+          {history.map(m => (
+            <div key={m.id} style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                {m.role !== "user" && <span style={{ fontSize: 16 }}>🤖</span>}
+                <span style={{ color: m.role === "user" ? "#00d4ff" : "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>{m.role === "user" ? "VOUS" : "JARVIS"}</span>
+              </div>
+              <div style={{
+                maxWidth: "85%",
+                background: m.role === "user" ? "linear-gradient(135deg,#00d4ff1a,#0a162888)" : "linear-gradient(135deg,#ffaa331a,#1a0f0588)",
+                border: `1px solid ${m.role === "user" ? "#00d4ff33" : "#ffaa3333"}`,
+                borderRadius: m.role === "user" ? "12px 0 12px 12px" : "0 12px 12px 12px",
+                padding: "10px 14px",
+                backdropFilter: "blur(4px)",
+              }}>
+                <div style={{ color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</div>
+              </div>
+              {m.sources && m.sources.length > 0 && (
+                <div style={{ maxWidth: "85%", marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 1 }}>📎 SOURCES</div>
+                  {m.sources.map((s, si) => (
+                    <a key={si} href={s.uri} target="_blank" rel="noopener noreferrer" style={{ color: "#ffaa33", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, textDecoration: "none", opacity: 0.85, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      🔗 {s.title || s.uri}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <span style={{ fontSize: 16 }}>🤖</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffaa33", animation: `badgePop 1s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </div>
+              <span style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 13 }}>Jarvis réfléchit...</span>
+            </div>
+          )}
+          {error && (
+            <div style={{ background: "#ff446611", border: "1px solid #ff446644", borderRadius: 10, padding: "10px 14px", color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, marginBottom: 16 }}>
+              ⚠️ {error}
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        {/* Input */}
+        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.97)", borderTop: "1px solid #ffaa3333", padding: "12px 16px", backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+              style={{ flex: 1, background: "#1a0f05", border: "1px solid #ffaa3344", borderRadius: 10, padding: "11px 14px", color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, outline: "none" }}
+              placeholder={apiKey ? "Demandez à Jarvis…" : "Configurez d'abord la clé API dans Réglages"}
+              disabled={!apiKey}
+            />
+            <button onClick={send} disabled={!text.trim() || loading || !apiKey} style={{ background: (text.trim() && !loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(text.trim() && !loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (text.trim() && !loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (text.trim() && !loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (text.trim() && !loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
+              {loading ? "..." : "ENVOYER"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ─── CHAT TILE + INTERFACE ────────────────────────────────────────────────────
 function ChatCanvas() {
@@ -4362,6 +4680,7 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
   const [urlIcon,setUrlIcon]=useState(settings.appIcon||"");
   const [ntfyInput,setNtfyInput]=useState(settings.ntfyTopic||"");
   const [discordInput,setDiscordInput]=useState(settings.discordWebhook||"");
+  const [geminiInput,setGeminiInput]=useState(settings.geminiApiKey||"");
   return (
     <div>
       <div style={S.sectionTitle}>⚙️ PERSONNALISATION</div>
@@ -4427,6 +4746,25 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
               }} style={{background:"#00ff9d22",border:"1px solid #00ff9d66",color:"#00ff9d",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:12,fontWeight:700}}>🔔 Tester</button>
             </div>
           : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucun webhook configuré</div>
+        }
+      </div>
+
+      {/* Section Jarvis / Gemini */}
+      <div style={{marginTop:16,background:"#1a0f05cc",border:"1px solid #ffaa3344",borderRadius:10,padding:16}}>
+        <div style={{...S.sectionTitle,color:"#ffaa33"}}>🤖 ASSISTANT IA (Jarvis)</div>
+        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:13,lineHeight:1.6,marginBottom:12}}>
+          <div>1. Va sur <strong style={{color:"#e8f4ff"}}>aistudio.google.com/apikey</strong> (gratuit avec compte Google)</div>
+          <div>2. Clique <strong style={{color:"#e8f4ff"}}>Create API Key</strong> et copie la clé</div>
+          <div>3. Colle-la ici et clique Appliquer</div>
+          <div style={{color:"#4a5a6a",fontSize:11,marginTop:4}}>⚠️ Cette clé sera visible côté navigateur — usage privé uniquement.</div>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <input type="password" value={geminiInput} onChange={e=>setGeminiInput(e.target.value)} style={{...S.input,flex:1,marginBottom:0}} placeholder="Clé API Gemini..."/>
+          <button onClick={()=>setSettings(p=>({...p,geminiApiKey:geminiInput.trim()}))} style={{...S.primaryBtn,width:"auto",marginTop:0,background:"#ffaa3322",borderColor:"#ffaa33",color:"#ffaa33"}}>Appliquer</button>
+        </div>
+        {settings.geminiApiKey
+          ? <span style={{color:"#00ff9d",fontFamily:"'Rajdhani',sans-serif",fontSize:13}}>✅ Clé configurée — Jarvis est prêt !</span>
+          : <div style={{color:"#4a5a6a",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>Aucune clé configurée</div>
         }
       </div>
 
@@ -4853,6 +5191,7 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
+  const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore("jarvis_chat", []);
   const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
   const settingsRef = useRef(settings);
@@ -4951,6 +5290,7 @@ export default function App() {
   const [gainsModal,     setGainsModal]     = useState(false);
   const [calcModal,      setCalcModal]      = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
+  const [jarvisOpen,     setJarvisOpen]     = useState(false);
 
   function openChat() {
     setChatOpen(true);
@@ -5248,6 +5588,7 @@ export default function App() {
                 <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(200px,1fr))`,gap:16,marginBottom:20}}>
                   <CalcTile onClick={()=>setCalcModal(true)} isDesktop={isDesktop}/>
                   <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
+                  <JarvisTile onClick={()=>setJarvisOpen(true)} isDesktop={isDesktop} hasKey={!!settings?.geminiApiKey}/>
                   <HexTile iconKind="pad" label="Missions" value={validatedMissions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
                   <HexTile iconKind="share" label="Partagées" value={validatedMissions.filter(m=>m.split).length} sub="co-op" color="#00ff9d" isDesktop={isDesktop}/>
                   <HexTile iconKind="target" label="Objectifs" value={objectives.common.length+Object.values(objectives.personal).flat().length} sub="en cours" color="#ff6b35" onClick={()=>setTab("objectives")} isDesktop={isDesktop}/>
@@ -5264,6 +5605,7 @@ export default function App() {
                 <MoneyBanner totalEarned={totalEarned} profiles={profiles} onClick={()=>setGainsModal(true)} isDesktop={isDesktop}/>
                 <div style={{marginBottom:12}}>
                   <ChatTile profiles={profiles} msgCount={unreadCount} onClick={openChat} isDesktop={isDesktop}/>
+                  <JarvisTile onClick={()=>setJarvisOpen(true)} isDesktop={isDesktop} hasKey={!!settings?.geminiApiKey}/>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:10,marginBottom:10}}>
                   <HexTile iconKind="pad" label="Missions" value={validatedMissions.length} sub="complétées" color="#00d4ff" onClick={()=>setMissionsModal(true)} isDesktop={isDesktop}/>
@@ -5310,6 +5652,8 @@ export default function App() {
 
       {/* Modal Missions (depuis Home) */}
       {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} ntfyTopic={settings?.ntfyTopic} discordWebhook={settings?.discordWebhook} defaultAuthor={validatedUser?.id}/>}
+
+      {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)}/>}
 
       {calcModal&&(
         <Modal title="🧮 CALCULATRICE" onClose={()=>setCalcModal(false)}>
