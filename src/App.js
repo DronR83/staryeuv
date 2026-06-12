@@ -2195,7 +2195,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           username:"Star YeUv · "+msg.author,
-          avatar_url:p?.avatar||undefined,
           embeds:[{
             description:msg.text,
             color:parseInt((p?.color||"#a78bfa").replace("#",""),16),
@@ -2203,7 +2202,9 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, n
             timestamp:new Date().toISOString(),
           }],
         }),
-      }).catch(()=>{});
+      }).then(r=>{
+        if(!r.ok) console.error("Discord webhook erreur HTTP:", r.status, r.statusText);
+      }).catch(e=>console.error("Discord webhook erreur réseau:", e));
     }
   }
 
