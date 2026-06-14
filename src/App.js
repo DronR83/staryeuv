@@ -3245,7 +3245,16 @@ function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHisto
   },[]);
 
   const whoP = profiles.find(p=>p.id===who);
-  const num = parseFloat(amount)||0;
+  function evalExpr(expr) {
+    try {
+      const clean = String(expr).replace(/[^0-9+\-*/.() ]/g,"").trim();
+      if (!clean) return 0;
+      // eslint-disable-next-line no-new-func
+      const r = Function('"use strict";return ('+clean+')')();
+      return (isFinite(r) && r > 0) ? Math.round(r) : 0;
+    } catch { return 0; }
+  }
+  const num = evalExpr(amount);
   const canSave = num>0 && label.trim() && whoP && whoP.aUEC>=num;
 
   function doDepense(){
@@ -3309,7 +3318,22 @@ function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHisto
               <label style={S.label}>Description</label>
               <input value={label} onChange={e=>setLabel(e.target.value)} style={S.input} placeholder="Ex: Carburant, Réparation, Armes…"/>
               <label style={S.label}>Montant (aUEC)</label>
-              <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} style={S.input} placeholder="Ex: 25 000" min="1"/>
+              <input
+                type="text"
+                value={amount}
+                onChange={e=>setAmount(e.target.value)}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"){
+                    const r=evalExpr(amount);
+                    if(r>0){setAmount(String(r)); if(canSave) doDepense();}
+                  }
+                }}
+                style={{...S.input,fontFamily:"'Orbitron',sans-serif"}}
+                placeholder="Ex: 25000 ou 200*3+500"
+              />
+              <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginTop:-6,marginBottom:4}}>
+                Supporte + − × ÷ — Entrée pour calculer ou valider
+              </div>
               {num>0 && (
                 <div style={{background:"#07111f",border:"1px solid #ff6b3522",borderRadius:10,padding:"12px 16px",marginTop:8}}>
                   <div style={{display:"flex",justifyContent:"space-between"}}>
