@@ -5776,18 +5776,14 @@ function LoginScreen({ profiles, onLogin }) {
 export default function App() {
   const [tab,setTab]=useState("dashboard");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
-  const [storedUserId, setStoredUserId] = useState(() => {
-    try { const u = localStorage.getItem("sc_user"); return u ? JSON.parse(u)?.id || null : null; } catch { return null; }
-  });
+  const [storedUserId, setStoredUserId] = useState(null);
 
   function handleLogin(profile) {
     const fresh = profiles.find(p => p.id === profile.id) || profile;
     setStoredUserId(fresh.id);
-    try { localStorage.setItem("sc_user", JSON.stringify({id: fresh.id})); } catch {}
   }
   function handleLogout() {
     setStoredUserId(null);
-    try { localStorage.removeItem("sc_user"); } catch {}
   }
 
   useEffect(() => {
