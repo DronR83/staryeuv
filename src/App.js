@@ -2197,7 +2197,6 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
   const pending = (dettes||[]).filter(d=>d.status==="pending").length;
   const hasAny = (dettes||[]).length > 0;
   const col = pending > 0 ? "#ef4444" : hasAny ? "#22c55e" : "#ef4444";
-  const [r,g,b] = pending > 0 ? [239,68,68] : hasAny ? [34,197,94] : [239,68,68];
   const icon = pending > 0 ? "🔴" : hasAny ? "🟢" : "🔴";
   const subtitle = pending > 0 ? `${pending} en attente` : hasAny ? "Tout réglé ✓" : "Créance entre joueurs";
 
@@ -2251,14 +2250,13 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
       </div>
     </div>
   ) : (
-    <div style={{...base,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
-      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>{icon}</div>
-      <div style={{position:"relative",zIndex:1,flex:1}}>
+    <div style={{...base,padding:"16px 18px",display:"flex",alignItems:"center",gap:16,transform:hov?"scale(1.01)":"scale(1)"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:900,borderRadius:"50%",width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 10px ${col}`,zIndex:2}}>{pending}</div>}
+      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
+      <div style={{flex:1,minWidth:0}}>
         <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:2}}>DETTES</div>
-        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif"}}>DETTE</div>
-        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{subtitle}</div>
+        <div style={{color:"#e8f4ff",fontSize:"clamp(16px,4vw,22px)",fontWeight:700,fontFamily:"'Orbitron',sans-serif",marginBottom:2}}>DETTE</div>
+        <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>{subtitle}</div>
       </div>
     </div>
   );
@@ -2423,13 +2421,12 @@ function AmendeTile({ amendes, isDesktop, onClick }) {
       </div>
     </div>
   ) : (
-    <div style={{...base,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>⚠️</div>
-      <div style={{position:"relative",zIndex:1,flex:1}}>
+    <div style={{...base,padding:"16px 18px",display:"flex",alignItems:"center",gap:16,transform:hov?"scale(1.01)":"scale(1)"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={canvasRef} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
+      <div style={{flex:1,minWidth:0}}>
         <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:2}}>AMENDES</div>
-        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif"}}>AMENDE</div>
-        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC au total`:"Pénalités joueurs"}</div>
+        <div style={{color:"#e8f4ff",fontSize:"clamp(16px,4vw,22px)",fontWeight:700,fontFamily:"'Orbitron',sans-serif",marginBottom:2}}>AMENDE</div>
+        <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif"}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC`:"Pénalités joueurs"}</div>
       </div>
     </div>
   );
