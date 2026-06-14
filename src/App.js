@@ -142,7 +142,7 @@ function CosmicBackground() {
     function drawFighter(ctx, px, j, j2) {
       // F7C Hornet / Arrow - vue de côté très détaillée
       const S = px;
-      ctx.shadowColor = '#40a0ff'; ctx.shadowBlur = 10 * j;
+      ctx.shadowColor = '#40a0ff'; ctx.shadowBlur = useShadow ? 10 * j : 0;
 
       // --- Jet engine glow ---
       const eg = ctx.createRadialGradient(-S*1.1, 0, 0, -S*1.1, 0, S*0.55*j);
@@ -194,7 +194,7 @@ function CosmicBackground() {
       cg.addColorStop(0.4, 'rgba(60,150,210,0.45)');
       cg.addColorStop(0.8, 'rgba(15,55,120,0.28)');
       cg.addColorStop(1, 'transparent');
-      ctx.fillStyle = cg; ctx.shadowColor = '#80ccff'; ctx.shadowBlur = 8;
+      ctx.fillStyle = cg; ctx.shadowColor = '#80ccff'; ctx.shadowBlur = useShadow ? 8 : 0;
       ctx.beginPath(); ctx.ellipse(S*0.46, -S*0.05, S*0.24, S*0.105, -0.12, 0, Math.PI*2); ctx.fill();
       // Reflet
       ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.shadowBlur = 0;
@@ -211,19 +211,19 @@ function CosmicBackground() {
       rg.addColorStop(0.2, `rgba(70,140,255,${0.65*j})`);
       rg.addColorStop(0.5, `rgba(50,100,220,${0.3*j})`);
       rg.addColorStop(1, 'transparent');
-      ctx.fillStyle = rg; ctx.shadowColor = '#4499ff'; ctx.shadowBlur = 18*j;
+      ctx.fillStyle = rg; ctx.shadowColor = '#4499ff'; ctx.shadowBlur = useShadow ? 18*j : 0;
       ctx.beginPath(); ctx.moveTo(-S*1.22,-S*0.065); ctx.lineTo(-S*(1.22+1.8*j),-S*0.01); ctx.lineTo(-S*(1.22+1.8*j),S*0.01); ctx.lineTo(-S*1.22,S*0.065); ctx.closePath(); ctx.fill();
       // Orifice réacteur
-      ctx.fillStyle = `rgba(100,180,255,${0.9*j})`; ctx.shadowBlur = 12*j;
+      ctx.fillStyle = `rgba(100,180,255,${0.9*j})`; ctx.shadowBlur = useShadow ? 12*j : 0;
       ctx.beginPath(); ctx.ellipse(-S*1.22,0,S*0.068,S*0.068,0,0,Math.PI*2); ctx.fill();
 
       // --- Réacteurs ailes ---
       [[-S*0.86,-S*0.56],[-S*0.86,S*0.56]].forEach(([rx,ry]) => {
-        ctx.fillStyle = `rgba(70,140,230,${0.72*j2})`; ctx.shadowBlur = 8*j2;
+        ctx.fillStyle = `rgba(70,140,230,${0.72*j2})`; ctx.shadowBlur = useShadow ? 8*j2 : 0;
         ctx.beginPath(); ctx.ellipse(rx,ry,S*0.038,S*0.038,0,0,Math.PI*2); ctx.fill();
         const rjg = ctx.createLinearGradient(rx,ry,rx-S*0.7*j2,ry);
         rjg.addColorStop(0,`rgba(90,160,255,${0.8*j2})`); rjg.addColorStop(1,'transparent');
-        ctx.fillStyle = rjg; ctx.shadowBlur = 7*j2;
+        ctx.fillStyle = rjg; ctx.shadowBlur = useShadow ? 7*j2 : 0;
         ctx.beginPath(); ctx.ellipse(rx-S*0.35*j2,ry,S*0.35*j2,S*0.028,0,0,Math.PI*2); ctx.fill();
       });
       ctx.shadowBlur = 0;
@@ -247,11 +247,11 @@ function CosmicBackground() {
         [-S*0.7,-S*0.35,0,S*0.25].forEach(lx => {ctx.beginPath();ctx.moveTo(lx,ny-S*0.20);ctx.lineTo(lx,ny+S*0.20);ctx.stroke();});
         // Réacteurs ×2
         [ny-S*0.11,ny+S*0.11].forEach(ry => {
-          ctx.fillStyle = `rgba(85,175,255,${0.88*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=9*j;
+          ctx.fillStyle = `rgba(85,175,255,${0.88*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur = useShadow ? 9*j : 0;
           ctx.beginPath(); ctx.ellipse(-S*1.07,ry,S*0.058,S*0.058,0,0,Math.PI*2); ctx.fill();
           const rjg = ctx.createLinearGradient(-S*1.07,ry,-S*(1.07+1.2*j),ry);
           rjg.addColorStop(0,`rgba(100,190,255,${0.9*j})`); rjg.addColorStop(0.3,`rgba(60,130,220,${0.45*j})`); rjg.addColorStop(1,'transparent');
-          ctx.fillStyle = rjg; ctx.shadowBlur=11*j;
+          ctx.fillStyle = rjg; ctx.shadowBlur = useShadow ? 11*j : 0;
           ctx.beginPath(); ctx.moveTo(-S*1.07,ry-S*0.058); ctx.lineTo(-S*(1.07+1.2*j),ry-S*0.012); ctx.lineTo(-S*(1.07+1.2*j),ry+S*0.012); ctx.lineTo(-S*1.07,ry+S*0.058); ctx.closePath(); ctx.fill();
         });
         ctx.shadowBlur = 0;
@@ -269,7 +269,7 @@ function CosmicBackground() {
       ctx.strokeStyle='rgba(38,76,125,0.28)'; ctx.lineWidth=S*0.009;
       [-S*0.68,-S*0.34,0,S*0.34,S*0.68].forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,-S*0.40);ctx.lineTo(lx,S*0.40);ctx.stroke();});
       // Fenêtres HD
-      ctx.shadowColor='#aaddff'; ctx.shadowBlur=5;
+      ctx.shadowColor='#aaddff'; ctx.shadowBlur = useShadow ? 5 : 0;
       [-S*0.62,-S*0.40,-S*0.16,S*0.06,S*0.29,S*0.52,S*0.72].forEach((wx,wi)=>{
         const wal=0.38+0.30*Math.abs(Math.sin(t2*0.04+wi*1.1+s2ph));
         ctx.fillStyle=`rgba(180,220,255,${wal})`;
@@ -279,18 +279,18 @@ function CosmicBackground() {
       // Cockpit
       const cg2=ctx.createRadialGradient(S*0.82,-S*0.07,0.01,S*0.82,-S*0.04,S*0.22);
       cg2.addColorStop(0,'rgba(165,225,255,0.75)'); cg2.addColorStop(0.5,'rgba(55,140,200,0.38)'); cg2.addColorStop(1,'transparent');
-      ctx.fillStyle=cg2; ctx.shadowColor='#80c8ff'; ctx.shadowBlur=7;
+      ctx.fillStyle=cg2; ctx.shadowColor='#80c8ff'; ctx.shadowBlur = useShadow ? 7 : 0;
       ctx.beginPath(); ctx.ellipse(S*0.80,-S*0.07,S*0.24,S*0.115,-0.08,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.shadowBlur=0;
       ctx.beginPath(); ctx.ellipse(S*0.74,-S*0.11,S*0.085,S*0.048,-0.18,0,Math.PI*2); ctx.fill();
       // Nav lights
       const bl=Math.sin(t2*0.07+s2ph)>0?0.92:0.12;
-      ctx.fillStyle=`rgba(255,48,48,${bl})`; ctx.shadowColor='#ff3333'; ctx.shadowBlur=7;
+      ctx.fillStyle=`rgba(255,48,48,${bl})`; ctx.shadowColor='#ff3333'; ctx.shadowBlur = useShadow ? 7 : 0;
       ctx.beginPath(); ctx.arc(-S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
       ctx.fillStyle=`rgba(48,48,255,${0.88-bl*0.78+0.1})`; ctx.shadowColor='#3333ff';
       ctx.beginPath(); ctx.arc(S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
       // Réacteur central
-      ctx.fillStyle=`rgba(85,168,255,${0.78*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=11*j;
+      ctx.fillStyle=`rgba(85,168,255,${0.78*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur = useShadow ? 11*j : 0;
       ctx.beginPath(); ctx.ellipse(-S*1.04,0,S*0.085,S*0.085,0,0,Math.PI*2); ctx.fill();
       const cjg=ctx.createLinearGradient(-S*1.04,0,-S*(1.04+1.3*j),0);
       cjg.addColorStop(0,`rgba(105,192,255,${0.92*j})`); cjg.addColorStop(0.3,`rgba(62,130,220,${0.45*j})`); cjg.addColorStop(1,'transparent');
@@ -347,24 +347,24 @@ function CosmicBackground() {
         ctx.strokeStyle='rgba(28,68,118,0.6)'; ctx.lineWidth=S*0.007;
         ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax+S*0.08,ay-S*0.17); ctx.stroke();
         const blink=Math.sin(t2*0.09+ax)*0.5+0.5>0.6?0.9:0.15;
-        ctx.fillStyle=`rgba(255,200,80,${blink})`; ctx.shadowColor='#ffcc44'; ctx.shadowBlur=4;
+        ctx.fillStyle=`rgba(255,200,80,${blink})`; ctx.shadowColor='#ffcc44'; ctx.shadowBlur = useShadow ? 4 : 0;
         ctx.beginPath(); ctx.arc(ax+S*0.08,ay-S*0.17,S*0.022,0,Math.PI*2); ctx.fill();
       });
       // Nav lights
       const bl2=Math.sin(t2*0.055+s2ph)>0?0.9:0.1;
-      ctx.fillStyle=`rgba(255,40,40,${bl2})`; ctx.shadowColor='#ff2222'; ctx.shadowBlur=8;
+      ctx.fillStyle=`rgba(255,40,40,${bl2})`; ctx.shadowColor='#ff2222'; ctx.shadowBlur = useShadow ? 8 : 0;
       ctx.beginPath(); ctx.arc(-S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
       ctx.fillStyle=`rgba(40,40,255,${0.85-bl2*0.75+0.1})`; ctx.shadowColor='#2222ff';
       ctx.beginPath(); ctx.arc(S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
       ctx.shadowBlur=0;
       // Réacteurs ×5
-      ctx.shadowColor='#4488ff'; ctx.shadowBlur=12*j;
+      ctx.shadowColor='#4488ff'; ctx.shadowBlur = useShadow ? 12*j : 0;
       [-S*0.26,-S*0.10,S*0.06,S*0.22,S*0.38].forEach(ry=>{
         ctx.fillStyle=`rgba(85,155,255,${0.88*j})`;
         ctx.beginPath(); ctx.ellipse(-S*2.47,ry,S*0.068,S*0.052,0,0,Math.PI*2); ctx.fill();
         const rjg=ctx.createLinearGradient(-S*2.47,ry,-S*(2.47+1.1*j),ry);
         rjg.addColorStop(0,`rgba(105,175,255,${0.92*j})`); rjg.addColorStop(0.35,`rgba(60,120,230,${0.42*j})`); rjg.addColorStop(1,'transparent');
-        ctx.fillStyle=rjg; ctx.shadowBlur=14*j;
+        ctx.fillStyle=rjg; ctx.shadowBlur = useShadow ? 14*j : 0;
         ctx.beginPath(); ctx.moveTo(-S*2.47,ry-S*0.052); ctx.lineTo(-S*(2.47+1.1*j),ry-S*0.010); ctx.lineTo(-S*(2.47+1.1*j),ry+S*0.010); ctx.lineTo(-S*2.47,ry+S*0.052); ctx.closePath(); ctx.fill();
       });
       ctx.shadowBlur=0;
@@ -404,7 +404,7 @@ function CosmicBackground() {
         const flg = ctx.createLinearGradient(Math.cos(fa)*rEv*1.2, Math.sin(fa)*rEv*1.2, Math.cos(fa)*R*0.88, Math.sin(fa)*R*0.88);
         flg.addColorStop(0, `rgba(255,160,40,${flAl*2})`); flg.addColorStop(0.5, `rgba(255,80,10,${flAl})`); flg.addColorStop(1,'transparent');
         ctx.strokeStyle = flg; ctx.lineWidth = 0.8 + Math.sin(bhA*3+f)*0.5;
-        ctx.shadowColor = 'rgba(255,100,10,0.5)'; ctx.shadowBlur = 6;
+        ctx.shadowColor = 'rgba(255,100,10,0.5)'; ctx.shadowBlur = useShadow ? 6 : 0;
         ctx.beginPath(); ctx.moveTo(Math.cos(fa)*rEv*1.2, Math.sin(fa)*rEv*1.2); ctx.lineTo(Math.cos(fa)*R*0.88, Math.sin(fa)*R*0.88); ctx.stroke();
       }
       ctx.shadowBlur=0; ctx.restore();
@@ -413,7 +413,7 @@ function CosmicBackground() {
         const aA = arc*(Math.PI/4)+bhA*0.4+(arc%2===0?0:Math.PI);
         const aR = rPh*1.04+arc*2.5, aW = Math.PI*(0.08+0.04*Math.sin(bhA*1.5+arc));
         ctx.strokeStyle = `rgba(255,${200-arc*14},${125-arc*9},${0.22+0.1*Math.sin(bhA*2+arc)})`;
-        ctx.lineWidth = 0.6+arc*0.2; ctx.shadowColor='rgba(255,185,95,0.4)'; ctx.shadowBlur=4;
+        ctx.lineWidth = 0.6+arc*0.2; ctx.shadowColor='rgba(255,185,95,0.4)'; ctx.shadowBlur = useShadow ? 4 : 0;
         ctx.beginPath(); ctx.arc(0,0,aR,aA,aA+aW); ctx.stroke();
       }
       ctx.shadowBlur=0;
@@ -423,14 +423,14 @@ function CosmicBackground() {
       phg.addColorStop(0,'transparent'); phg.addColorStop(0.25,`rgba(255,210,130,${phB*0.75})`);
       phg.addColorStop(0.5,`rgba(255,248,215,${phB})`); phg.addColorStop(0.75,`rgba(255,210,130,${phB*0.75})`); phg.addColorStop(1,'transparent');
       ctx.strokeStyle=phg; ctx.lineWidth=3;
-      ctx.shadowColor='rgba(255,212,100,0.95)'; ctx.shadowBlur=16;
+      ctx.shadowColor='rgba(255,212,100,0.95)'; ctx.shadowBlur = useShadow ? 16 : 0;
       ctx.beginPath(); ctx.arc(0,0,rPh,0,Math.PI*2); ctx.stroke(); ctx.shadowBlur=0;
       // Jets relativistes
       [-1,1].forEach(jd=>{
         const jH=R*1.5, jP=0.5+0.5*Math.sin(bhA*5+jd);
         const jg=ctx.createLinearGradient(0,jd*rEv,0,jd*(rEv+jH));
         jg.addColorStop(0,`rgba(100,165,255,${0.65*jP})`); jg.addColorStop(0.25,`rgba(80,120,255,${0.4*jP})`); jg.addColorStop(0.6,`rgba(60,100,220,${0.15*jP})`); jg.addColorStop(1,'transparent');
-        ctx.fillStyle=jg; ctx.shadowColor='rgba(100,150,255,0.8)'; ctx.shadowBlur=20*jP;
+        ctx.fillStyle=jg; ctx.shadowColor='rgba(100,150,255,0.8)'; ctx.shadowBlur = useShadow ? 20*jP : 0;
         ctx.beginPath(); ctx.moveTo(-rEv*0.14,jd*rEv); ctx.quadraticCurveTo(rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.07,jd*(rEv+jH)); ctx.lineTo(-rEv*0.07,jd*(rEv+jH)); ctx.quadraticCurveTo(-rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.14,jd*rEv); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
       });
       // Horizon
@@ -443,9 +443,20 @@ function CosmicBackground() {
 
     let t = 0;
     const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    function frame() {
+    // Détecte la saisie active → suspend les shadows pour fluidifier le clavier
+    let typingTimer = 0;
+    function onInput() { typingTimer = 12; } // 12 frames ≈ 200ms
+    window.addEventListener("input", onInput, true);
+    // Throttle 30fps sur mobile
+    let lastFrame = 0;
+    const FPS = isMobile ? 30 : 60;
+    const INTERVAL = 1000 / FPS;
+    function frame(ts) {
+      if (ts - lastFrame < INTERVAL - 1) { raf.current = requestAnimationFrame(frame); return; }
+      lastFrame = ts;
       t++;
-      const useShadow = !isMobile || (t % 2 === 0); // mobile: shadows tous les 2 frames t2 = t;
+      if (typingTimer > 0) typingTimer--;
+      const useShadow = !isMobile && typingTimer === 0;
       ctx.clearRect(0,0,W,H);
       // Fond
       const bg=ctx.createRadialGradient(W*0.82,H*0.42,0,W*0.5,H*0.5,Math.max(W,H)*0.9);
@@ -470,7 +481,7 @@ function CosmicBackground() {
         const al = s.z * (0.45 + 0.35*Math.abs(Math.sin(t*0.025*s.z+s.ph)));
         const r=Math.round(195+60*s.z), g2=Math.round(205+50*s.z), b=255;
         ctx.fillStyle=`rgba(${r},${g2},${b},${al})`;
-        if (s.z > 0.75 && size > 1.2 && useShadow) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur=size*2.5; }
+        if (s.z > 0.75 && size > 1.2 && useShadow) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur = useShadow ? size*2.5 : 0; }
         ctx.beginPath(); ctx.arc(s.x*W, s.y*H, size*0.6, 0, Math.PI*2); ctx.fill();
         // Croix pour les plus brillantes
         if (s.z > 0.85 && size > 1.4) {
@@ -505,7 +516,7 @@ function CosmicBackground() {
           const width = prog * s.size * 2.4;
           ctx.strokeStyle=`rgba(${hr},${hg},${hb},${al2})`;
           ctx.lineWidth=width;
-          ctx.shadowColor=`rgba(${hr},${hg},${hb},${al2*0.8})`; ctx.shadowBlur=width*3;
+          ctx.shadowColor=`rgba(${hr},${hg},${hb},${al2*0.8})`; ctx.shadowBlur = useShadow ? width*3 : 0;
           ctx.beginPath(); ctx.moveTo(s.trail[i-1].x*W,s.trail[i-1].y*H); ctx.lineTo(s.trail[i].x*W,s.trail[i].y*H); ctx.stroke();
         }
         // Noyau lumineux à la tête (halo + point brillant)
@@ -553,8 +564,8 @@ function CosmicBackground() {
 
       raf.current=requestAnimationFrame(frame);
     }
-    frame();
-    return()=>{cancelAnimationFrame(raf.current);window.removeEventListener('resize',resize);};
+    frame(0);
+    return()=>{cancelAnimationFrame(raf.current);window.removeEventListener('resize',resize);window.removeEventListener('input',onInput,true);};
   },[]);
 
   return <canvas ref={ref} style={{position:'fixed',inset:0,width:'100%',height:'100%',pointerEvents:'none',zIndex:0}}/>;
