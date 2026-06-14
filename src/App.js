@@ -2055,7 +2055,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
               placeholder={apiKey ? "Demandez à Jarvis…" : "Configurez d'abord la clé API dans Réglages"}
               disabled={!apiKey}
             />
-            <button onClick={send} disabled={!text.trim() || loading || !apiKey} style={{ background: (!loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(!loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (!loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (!loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (!loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
+            <button onClick={send} disabled={loading || !apiKey} style={{ background: (!loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(!loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (!loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (!loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (!loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
               {loading ? "..." : "ENVOYER"}
             </button>
           </div>
