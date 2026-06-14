@@ -2240,9 +2240,10 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
       <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
       {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
       <div style={{position:"relative",zIndex:1,pointerEvents:"none",paddingTop:6}}>
-        <div style={{fontSize:36,marginBottom:10,filter:`drop-shadow(0 0 10px ${col})`}}>{icon}</div>
-        <div style={{color:col,fontSize:16,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:4}}>DETTE</div>
-        <div style={{color:"#e8f4ff",fontSize:13,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{subtitle}</div>
+        <div style={{fontSize:32,marginBottom:6,filter:`drop-shadow(0 0 10px ${col})`}}>{icon}</div>
+        <div style={{color:col,fontSize:13,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:2}}>DETTE</div>
+        <div style={{color:"#e8f4ff",fontSize:"clamp(22px,2vw,32px)",fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 14px ${col}88`,margin:"4px 0"}}>{pending>0?pending:(dettes||[]).length}</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{subtitle}</div>
       </div>
     </div>
   ) : (
@@ -2250,8 +2251,9 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
       {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:900,borderRadius:"50%",width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 10px ${col}`,zIndex:2}}>{pending}</div>}
       <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:3}}>DETTE</div>
-        <div style={{color:"#e8f4ff",fontSize:13,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{subtitle}</div>
+        <div style={{color:col,fontSize:14,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:2}}>DETTE</div>
+        <div style={{color:"#e8f4ff",fontSize:28,fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 12px ${col}88`,lineHeight:1}}>{pending>0?pending:(dettes||[]).length}</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginTop:2}}>{subtitle}</div>
       </div>
     </div>
   );
@@ -2407,17 +2409,19 @@ function AmendeTile({ amendes, isDesktop, onClick }) {
     <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
       <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
       <div style={{position:"relative",zIndex:1,pointerEvents:"none",paddingTop:6}}>
-        <div style={{fontSize:36,marginBottom:10,filter:`drop-shadow(0 0 10px ${col})`}}>⚠️</div>
-        <div style={{color:col,fontSize:16,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:4}}>AMENDE</div>
-        <div style={{color:"#e8f4ff",fontSize:13,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC`:"Pénalités joueurs"}</div>
+        <div style={{fontSize:32,marginBottom:6,filter:`drop-shadow(0 0 10px ${col})`}}>⚠️</div>
+        <div style={{color:col,fontSize:13,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:2}}>AMENDE</div>
+        <div style={{color:"#e8f4ff",fontSize:"clamp(20px,2vw,28px)",fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 14px ${col}88`,margin:"4px 0"}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)}`:"0"}</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{total>0?"aUEC déduits":"Pénalités joueurs"}</div>
       </div>
     </div>
   ) : (
     <div style={{...base,padding:"16px 18px",display:"flex",alignItems:"center",gap:16,transform:hov?"scale(1.01)":"scale(1)"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
       <canvas ref={canvasRef} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:3}}>AMENDE</div>
-        <div style={{color:"#e8f4ff",fontSize:13,fontFamily:"'Rajdhani',sans-serif",fontWeight:600}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC`:"Pénalités joueurs"}</div>
+        <div style={{color:col,fontSize:14,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:2}}>AMENDE</div>
+        <div style={{color:"#e8f4ff",fontSize:26,fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 12px ${col}88`,lineHeight:1}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)}`:"0"}</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif",marginTop:2}}>{total>0?"aUEC déduits":"Pénalités joueurs"}</div>
       </div>
     </div>
   );
