@@ -5222,23 +5222,23 @@ function ConcessionTab({ profiles, fleets, setFleets }) {
             }}>
               <ConcessionShip3D color={color} index={i} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color, fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700, marginBottom:4 }}>{ship.name}</div>
-                {ship.maker && <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>{ship.maker}</div>}
+                <div style={{ color, fontFamily:"'Orbitron',sans-serif", fontSize:18, fontWeight:700, marginBottom:6 }}>{ship.name}</div>
+                {ship.maker && <div style={{ color:"#8899bb", fontSize:13, fontFamily:"'Rajdhani',sans-serif", marginBottom:8 }}>{ship.maker}</div>}
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                  <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:`1px solid ${profile.color}33` }}>
-                    <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PILOTE</div>
-                    <div style={{ color:profile.color, fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:600 }}>{profile.name}</div>
+                  <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:`1px solid ${profile.color}33` }}>
+                    <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>PILOTE</div>
+                    <div style={{ color:profile.color, fontFamily:"'Rajdhani',sans-serif", fontSize:15, fontWeight:700 }}>{profile.name}</div>
                   </div>
                   {ship.capacity > 0 && (
-                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #00d4ff22" }}>
-                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>CARGO</div>
-                      <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{ship.capacity} SCU</div>
+                    <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:"1px solid #00d4ff22" }}>
+                      <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>CARGO</div>
+                      <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{ship.capacity} SCU</div>
                     </div>
                   )}
                   {ship.price > 0 && (
-                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #ffcc0022" }}>
-                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PRIX</div>
-                      <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{fmt(ship.price)} aUEC</div>
+                    <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:"1px solid #ffcc0022" }}>
+                      <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>PRIX</div>
+                      <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{fmt(ship.price)} aUEC</div>
                     </div>
                   )}
                 </div>
