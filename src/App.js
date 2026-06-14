@@ -139,7 +139,7 @@ function CosmicBackground() {
     ];
 
     // ── DESSINS VAISSEAUX HD ─────────────────────────────────────
-    function drawFighter(ctx, px, j, j2) {
+    function drawFighter(ctx, px, j, j2, useShadow) {
       // F7C Hornet / Arrow - vue de côté très détaillée
       const S = px;
       ctx.shadowColor = '#40a0ff'; ctx.shadowBlur = useShadow ? 10 * j : 0;
@@ -229,7 +229,7 @@ function CosmicBackground() {
       ctx.shadowBlur = 0;
     }
 
-    function drawCargo(ctx, px, j, j2) {
+    function drawCargo(ctx, px, j, j2, useShadow) {
       const S = px;
       // --- Nacelles ×2 ---
       [-1,1].forEach(side => {
@@ -299,7 +299,7 @@ function CosmicBackground() {
       ctx.shadowBlur=0;
     }
 
-    function drawCapital(ctx, px, j, j2) {
+    function drawCapital(ctx, px, j, j2, useShadow) {
       const S = px;
       // Aura réacteurs
       [-S*0.26,-S*0.10,S*0.06,S*0.22].forEach(ry=>{
@@ -556,9 +556,9 @@ function CosmicBackground() {
         const j4=0.5+0.5*Math.sin(t*0.22+sh.ph+1.3);
         s2ph=sh.ph;
         ctx.save(); ctx.translate(sh.x*W,sh.y*H); ctx.scale(dir,1); ctx.globalAlpha=sh.al;
-        if(sh.type==='fighter') drawFighter(ctx,Math.min(W,H)*sh.sc,j3,j4);
-        else if(sh.type==='cargo') drawCargo(ctx,Math.min(W,H)*sh.sc,j3,j4);
-        else drawCapital(ctx,Math.min(W,H)*sh.sc,j3,j4);
+        if(sh.type==='fighter') drawFighter(ctx,Math.min(W,H)*sh.sc,j3,j4,useShadow);
+        else if(sh.type==='cargo') drawCargo(ctx,Math.min(W,H)*sh.sc,j3,j4,useShadow);
+        else drawCapital(ctx,Math.min(W,H)*sh.sc,j3,j4,useShadow);
         ctx.globalAlpha=1; ctx.restore();
       });
 
