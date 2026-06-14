@@ -4182,27 +4182,27 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
               onClick={()=>{ if(obj.type==="common") setDetailObj(obj); }}
               style={{...S.objectiveCard, borderColor:obj.type==="common"?"#ffcc0055":(owner?.color+"55"||"#00d4ff55"), cursor:obj.type==="common"?"pointer":"default" }}>
               <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                <div style={{fontSize:26,flexShrink:0}}>{obj.icon}</div>
+                <div style={{fontSize:32,flexShrink:0}}>{obj.icon}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:600}}>{obj.name}</div>
+                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:18,fontWeight:700}}>{obj.name}</div>
                     <div style={{display:"flex",gap:4,alignItems:"center"}}>
                       {obj.type==="common"
-                        ? <span style={S.badgeCommon}>COMMUN 👆</span>
-                        : <span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>
+                        ? <span style={{...S.badgeCommon,fontSize:12,padding:"4px 10px"}}>COMMUN 👆</span>
+                        : <span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55",fontSize:12,padding:"4px 10px"}}>{owner?.name}</span>
                       }
                     </div>
                   </div>
                   {obj.cost>0&&(
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
-                      <div style={{color:"#ffcc00",fontSize:11,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
+                      <div style={{color:"#ffcc00",fontSize:14,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
                       {pct>=100
-                        ? <span style={{color:"#00ff9d",fontSize:11,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
-                        : <span style={{color:barColor,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pct}%</span>
+                        ? <span style={{color:"#00ff9d",fontSize:14,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
+                        : <span style={{color:barColor,fontSize:16,fontFamily:"'Orbitron',sans-serif",fontWeight:900}}>{pct}%</span>
                       }
                     </div>
                   )}
-                  <div style={{...S.progressBar,height:8,borderRadius:6,position:"relative",overflow:"hidden"}}>
+                  <div style={{...S.progressBar,height:10,borderRadius:8,position:"relative",overflow:"hidden"}}>
                     <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,${barColor}88,${barColor})`,borderRadius:6,boxShadow:`0 0 10px ${barColor}88`,transition:"width 1s ease"}}/>
                     <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
                   </div>
