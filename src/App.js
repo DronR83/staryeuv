@@ -442,8 +442,10 @@ function CosmicBackground() {
     }
 
     let t = 0;
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
     function frame() {
-      t++; t2 = t;
+      t++;
+      const useShadow = !isMobile || (t % 2 === 0); // mobile: shadows tous les 2 frames t2 = t;
       ctx.clearRect(0,0,W,H);
       // Fond
       const bg=ctx.createRadialGradient(W*0.82,H*0.42,0,W*0.5,H*0.5,Math.max(W,H)*0.9);
@@ -468,7 +470,7 @@ function CosmicBackground() {
         const al = s.z * (0.45 + 0.35*Math.abs(Math.sin(t*0.025*s.z+s.ph)));
         const r=Math.round(195+60*s.z), g2=Math.round(205+50*s.z), b=255;
         ctx.fillStyle=`rgba(${r},${g2},${b},${al})`;
-        if (s.z > 0.75 && size > 1.2) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur=size*2.5; }
+        if (s.z > 0.75 && size > 1.2 && useShadow) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur=size*2.5; }
         ctx.beginPath(); ctx.arc(s.x*W, s.y*H, size*0.6, 0, Math.PI*2); ctx.fill();
         // Croix pour les plus brillantes
         if (s.z > 0.85 && size > 1.4) {
@@ -1853,7 +1855,7 @@ RÈGLES STRICTES :
 - Si la question n'a aucun rapport avec Star Citizen, tu peux quand même répondre utilement mais reste dans ton personnage de Jarvis.`;
 
 function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userColor }) {
-  const [text, setText] = useState("");
+  const textRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const endRef = useRef(null);
@@ -1896,12 +1898,13 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   }, []);
 
   async function send() {
-    if (!text.trim() || loading) return;
+    const tv = textRef.current?.value?.trim() || "";
+    if (!tv || loading) return;
     if (!apiKey) { setError("Clé API Gemini non configurée. Va dans Réglages."); return; }
-    const userMsg = { role: "user", text: text.trim(), id: Date.now() };
+    const userMsg = { role: "user", text: tv, id: Date.now() };
     const next = [...history, userMsg];
     setHistory(next);
-    setText("");
+    if (textRef.current) textRef.current.value = "";
     setLoading(true);
     setError(null);
 
@@ -2045,14 +2048,14 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
         <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.97)", borderTop: "1px solid #ffaa3333", padding: "12px 16px", paddingBottom: 12 + kbOffset, backdropFilter: "blur(16px)" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <input
-              value={text}
-              onChange={e => setText(e.target.value)}
+              ref={textRef}
+              defaultValue=""
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               style={{ flex: 1, background: "#1a0f05", border: "1px solid #ffaa3344", borderRadius: 10, padding: "11px 14px", color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, outline: "none" }}
               placeholder={apiKey ? "Demandez à Jarvis…" : "Configurez d'abord la clé API dans Réglages"}
               disabled={!apiKey}
             />
-            <button onClick={send} disabled={!text.trim() || loading || !apiKey} style={{ background: (text.trim() && !loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(text.trim() && !loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (text.trim() && !loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (text.trim() && !loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (text.trim() && !loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
+            <button onClick={send} disabled={!text.trim() || loading || !apiKey} style={{ background: (!loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(!loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (!loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (!loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (!loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
               {loading ? "..." : "ENVOYER"}
             </button>
           </div>
@@ -2288,14 +2291,13 @@ function ChatTile({ profiles, msgCount, onClick, isDesktop }) {
 }
 
 function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, discordWebhook, giphyApiKey, defaultAuthor }) {
-  const [text, setText]   = useState("");
   const [author, setAuthor] = useState(defaultAuthor || profiles[0]?.id || "");
   const [sending, setSending] = useState(false);
   const [gifPanelOpen, setGifPanelOpen] = useState(false);
-  const [gifQuery, setGifQuery] = useState("");
   const [gifResults, setGifResults] = useState([]);
   const [gifLoading, setGifLoading] = useState(false);
   const gifSearchTimer = useRef(null);
+  const gifInputRef = useRef(null);
   const endRef    = useRef(null);
   const bgRef     = useRef(null);
   const rafRef    = useRef(null);
@@ -2383,12 +2385,13 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   }
 
   function send() {
-    if(!text.trim()||!author) return;
+    const tv2 = inputRef.current?.value?.trim() || "";
+    if(!tv2||!author) return;
     setSending(true);
     const p=profiles.find(p2=>p2.id===author);
-    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:text.trim(),time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
+    const msg={id:Date.now(),author:p?.name||author,color:p?.color||"#a78bfa",text:tv2,time:new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),date:new Date().toLocaleDateString("fr-FR")};
     pushMessage(msg, p);
-    setText("");
+    if(inputRef.current) inputRef.current.value="";
     setSending(false);
   }
 
@@ -2407,7 +2410,6 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   }
 
   function onGifQueryChange(v) {
-    setGifQuery(v);
     clearTimeout(gifSearchTimer.current);
     gifSearchTimer.current = setTimeout(()=>searchGifs(v), 400);
   }
@@ -2562,7 +2564,8 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
             ) : (
               <>
                 <input
-                  value={gifQuery}
+                  ref={gifInputRef}
+                  defaultValue=""
                   onChange={e=>onGifQueryChange(e.target.value)}
                   placeholder="Rechercher un GIF... (vide = tendances)"
                   style={{width:"100%",background:"rgba(167,139,250,0.07)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:18,padding:"9px 14px",color:"#d4e8ff",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:8}}
@@ -2610,8 +2613,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
           <div style={{flex:1,position:"relative"}}>
             <input
               ref={inputRef}
-              value={text}
-              onChange={e=>setText(e.target.value)}
+              defaultValue=""
               onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
               placeholder="Message..."
               style={{
