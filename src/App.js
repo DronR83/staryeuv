@@ -5976,20 +5976,21 @@ export default function App() {
   }
 
   // Résoudre le profil complet depuis Firestore à chaque chargement
+  // Résout le profil complet depuis Firestore
   const validatedUser = storedUserId && profiles.length > 0
     ? profiles.find(p => p.id === storedUserId) || null
     : null;
 
-  // Attendre que les profils soient chargés AVANT d'afficher le login
-  if (!profLoaded) return (
+  // Pas d'userId stocké → login immédiatement (sans attendre Firestore)
+  if (!storedUserId) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
+
+  // userId stocké mais profils pas encore chargés → chargement
+  if (!profLoaded || !validatedUser) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <CosmicBackground/>
       <div style={{position:"relative",zIndex:1,color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:14,letterSpacing:3,animation:"neonFlicker 2s linear infinite"}}>CHARGEMENT...</div>
     </div>
   );
-
-  // Écran de connexion si pas identifié (ou identifiant invalide)
-  if (!validatedUser) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
