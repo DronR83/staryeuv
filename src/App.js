@@ -2188,6 +2188,332 @@ function JarvisBubble({ onClick }) {
 }
 
 
+
+// ─── DETTE TILE + INTERFACE ────────────────────────────────────────────────
+function DetteTile({ dettes, profiles, isDesktop, onClick }) {
+  const [hov, setHov] = useState(false);
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+  const pending = (dettes||[]).filter(d=>d.status==="pending").length;
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio||1;
+    let w,h,t=0;
+    function resize(){ w=canvas.offsetWidth; h=canvas.offsetHeight; canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); }
+    resize();
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+      const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+      bg.addColorStop(0,"rgba(239,68,68,0.15)"); bg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      // chaîne tournante
+      for(let i=0;i<8;i++){
+        const a=t*0.4+i*Math.PI/4;
+        const r1=R*0.42, r2=R*0.62;
+        const x1=cx+Math.cos(a)*r1,y1=cy+Math.sin(a)*r1;
+        const x2=cx+Math.cos(a+0.4)*r2,y2=cy+Math.sin(a+0.4)*r2;
+        ctx.strokeStyle=`rgba(239,68,68,${0.3+0.4*Math.abs(Math.sin(t+i))})`; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      }
+      // signe
+      const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.22);
+      sg.addColorStop(0,"rgba(254,202,202,.98)"); sg.addColorStop(.4,"rgba(239,68,68,.9)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.2)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,.98)"; ctx.shadowColor="#ef4444"; ctx.shadowBlur=12;
+      ctx.fillText("DETTE",cx,cy+1); ctx.shadowBlur=0;
+      rafRef.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return()=>cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  const col="#ef4444";
+  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:"#1a0505cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:` 0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
+
+  return isDesktop ? (
+    <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
+      <div style={{position:"relative",zIndex:1,pointerEvents:"none"}}>
+        <div style={{fontSize:32,marginBottom:8,filter:`drop-shadow(0 0 8px ${col})`}}>🔴</div>
+        <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:600}}>DETTES</div>
+        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"5px 0"}}>DETTE</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>Créance entre joueurs</div>
+      </div>
+    </div>
+  ) : (
+    <div style={{...base,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
+      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>🔴</div>
+      <div style={{position:"relative",zIndex:1,flex:1}}>
+        <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:2}}>DETTES</div>
+        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif"}}>DETTE</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{pending>0?`${pending} en attente`:"Créance entre joueurs"}</div>
+      </div>
+    </div>
+  );
+}
+
+function DetteInterface({ profiles, dettes, setDettes, currentUserId, onClose }) {
+  const [form, setForm] = useState({creditor:currentUserId||"p1",debtor:"",amount:"",label:""});
+  const [tab, setTab] = useState("list");
+  const S = {
+    overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
+    panel:{width:"100%",maxWidth:560,background:"linear-gradient(160deg,#0d0608,#0a0404)",border:"1px solid #ef444444",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto",position:"relative"},
+    title:{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900,letterSpacing:3,marginBottom:16},
+    input:{width:"100%",background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10},
+    btn:{width:"100%",padding:"12px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,transition:"all .2s"},
+    tab:{padding:"8px 18px",borderRadius:20,border:"1px solid #ef444455",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,transition:"all .2s"},
+  };
+
+  const otherPlayer = profiles.find(p=>p.id!==currentUserId);
+  if(!form.debtor && otherPlayer) setForm(f=>({...f,debtor:otherPlayer.id}));
+
+  function addDette(){
+    if(!form.amount||!form.debtor||!form.creditor||isNaN(+form.amount)||+form.amount<=0) return;
+    const cred=profiles.find(p=>p.id===form.creditor);
+    const deb=profiles.find(p=>p.id===form.debtor);
+    const nd={id:Date.now(),creditor:form.creditor,creditorName:cred?.name||form.creditor,debtor:form.debtor,debtorName:deb?.name||form.debtor,amount:Math.abs(Math.round(+form.amount)),label:form.label.trim()||"Dette",status:"pending",date:new Date().toLocaleDateString("fr-FR"),createdBy:currentUserId};
+    setDettes([nd,...(dettes||[])]);
+    setForm(f=>({...f,amount:"",label:""}));
+    setTab("list");
+  }
+
+  function validateDette(d){
+    setDettes((dettes||[]).map(x=>x.id===d.id?{...x,status:"validated",validatedDate:new Date().toLocaleDateString("fr-FR")}:x));
+  }
+
+  function deleteDette(id){ setDettes((dettes||[]).filter(d=>d.id!==id)); }
+
+  const pending=(dettes||[]).filter(d=>d.status==="pending");
+  const validated=(dettes||[]).filter(d=>d.status==="validated");
+
+  return (
+    <div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={S.panel}>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"transparent",border:"1px solid #ef444455",color:"#ef4444",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✕</button>
+        <div style={S.title}>🔴 DETTES</div>
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          {["list","add"].map(t2=>(
+            <button key={t2} onClick={()=>setTab(t2)} style={{...S.tab,background:tab===t2?"#ef444422":"transparent",borderColor:tab===t2?"#ef4444":"#ef444455",color:tab===t2?"#ef4444":"#8899bb"}}>{t2==="add"?"+ Nouvelle dette":"Liste"}</button>
+          ))}
+        </div>
+        {tab==="add" && (
+          <div>
+            <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginBottom:6}}>CRÉANCIER (celui qui prête)</div>
+            <select value={form.creditor} onChange={e=>setForm(f=>({...f,creditor:e.target.value}))} style={S.input}>
+              {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginBottom:6}}>DÉBITEUR (celui qui doit)</div>
+            <select value={form.debtor} onChange={e=>setForm(f=>({...f,debtor:e.target.value}))} style={S.input}>
+              {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <input style={S.input} type="number" placeholder="Montant aUEC" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>
+            <input style={S.input} placeholder="Description (optionnel)" value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))}/>
+            <button onClick={addDette} style={{...S.btn,background:"linear-gradient(135deg,#ef4444,#991b1b)",color:"#fff"}}>Créer la dette</button>
+          </div>
+        )}
+        {tab==="list" && (
+          <div>
+            {pending.length>0 && <div style={{color:"#fbbf24",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,marginBottom:8}}>EN ATTENTE DE VALIDATION</div>}
+            {pending.map(d=>{
+              const canValidate=d.createdBy!==currentUserId;
+              return(
+                <div key={d.id} style={{background:"rgba(239,68,68,0.06)",border:"1px solid #ef444433",borderRadius:12,padding:14,marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                    <div>
+                      <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:700}}>{d.label}</div>
+                      <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>{d.debtorName} → doit {new Intl.NumberFormat("fr-FR").format(d.amount)} aUEC à {d.creditorName}</div>
+                      <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>{d.date}</div>
+                    </div>
+                    <div style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:900,whiteSpace:"nowrap"}}>
+                      -{new Intl.NumberFormat("fr-FR").format(d.amount)} aUEC
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    {canValidate && <button onClick={()=>validateDette(d)} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#22c55e,#166534)",color:"#fff",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700}}>✅ VALIDER + CRÉDITER</button>}
+                    {!canValidate && <div style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid #ef444422",color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:12,textAlign:"center"}}>En attente de validation par {d.debtorName}</div>}
+                    <button onClick={()=>deleteDette(d.id)} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #ef444444",background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:14}}>🗑</button>
+                  </div>
+                </div>
+              );
+            })}
+            {validated.length>0 && <div style={{color:"#22c55e",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,margin:"12px 0 8px"}}>VALIDÉES</div>}
+            {validated.map(d=>(
+              <div key={d.id} style={{background:"rgba(34,197,94,0.05)",border:"1px solid #22c55e33",borderRadius:12,padding:12,marginBottom:8,opacity:0.7}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14}}>{d.label}</div>
+                    <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>{d.debtorName} → {d.creditorName} · {d.validatedDate}</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{color:"#22c55e",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:900}}>✓ {new Intl.NumberFormat("fr-FR").format(d.amount)}</span>
+                    <button onClick={()=>deleteDette(d.id)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #ef444444",background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:12}}>🗑</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(dettes||[]).length===0 && <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:14,textAlign:"center",padding:"30px 0"}}>Aucune dette enregistrée</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── AMENDE TILE + INTERFACE ────────────────────────────────────────────────
+function AmendeTile({ amendes, isDesktop, onClick }) {
+  const [hov, setHov] = useState(false);
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+  const total=(amendes||[]).reduce((s,a)=>s+a.total,0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio||1;
+    let w,h,t=0;
+    function resize(){ w=canvas.offsetWidth; h=canvas.offsetHeight; canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); }
+    resize();
+    const sparks=Array.from({length:10},()=>({a:Math.random()*Math.PI*2,sp:0.01+Math.random()*0.02,r:0.45+Math.random()*0.4,sz:1.5+Math.random()*2.5}));
+    function frame(){
+      t+=0.02; ctx.clearRect(0,0,w,h);
+      const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+      const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+      bg.addColorStop(0,"rgba(251,191,36,0.15)"); bg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+      sparks.forEach(s=>{
+        s.a+=s.sp; const x=cx+Math.cos(s.a)*R*s.r,y=cy+Math.sin(s.a)*R*s.r*0.5;
+        const al=0.3+0.6*Math.abs(Math.sin(t+s.a));
+        ctx.fillStyle=`rgba(251,191,36,${al})`; ctx.beginPath(); ctx.arc(x,y,s.sz*al,0,Math.PI*2); ctx.fill();
+      });
+      const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.22);
+      sg.addColorStop(0,"rgba(254,240,138,.98)"); sg.addColorStop(.4,"rgba(251,191,36,.9)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+      ctx.font=`bold ${Math.round(R*.22)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(0,0,0,.95)"; ctx.fillText("⚠",cx,cy+1);
+      rafRef.current=requestAnimationFrame(frame);
+    }
+    frame();
+    return()=>cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+
+  const col="#fbbf24";
+  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:"#1a1200cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:`0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
+
+  return isDesktop ? (
+    <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <div style={{position:"relative",zIndex:1,pointerEvents:"none"}}>
+        <div style={{fontSize:32,marginBottom:8,filter:`drop-shadow(0 0 8px ${col})`}}>⚠️</div>
+        <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:600}}>AMENDES</div>
+        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"5px 0"}}>AMENDE</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC`:"Pénalités joueurs"}</div>
+      </div>
+    </div>
+  ) : (
+    <div style={{...base,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
+      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>⚠️</div>
+      <div style={{position:"relative",zIndex:1,flex:1}}>
+        <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:2}}>AMENDES</div>
+        <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif"}}>AMENDE</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)} aUEC au total`:"Pénalités joueurs"}</div>
+      </div>
+    </div>
+  );
+}
+
+function AmendeInterface({ profiles, amendes, setAmendes, setProfiles, onClose }) {
+  const [who, setWho] = useState(profiles[0]?.id||"p1");
+  const [qty, setQty] = useState("");
+  const [val, setVal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const S = {
+    overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
+    panel:{width:"100%",maxWidth:560,background:"linear-gradient(160deg,#0d0b00,#0a0800)",border:"1px solid #fbbf2444",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto",position:"relative"},
+    input:{width:"100%",background:"rgba(251,191,36,0.07)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:10,padding:"10px 14px",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10},
+  };
+
+  function submitAmende(){
+    const q=parseInt(qty), v=parseInt(val);
+    if(isNaN(q)||isNaN(v)||q<=0||v<=0) return;
+    const total=q*v;
+    const p=profiles.find(x=>x.id===who);
+    setSaving(true);
+    const na={id:Date.now(),playerId:who,playerName:p?.name||who,qty:q,val:v,total,date:new Date().toLocaleDateString("fr-FR")};
+    setAmendes([na,...(amendes||[])]);
+    setProfiles(profiles.map(x=>x.id===who?{...x,aUEC:Math.max(0,x.aUEC-total)}:x));
+    setQty(""); setVal(""); setSaving(false);
+  }
+
+  function deleteAmende(id){
+    const am=(amendes||[]).find(a=>a.id===id); if(!am) return;
+    setAmendes((amendes||[]).filter(a=>a.id!==id));
+    setProfiles(profiles.map(p=>p.id===am.playerId?{...p,aUEC:p.aUEC+am.total}:p));
+  }
+
+  const total=(amendes||[]).reduce((s,a)=>s+a.total,0);
+
+  return (
+    <div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={S.panel}>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"transparent",border:"1px solid #fbbf2455",color:"#fbbf24",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✕</button>
+        <div style={{color:"#fbbf24",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900,letterSpacing:3,marginBottom:4}}>⚠️ AMENDES</div>
+        {total>0 && <div style={{color:"#ef4444",fontFamily:"'Rajdhani',sans-serif",fontSize:13,marginBottom:16}}>Total déduit : -{new Intl.NumberFormat("fr-FR").format(total)} aUEC</div>}
+
+        <div style={{background:"rgba(251,191,36,0.06)",border:"1px solid #fbbf2433",borderRadius:14,padding:16,marginBottom:16}}>
+          <div style={{color:"#fbbf24",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,marginBottom:12}}>AJOUTER UNE AMENDE</div>
+          <select value={who} onChange={e=>setWho(e.target.value)} style={S.input}>
+            {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginBottom:4}}>NOMBRE D'AMENDES</div>
+              <input style={S.input} type="number" min="1" placeholder="ex: 3" value={qty} onChange={e=>setQty(e.target.value)}/>
+            </div>
+            <div>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginBottom:4}}>VALEUR PAR AMENDE (aUEC)</div>
+              <input style={S.input} type="number" min="1" placeholder="ex: 5000" value={val} onChange={e=>setVal(e.target.value)}/>
+            </div>
+          </div>
+          {qty&&val&&!isNaN(+qty)&&!isNaN(+val)&&+qty>0&&+val>0 && (
+            <div style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,textAlign:"center",margin:"8px 0"}}>
+              = -{new Intl.NumberFormat("fr-FR").format(+qty*+val)} aUEC sur {profiles.find(p=>p.id===who)?.name}
+            </div>
+          )}
+          <button onClick={submitAmende} disabled={saving||!qty||!val} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,#fbbf24,#92400e)",color:"#000",transition:"all .2s"}}>
+            ⚠️ APPLIQUER L'AMENDE
+          </button>
+        </div>
+
+        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,marginBottom:8}}>HISTORIQUE</div>
+        {(amendes||[]).length===0 && <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:14,textAlign:"center",padding:"20px 0"}}>Aucune amende enregistrée</div>}
+        {(amendes||[]).map(a=>(
+          <div key={a.id} style={{background:"rgba(251,191,36,0.05)",border:"1px solid #fbbf2422",borderRadius:10,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:700}}>{a.playerName}</div>
+              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>{a.qty} × {new Intl.NumberFormat("fr-FR").format(a.val)} aUEC · {a.date}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:900}}>-{new Intl.NumberFormat("fr-FR").format(a.total)}</span>
+              <button onClick={()=>deleteAmende(a.id)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #fbbf2444",background:"transparent",color:"#fbbf24",cursor:"pointer",fontSize:12}}>🗑</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 // ─── CHAT TILE + INTERFACE ────────────────────────────────────────────────────
 function ChatCanvas() {
   const ref = useRef(null);
@@ -5459,6 +5785,8 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
+  const [dettes,      setDettes,    ,            saveDettes    ] = useFirestore("dettes",        []);
+  const [amendes,     setAmendes,   ,            saveAmendes   ] = useFirestore("amendes",       []);
   const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore(`jarvis_chat_${storedUserId||"anon"}`, []);
   const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
@@ -5521,6 +5849,23 @@ export default function App() {
 
   const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
+  // Crédite le créancier quand une dette est validée
+  const prevDetteRef = useRef([]);
+  useEffect(() => {
+    const prev = prevDetteRef.current;
+    const justValidated = (dettes||[]).filter(d=>d.status==="validated" && !prev.find(p=>p.id===d.id&&p.status==="validated"));
+    if(justValidated.length > 0) {
+      const newProfs = profiles.map(p => {
+        const credit = justValidated.filter(d=>d.creditor===p.id).reduce((s,d)=>s+d.amount,0);
+        const debit  = justValidated.filter(d=>d.debtor===p.id).reduce((s,d)=>s+d.amount,0);
+        return credit||debit ? {...p, aUEC: p.aUEC + credit - debit} : p;
+      });
+      if(newProfs.some((p,i)=>p.aUEC!==profiles[i].aUEC)){setProfiles(newProfs);saveProfiles(newProfs);}
+    }
+    prevDetteRef.current = dettes||[];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dettes]);
+
   // Écoute validation trade depuis CalcTab
   useEffect(() => {
     function onTradeValidated() {
@@ -5547,6 +5892,8 @@ export default function App() {
   const [calcModal,      setCalcModal]      = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
   const [jarvisOpen,     setJarvisOpen]     = useState(false);
+  const [detteOpen,      setDetteOpen]      = useState(false);
+  const [amendeOpen,     setAmendeOpen]     = useState(false);
 
   function openChat() {
     setChatOpen(true);
@@ -5854,6 +6201,8 @@ export default function App() {
                   <VirementTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(virHistory):h;setVirHistory(nh);saveVirHistory(nh);}}/>
                   <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
+                  <DetteTile dettes={dettes} profiles={profiles} isDesktop={isDesktop} onClick={()=>setDetteOpen(true)}/>
+                  <AmendeTile amendes={amendes} isDesktop={isDesktop} onClick={()=>setAmendeOpen(true)}/>
                 </div>
               </>
             ) : (
@@ -5878,6 +6227,8 @@ export default function App() {
                 <div style={{marginBottom:20}}>
                   <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
+                  <DetteTile dettes={dettes} profiles={profiles} isDesktop={isDesktop} onClick={()=>setDetteOpen(true)}/>
+                  <AmendeTile amendes={amendes} isDesktop={isDesktop} onClick={()=>setAmendeOpen(true)}/>
                 </div>
               </>
             )}
@@ -5910,6 +6261,10 @@ export default function App() {
       {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} giphyApiKey={settings?.giphyApiKey} defaultAuthor={validatedUser?.id}/>}
 
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
+
+      {detteOpen && <DetteInterface profiles={profiles} dettes={dettes} setDettes={(v)=>{setDettes(v);saveDettes(v);}} currentUserId={storedUserId} onClose={()=>setDetteOpen(false)}/>}
+
+      {amendeOpen && <AmendeInterface profiles={profiles} amendes={amendes} setAmendes={(v)=>{setAmendes(v);saveAmendes(v);}} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} onClose={()=>setAmendeOpen(false)}/>}
 
       {/* Bulle flottante Jarvis — visible partout, déplaçable */}
       {tab!=="dashboard" && !jarvisOpen && <JarvisBubble onClick={()=>setJarvisOpen(true)}/>}
