@@ -4073,16 +4073,17 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
 }
 
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
-function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
+function MissionItem({ mission, profiles, onDelete, onValidate, onFail, isDesktop }) {
   const [exp,setExp]=useState(false);
   const share=Math.floor(mission.amount/2);
   const owner=profiles.find(p=>p.id===mission.assignee);
   const isPending = !mission.status || mission.status === "pending";
+  const isFailed  = mission.status === "failed";
   return (
-    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14,border:`1px solid ${isPending?"#ffcc0044":"#1a2a4488"}`,position:"relative"}} onClick={()=>setExp(!exp)}>
+    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14,border:`1px solid ${isPending?"#ffcc0044":isFailed?"#ff446644":"#00ff9d44"}`,position:"relative"}} onClick={()=>setExp(!exp)}>
       {/* Badge statut */}
-      <div style={{position:"absolute",top:8,right:8,background:isPending?"#ffcc0022":"#00ff9d22",border:`1px solid ${isPending?"#ffcc0066":"#00ff9d66"}`,borderRadius:20,padding:"2px 9px",fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:isPending?"#ffcc00":"#00ff9d",letterSpacing:1}}>
-        {isPending ? "⏳ EN ATTENTE" : "✅ VALIDÉE"}
+      <div style={{position:"absolute",top:8,right:8,background:isPending?"#ffcc0022":isFailed?"#ff446622":"#00ff9d22",border:`1px solid ${isPending?"#ffcc0066":isFailed?"#ff446666":"#00ff9d66"}`,borderRadius:20,padding:"2px 9px",fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:isPending?"#ffcc00":isFailed?"#ff4466":"#00ff9d",letterSpacing:1}}>
+        {isPending ? "⏳ EN ATTENTE" : isFailed ? "❌ ÉCHOUÉE" : "✅ VALIDÉE"}
       </div>
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
@@ -4091,7 +4092,7 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
           <div style={{color:"#8899bb",fontSize:isDesktop?13:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
+          <div style={{color:isPending?"#ffcc00":isFailed?"#ff4466":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":13,fontWeight:700,textDecoration:isFailed?"line-through":"none"}}>{fmt(mission.amount)} aUEC</div>
           {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
@@ -4117,6 +4118,11 @@ function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
             {isPending && onValidate && (
               <button onClick={e=>{e.stopPropagation();onValidate(mission.id);}} style={{background:"linear-gradient(135deg,#00ff9d22,#0a1628)",border:"1px solid #00ff9d88",color:"#00ff9d",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:11,fontWeight:700,boxShadow:"0 0 10px #00ff9d33",flex:1}}>
                 ✅ VALIDER + DISTRIBUER {fmt(mission.amount)} aUEC
+              </button>
+            )}
+            {isPending && onFail && (
+              <button onClick={e=>{e.stopPropagation();onFail(mission.id);}} style={{background:"linear-gradient(135deg,#ff446622,#0a1628)",border:"1px solid #ff446688",color:"#ff4466",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?13:11,fontWeight:700,flexShrink:0}}>
+                ❌ ÉCHEC
               </button>
             )}
             <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,fontSize:isDesktop?13:11,padding:"8px 14px"}}>🗑 Supprimer</button>
@@ -5929,6 +5935,7 @@ export default function App() {
 
   const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
   const validatedMissions = missions.filter(m=>m.status==="validated");
+  const failedMissions    = missions.filter(m=>m.status==="failed");
   const pendingMissions   = missions.filter(m=>!m.status||m.status==="pending");
   const p1=profiles.find(p=>p.id==="p1");
   const p2=profiles.find(p=>p.id==="p2");
@@ -5949,6 +5956,12 @@ export default function App() {
     const newProfs=profiles.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; });
     setProfiles(newProfs); saveProfiles(newProfs);
     const updated=missions.map(x=>x.id===id?{...x,status:"validated"}:x);
+    setMissions(updated); saveMissions(updated);
+  }
+
+  function failMission(id){
+    const m=missions.find(x=>x.id===id); if(!m||m.status==="failed") return;
+    const updated=missions.map(x=>x.id===id?{...x,status:"failed"}:x);
     setMissions(updated); saveMissions(updated);
   }
 
@@ -6264,7 +6277,7 @@ export default function App() {
                 <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>Cliquez sur une mission pour valider et distribuer l'argent</div>
               </div>
             </div>}
-            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} isDesktop={isDesktop}/>)}
+            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} onFail={failMission} isDesktop={isDesktop}/>)}
             {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?20:13}}>Aucune mission — commencez à jouer !</div>}
             {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
@@ -6305,7 +6318,29 @@ export default function App() {
           <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,marginBottom:12}}>+ Nouvelle mission</button>
           {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:20,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission enregistrée</div>}
           <div style={{maxHeight:"60vh",overflowY:"auto"}}>
-            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission}/>)}
+            {missions.length>0 && (
+              <div style={{display:"flex",gap:10,marginBottom:12,padding:"10px 14px",background:"#07111f",borderRadius:10,border:"1px solid #1a2a44",flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{validatedMissions.length}</span>
+                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>réussies</span>
+                </div>
+                <div style={{color:"#1a2a44"}}>|</div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{color:"#ff4466",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{failedMissions.length}</span>
+                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>échouées</span>
+                </div>
+                <div style={{color:"#1a2a44"}}>|</div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{pendingMissions.length}</span>
+                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>en attente</span>
+                </div>
+                {missions.length>0 && <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{Math.round(validatedMissions.length/missions.length*100)}%</span>
+                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>taux de réussite</span>
+                </div>}
+              </div>
+            )}
+            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} onFail={failMission}/>)}
           </div>
         </Modal>
       )}
