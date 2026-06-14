@@ -2195,6 +2195,11 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const pending = (dettes||[]).filter(d=>d.status==="pending").length;
+  const hasAny = (dettes||[]).length > 0;
+  const col = pending > 0 ? "#ef4444" : hasAny ? "#22c55e" : "#ef4444";
+  const [r,g,b] = pending > 0 ? [239,68,68] : hasAny ? [34,197,94] : [239,68,68];
+  const icon = pending > 0 ? "🔴" : hasAny ? "🟢" : "🔴";
+  const subtitle = pending > 0 ? `${pending} en attente` : hasAny ? "Tout réglé ✓" : "Créance entre joueurs";
 
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
@@ -2207,23 +2212,23 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
       t+=0.02; ctx.clearRect(0,0,w,h);
       const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
       const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-      bg.addColorStop(0,"rgba(239,68,68,0.15)"); bg.addColorStop(1,"rgba(0,0,0,0)");
+      const isPending=canvas.dataset.pending==="1";
+      const rc=isPending?"239,68,68":"34,197,94";
+      bg.addColorStop(0,`rgba(${rc},0.15)`); bg.addColorStop(1,"rgba(0,0,0,0)");
       ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
-      // chaîne tournante
       for(let i=0;i<8;i++){
         const a=t*0.4+i*Math.PI/4;
         const r1=R*0.42, r2=R*0.62;
         const x1=cx+Math.cos(a)*r1,y1=cy+Math.sin(a)*r1;
         const x2=cx+Math.cos(a+0.4)*r2,y2=cy+Math.sin(a+0.4)*r2;
-        ctx.strokeStyle=`rgba(239,68,68,${0.3+0.4*Math.abs(Math.sin(t+i))})`; ctx.lineWidth=2;
+        ctx.strokeStyle=`rgba(${rc},${0.3+0.4*Math.abs(Math.sin(t+i))})`; ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
       }
-      // signe
       const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.22);
-      sg.addColorStop(0,"rgba(254,202,202,.98)"); sg.addColorStop(.4,"rgba(239,68,68,.9)"); sg.addColorStop(1,"rgba(0,0,0,0)");
+      sg.addColorStop(0,`rgba(${isPending?"254,202,202":"187,247,208"},.98)`); sg.addColorStop(.4,`rgba(${rc},.9)`); sg.addColorStop(1,"rgba(0,0,0,0)");
       ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
       ctx.font=`bold ${Math.round(R*.2)}px Orbitron,monospace`; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillStyle="rgba(255,255,255,.98)"; ctx.shadowColor="#ef4444"; ctx.shadowBlur=12;
+      ctx.fillStyle="rgba(255,255,255,.98)"; ctx.shadowColor=`rgba(${rc},1)`; ctx.shadowBlur=12;
       ctx.fillText("DETTE",cx,cy+1); ctx.shadowBlur=0;
       rafRef.current=requestAnimationFrame(frame);
     }
@@ -2232,29 +2237,28 @@ function DetteTile({ dettes, profiles, isDesktop, onClick }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
-  const col="#ef4444";
-  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:"#1a0505cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:` 0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
+  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:pending>0?"#1a0505cc":"#001a08cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:` 0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
 
   return isDesktop ? (
     <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
       {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
       <div style={{position:"relative",zIndex:1,pointerEvents:"none"}}>
-        <div style={{fontSize:32,marginBottom:8,filter:`drop-shadow(0 0 8px ${col})`}}>🔴</div>
+        <div style={{fontSize:32,marginBottom:8,filter:`drop-shadow(0 0 8px ${col})`}}>{icon}</div>
         <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:600}}>DETTES</div>
         <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif",margin:"5px 0"}}>DETTE</div>
-        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>Créance entre joueurs</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{subtitle}</div>
       </div>
     </div>
   ) : (
     <div style={{...base,padding:"14px 18px",display:"flex",alignItems:"center",gap:14}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
       {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
-      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>🔴</div>
+      <div style={{position:"relative",zIndex:1,fontSize:34,filter:`drop-shadow(0 0 10px ${col})`,flexShrink:0}}>{icon}</div>
       <div style={{position:"relative",zIndex:1,flex:1}}>
         <div style={{color:col,fontSize:13,fontFamily:"'Rajdhani',sans-serif",letterSpacing:2,textTransform:"uppercase",fontWeight:700,marginBottom:2}}>DETTES</div>
         <div style={{color:"#e8f4ff",fontSize:20,fontWeight:700,fontFamily:"'Orbitron',sans-serif"}}>DETTE</div>
-        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{pending>0?`${pending} en attente`:"Créance entre joueurs"}</div>
+        <div style={{color:"#8899bb",fontSize:11,fontFamily:"'Rajdhani',sans-serif"}}>{subtitle}</div>
       </div>
     </div>
   );
