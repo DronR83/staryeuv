@@ -1862,6 +1862,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   const [speakEnabled, setSpeakEnabled] = useState(false);
   const recognitionRef = useRef(null);
   const endRef = useRef(null);
+  const scrollRef = useRef(null);
   const kbOffset = useKeyboardOffset();
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
 
@@ -1912,7 +1913,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
     rec.start();
   }
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
+  useEffect(() => { if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [history, loading]);
 
   async function send() {
     const tv = textRef.current?.value?.trim() || "";
@@ -1978,7 +1979,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
         </div>
 
         {/* ── MESSAGES ── */}
-        <div style={{ position:"relative", zIndex:2, flex:1, overflowY:"auto", padding:"24px 18px", display:"flex", flexDirection:"column", gap:18 }}>
+        <div ref={scrollRef} style={{ position:"relative", zIndex:2, flex:1, overflowY:"auto", padding:"24px 18px", display:"flex", flexDirection:"column", gap:18 }}>
 
           {/* Écran vide */}
           {history.length === 0 && (
@@ -2339,7 +2340,7 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
   const { onTouchStart:sTS,onTouchMove:sTM,onTouchEnd:sTE,onTouchCancel:sTC } = swipeHandlers;
 
   // Scroll auto
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
   // Fond animé particules
   useEffect(() => {
