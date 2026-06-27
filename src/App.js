@@ -1953,7 +1953,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
       </div>
 
       {/* Panel principal */}
-      <div ref={panelRef} {...swipeHandlers} style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", background:"radial-gradient(ellipse at top,#16162e,#0a0a16 60%)", willChange:"transform", overflow:"hidden", paddingTop:"env(safe-area-inset-top, 0px)" }}>
+      <div ref={panelRef} {...swipeHandlers} style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", background:"radial-gradient(ellipse at top,#16162e,#0a0a16 60%)", willChange:"transform", overflow:"hidden" }}>
 
         {/* Halos lumineux d'ambiance */}
         <div style={{ position:"absolute", top:"-15%", left:"-10%", width:"50%", height:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.22),transparent 70%)", filter:"blur(40px)", pointerEvents:"none", animation:"jarvisHalo1 8s ease-in-out infinite" }}/>
@@ -1961,7 +1961,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
         <div style={{ position:"absolute", top:"40%", left:"30%", width:"40%", height:"40%", background:"radial-gradient(circle,rgba(167,139,250,0.12),transparent 70%)", filter:"blur(60px)", pointerEvents:"none", animation:"jarvisHalo1 12s ease-in-out infinite reverse" }}/>
 
         {/* ── HEADER ── */}
-        <div style={{ position:"relative", zIndex:2, flexShrink:0, background:"linear-gradient(135deg,rgba(26,26,46,0.85),rgba(22,33,62,0.85))", borderBottom:"1px solid rgba(139,92,246,0.25)", padding:"16px 20px", paddingTop:"max(20px, env(safe-area-inset-top, 20px))", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(24px)" }}>
+        <div style={{ position:"relative", zIndex:2, flexShrink:0, background:"linear-gradient(135deg,rgba(26,26,46,0.85),rgba(22,33,62,0.85))", borderBottom:"1px solid rgba(139,92,246,0.25)", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(24px)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <div style={{ width:46, height:46, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#6d28d9,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:"0 0 24px rgba(139,92,246,0.6)", animation:"jarvisPulse 3s ease-in-out infinite" }}>🤖</div>
             <div>
