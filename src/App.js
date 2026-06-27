@@ -247,11 +247,11 @@ function CosmicBackground() {
         [-S*0.7,-S*0.35,0,S*0.25].forEach(lx => {ctx.beginPath();ctx.moveTo(lx,ny-S*0.20);ctx.lineTo(lx,ny+S*0.20);ctx.stroke();});
         // Réacteurs ×2
         [ny-S*0.11,ny+S*0.11].forEach(ry => {
-          ctx.fillStyle = `rgba(85,175,255,${0.88*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur = 9*j;
+          ctx.fillStyle = `rgba(85,175,255,${0.88*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=9*j;
           ctx.beginPath(); ctx.ellipse(-S*1.07,ry,S*0.058,S*0.058,0,0,Math.PI*2); ctx.fill();
           const rjg = ctx.createLinearGradient(-S*1.07,ry,-S*(1.07+1.2*j),ry);
           rjg.addColorStop(0,`rgba(100,190,255,${0.9*j})`); rjg.addColorStop(0.3,`rgba(60,130,220,${0.45*j})`); rjg.addColorStop(1,'transparent');
-          ctx.fillStyle = rjg; ctx.shadowBlur = 11*j;
+          ctx.fillStyle = rjg; ctx.shadowBlur=11*j;
           ctx.beginPath(); ctx.moveTo(-S*1.07,ry-S*0.058); ctx.lineTo(-S*(1.07+1.2*j),ry-S*0.012); ctx.lineTo(-S*(1.07+1.2*j),ry+S*0.012); ctx.lineTo(-S*1.07,ry+S*0.058); ctx.closePath(); ctx.fill();
         });
         ctx.shadowBlur = 0;
@@ -269,7 +269,7 @@ function CosmicBackground() {
       ctx.strokeStyle='rgba(38,76,125,0.28)'; ctx.lineWidth=S*0.009;
       [-S*0.68,-S*0.34,0,S*0.34,S*0.68].forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,-S*0.40);ctx.lineTo(lx,S*0.40);ctx.stroke();});
       // Fenêtres HD
-      ctx.shadowColor='#aaddff'; ctx.shadowBlur = 5;
+      ctx.shadowColor='#aaddff'; ctx.shadowBlur=5;
       [-S*0.62,-S*0.40,-S*0.16,S*0.06,S*0.29,S*0.52,S*0.72].forEach((wx,wi)=>{
         const wal=0.38+0.30*Math.abs(Math.sin(t2*0.04+wi*1.1+s2ph));
         ctx.fillStyle=`rgba(180,220,255,${wal})`;
@@ -279,18 +279,18 @@ function CosmicBackground() {
       // Cockpit
       const cg2=ctx.createRadialGradient(S*0.82,-S*0.07,0.01,S*0.82,-S*0.04,S*0.22);
       cg2.addColorStop(0,'rgba(165,225,255,0.75)'); cg2.addColorStop(0.5,'rgba(55,140,200,0.38)'); cg2.addColorStop(1,'transparent');
-      ctx.fillStyle=cg2; ctx.shadowColor='#80c8ff'; ctx.shadowBlur = 7;
+      ctx.fillStyle=cg2; ctx.shadowColor='#80c8ff'; ctx.shadowBlur=7;
       ctx.beginPath(); ctx.ellipse(S*0.80,-S*0.07,S*0.24,S*0.115,-0.08,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.shadowBlur=0;
       ctx.beginPath(); ctx.ellipse(S*0.74,-S*0.11,S*0.085,S*0.048,-0.18,0,Math.PI*2); ctx.fill();
       // Nav lights
       const bl=Math.sin(t2*0.07+s2ph)>0?0.92:0.12;
-      ctx.fillStyle=`rgba(255,48,48,${bl})`; ctx.shadowColor='#ff3333'; ctx.shadowBlur = 7;
+      ctx.fillStyle=`rgba(255,48,48,${bl})`; ctx.shadowColor='#ff3333'; ctx.shadowBlur=7;
       ctx.beginPath(); ctx.arc(-S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
       ctx.fillStyle=`rgba(48,48,255,${0.88-bl*0.78+0.1})`; ctx.shadowColor='#3333ff';
       ctx.beginPath(); ctx.arc(S*0.98,0,S*0.038,0,Math.PI*2); ctx.fill();
       // Réacteur central
-      ctx.fillStyle=`rgba(85,168,255,${0.78*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur = 11*j;
+      ctx.fillStyle=`rgba(85,168,255,${0.78*j})`; ctx.shadowColor='#50aaff'; ctx.shadowBlur=11*j;
       ctx.beginPath(); ctx.ellipse(-S*1.04,0,S*0.085,S*0.085,0,0,Math.PI*2); ctx.fill();
       const cjg=ctx.createLinearGradient(-S*1.04,0,-S*(1.04+1.3*j),0);
       cjg.addColorStop(0,`rgba(105,192,255,${0.92*j})`); cjg.addColorStop(0.3,`rgba(62,130,220,${0.45*j})`); cjg.addColorStop(1,'transparent');
@@ -347,24 +347,24 @@ function CosmicBackground() {
         ctx.strokeStyle='rgba(28,68,118,0.6)'; ctx.lineWidth=S*0.007;
         ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax+S*0.08,ay-S*0.17); ctx.stroke();
         const blink=Math.sin(t2*0.09+ax)*0.5+0.5>0.6?0.9:0.15;
-        ctx.fillStyle=`rgba(255,200,80,${blink})`; ctx.shadowColor='#ffcc44'; ctx.shadowBlur = 4;
+        ctx.fillStyle=`rgba(255,200,80,${blink})`; ctx.shadowColor='#ffcc44'; ctx.shadowBlur=4;
         ctx.beginPath(); ctx.arc(ax+S*0.08,ay-S*0.17,S*0.022,0,Math.PI*2); ctx.fill();
       });
       // Nav lights
       const bl2=Math.sin(t2*0.055+s2ph)>0?0.9:0.1;
-      ctx.fillStyle=`rgba(255,40,40,${bl2})`; ctx.shadowColor='#ff2222'; ctx.shadowBlur = 8;
+      ctx.fillStyle=`rgba(255,40,40,${bl2})`; ctx.shadowColor='#ff2222'; ctx.shadowBlur=8;
       ctx.beginPath(); ctx.arc(-S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
       ctx.fillStyle=`rgba(40,40,255,${0.85-bl2*0.75+0.1})`; ctx.shadowColor='#2222ff';
       ctx.beginPath(); ctx.arc(S*2.44,-S*0.01,S*0.048,0,Math.PI*2); ctx.fill();
       ctx.shadowBlur=0;
       // Réacteurs ×5
-      ctx.shadowColor='#4488ff'; ctx.shadowBlur = 12*j;
+      ctx.shadowColor='#4488ff'; ctx.shadowBlur=12*j;
       [-S*0.26,-S*0.10,S*0.06,S*0.22,S*0.38].forEach(ry=>{
         ctx.fillStyle=`rgba(85,155,255,${0.88*j})`;
         ctx.beginPath(); ctx.ellipse(-S*2.47,ry,S*0.068,S*0.052,0,0,Math.PI*2); ctx.fill();
         const rjg=ctx.createLinearGradient(-S*2.47,ry,-S*(2.47+1.1*j),ry);
         rjg.addColorStop(0,`rgba(105,175,255,${0.92*j})`); rjg.addColorStop(0.35,`rgba(60,120,230,${0.42*j})`); rjg.addColorStop(1,'transparent');
-        ctx.fillStyle=rjg; ctx.shadowBlur = 14*j;
+        ctx.fillStyle=rjg; ctx.shadowBlur=14*j;
         ctx.beginPath(); ctx.moveTo(-S*2.47,ry-S*0.052); ctx.lineTo(-S*(2.47+1.1*j),ry-S*0.010); ctx.lineTo(-S*(2.47+1.1*j),ry+S*0.010); ctx.lineTo(-S*2.47,ry+S*0.052); ctx.closePath(); ctx.fill();
       });
       ctx.shadowBlur=0;
@@ -413,7 +413,7 @@ function CosmicBackground() {
         const aA = arc*(Math.PI/4)+bhA*0.4+(arc%2===0?0:Math.PI);
         const aR = rPh*1.04+arc*2.5, aW = Math.PI*(0.08+0.04*Math.sin(bhA*1.5+arc));
         ctx.strokeStyle = `rgba(255,${200-arc*14},${125-arc*9},${0.22+0.1*Math.sin(bhA*2+arc)})`;
-        ctx.lineWidth = 0.6+arc*0.2; ctx.shadowColor='rgba(255,185,95,0.4)'; ctx.shadowBlur = 4;
+        ctx.lineWidth = 0.6+arc*0.2; ctx.shadowColor='rgba(255,185,95,0.4)'; ctx.shadowBlur=4;
         ctx.beginPath(); ctx.arc(0,0,aR,aA,aA+aW); ctx.stroke();
       }
       ctx.shadowBlur=0;
@@ -423,14 +423,14 @@ function CosmicBackground() {
       phg.addColorStop(0,'transparent'); phg.addColorStop(0.25,`rgba(255,210,130,${phB*0.75})`);
       phg.addColorStop(0.5,`rgba(255,248,215,${phB})`); phg.addColorStop(0.75,`rgba(255,210,130,${phB*0.75})`); phg.addColorStop(1,'transparent');
       ctx.strokeStyle=phg; ctx.lineWidth=3;
-      ctx.shadowColor='rgba(255,212,100,0.95)'; ctx.shadowBlur = 16;
+      ctx.shadowColor='rgba(255,212,100,0.95)'; ctx.shadowBlur=16;
       ctx.beginPath(); ctx.arc(0,0,rPh,0,Math.PI*2); ctx.stroke(); ctx.shadowBlur=0;
       // Jets relativistes
       [-1,1].forEach(jd=>{
         const jH=R*1.5, jP=0.5+0.5*Math.sin(bhA*5+jd);
         const jg=ctx.createLinearGradient(0,jd*rEv,0,jd*(rEv+jH));
         jg.addColorStop(0,`rgba(100,165,255,${0.65*jP})`); jg.addColorStop(0.25,`rgba(80,120,255,${0.4*jP})`); jg.addColorStop(0.6,`rgba(60,100,220,${0.15*jP})`); jg.addColorStop(1,'transparent');
-        ctx.fillStyle=jg; ctx.shadowColor='rgba(100,150,255,0.8)'; ctx.shadowBlur = 20*jP;
+        ctx.fillStyle=jg; ctx.shadowColor='rgba(100,150,255,0.8)'; ctx.shadowBlur=20*jP;
         ctx.beginPath(); ctx.moveTo(-rEv*0.14,jd*rEv); ctx.quadraticCurveTo(rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.07,jd*(rEv+jH)); ctx.lineTo(-rEv*0.07,jd*(rEv+jH)); ctx.quadraticCurveTo(-rEv*0.25*jd,jd*(rEv+jH*0.5),rEv*0.14,jd*rEv); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
       });
       // Horizon
@@ -443,14 +443,9 @@ function CosmicBackground() {
 
     let t = 0;
     const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    // Throttle 30fps sur mobile
-    let lastFrame = 0;
-    const FPS = isMobile ? 30 : 60;
-    const INTERVAL = 1000 / FPS;
-    function frame(ts) {
-      if (ts - lastFrame < INTERVAL - 1) { raf.current = requestAnimationFrame(frame); return; }
-      lastFrame = ts;
+    function frame() {
       t++;
+      const useShadow = !isMobile || (t % 2 === 0); // mobile: shadows tous les 2 frames t2 = t;
       ctx.clearRect(0,0,W,H);
       // Fond
       const bg=ctx.createRadialGradient(W*0.82,H*0.42,0,W*0.5,H*0.5,Math.max(W,H)*0.9);
@@ -475,7 +470,7 @@ function CosmicBackground() {
         const al = s.z * (0.45 + 0.35*Math.abs(Math.sin(t*0.025*s.z+s.ph)));
         const r=Math.round(195+60*s.z), g2=Math.round(205+50*s.z), b=255;
         ctx.fillStyle=`rgba(${r},${g2},${b},${al})`;
-        if (s.z > 0.75 && size > 1.2) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur = size*2.5; }
+        if (s.z > 0.75 && size > 1.2 && useShadow) { ctx.shadowColor=`rgba(${r},${g2},${b},${al*0.7})`; ctx.shadowBlur=size*2.5; }
         ctx.beginPath(); ctx.arc(s.x*W, s.y*H, size*0.6, 0, Math.PI*2); ctx.fill();
         // Croix pour les plus brillantes
         if (s.z > 0.85 && size > 1.4) {
@@ -510,7 +505,7 @@ function CosmicBackground() {
           const width = prog * s.size * 2.4;
           ctx.strokeStyle=`rgba(${hr},${hg},${hb},${al2})`;
           ctx.lineWidth=width;
-          ctx.shadowColor=`rgba(${hr},${hg},${hb},${al2*0.8})`; ctx.shadowBlur = width*3;
+          ctx.shadowColor=`rgba(${hr},${hg},${hb},${al2*0.8})`; ctx.shadowBlur=width*3;
           ctx.beginPath(); ctx.moveTo(s.trail[i-1].x*W,s.trail[i-1].y*H); ctx.lineTo(s.trail[i].x*W,s.trail[i].y*H); ctx.stroke();
         }
         // Noyau lumineux à la tête (halo + point brillant)
@@ -558,7 +553,7 @@ function CosmicBackground() {
 
       raf.current=requestAnimationFrame(frame);
     }
-    frame(0);
+    frame();
     return()=>{cancelAnimationFrame(raf.current);window.removeEventListener('resize',resize);};
   },[]);
 
@@ -1864,43 +1859,10 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const endRef = useRef(null);
-  const bgRef = useRef(null);
-  const rafRef = useRef(null);
-
-  const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
   const kbOffset = useKeyboardOffset();
+  const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
-
-  // Fond animé holographique doré
-  useEffect(() => {
-    const canvas = bgRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    function resize() { canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
-    resize();
-    const W = () => canvas.offsetWidth, H = () => canvas.offsetHeight;
-    let t = 0;
-    const stars = Array.from({ length: 35 }, () => ({ x: Math.random(), y: Math.random(), r: 0.5 + Math.random() * 1.5, ph: Math.random() * 6 }));
-    function frame() {
-      t += 0.012; ctx.clearRect(0, 0, W(), H());
-      const bg = ctx.createLinearGradient(0, 0, 0, H());
-      bg.addColorStop(0, "rgb(8,5,2)"); bg.addColorStop(1, "rgb(4,3,1)");
-      ctx.fillStyle = bg; ctx.fillRect(0, 0, W(), H());
-      ctx.strokeStyle = "rgba(255,170,50,0.04)"; ctx.lineWidth = 0.8;
-      const gap = 32;
-      for (let x = 0; x < W() + gap; x += gap) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H()); ctx.stroke(); }
-      for (let y = 0; y < H() + gap; y += gap) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W(), y); ctx.stroke(); }
-      stars.forEach(s => {
-        const al = 0.2 + 0.3 * Math.abs(Math.sin(t * 0.8 + s.ph));
-        ctx.fillStyle = `rgba(255,210,150,${al})`;
-        ctx.beginPath(); ctx.arc(s.x * W(), s.y * H(), s.r, 0, Math.PI * 2); ctx.fill();
-      });
-      rafRef.current = requestAnimationFrame(frame);
-    }
-    frame();
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
 
   async function send() {
     const tv = textRef.current?.value?.trim() || "";
@@ -1910,165 +1872,171 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
     const next = [...history, userMsg];
     setHistory(next);
     if (textRef.current) textRef.current.value = "";
-    setLoading(true);
-    setError(null);
-
+    setLoading(true); setError(null);
     try {
-      const contents = next.map(m => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.text }],
-      }));
-
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents,
+          contents: next.map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.text }] })),
           systemInstruction: { parts: [{ text: JARVIS_SYSTEM_PROMPT }] },
           tools: [{ google_search: {} }],
         }),
       });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `Erreur API (${res.status})`);
-      }
-
+      if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d?.error?.message || `Erreur ${res.status}`); }
       const data = await res.json();
       const candidate = data?.candidates?.[0];
       const reply = candidate?.content?.parts?.map(p => p.text).join("") || "Je n'ai pas pu générer de réponse.";
-
-      // Extraction des sources (grounding)
-      const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
-      const sources = groundingChunks
-        .map(c => c?.web ? { title: c.web.title, uri: c.web.uri } : null)
-        .filter(Boolean)
-        .slice(0, 5);
-
-      const aiMsg = { role: "model", text: reply, sources, id: Date.now() + 1 };
-      setHistory([...next, aiMsg]);
-    } catch (e) {
-      setError(e.message || "Erreur de connexion à Jarvis.");
-      setHistory(next); // garde le message utilisateur même en cas d'erreur
-    } finally {
-      setLoading(false);
-    }
+      const sources = (candidate?.groundingMetadata?.groundingChunks||[]).map(c=>c?.web?{title:c.web.title,uri:c.web.uri}:null).filter(Boolean).slice(0,5);
+      setHistory([...next, { role:"model", text:reply, sources, id:Date.now()+1 }]);
+    } catch(e) { setError(e.message||"Erreur de connexion."); setHistory(next); }
+    finally { setLoading(false); }
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 999 }}>
-      {/* Backdrop */}
-      <div ref={backdropRef} style={{ position: "absolute", inset: 0, background: "#080502", opacity: 0, transform: "scale(0.94)", pointerEvents: "none", willChange: "transform,opacity" }}>
-        <div ref={hintRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0 }}>
-          <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 16, letterSpacing: 4, textShadow: "0 0 20px #ffaa33" }}>← HOME</div>
+    <div style={{ position:"fixed", inset:0, zIndex:999 }}>
+      {/* Backdrop swipe */}
+      <div ref={backdropRef} style={{ position:"absolute", inset:0, background:"#0a0b1a", opacity:0, transform:"scale(0.94)", pointerEvents:"none", willChange:"transform,opacity" }}>
+        <div ref={hintRef} style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", opacity:0 }}>
+          <div style={{ color:"#8b5cf6", fontFamily:"'Orbitron',sans-serif", fontSize:16, letterSpacing:4 }}>← RETOUR</div>
         </div>
       </div>
 
-      {/* Panel */}
-      <div ref={panelRef} {...swipeHandlers} style={{ position: "absolute", inset: 0, background: "#0a0602", display: "flex", flexDirection: "column", willChange: "transform" }}>
-        <canvas ref={bgRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+      {/* Panel principal */}
+      <div ref={panelRef} {...swipeHandlers} style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", background:"#0d0d1a", willChange:"transform" }}>
 
-        {/* Header */}
-        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.95)", borderBottom: "1px solid #ffaa3344", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(16px)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontSize: 28, filter: "drop-shadow(0 0 8px #ffaa33)" }}>🤖</div>
+        {/* ── HEADER style Gemini ── */}
+        <div style={{ flexShrink:0, background:"linear-gradient(135deg,#1a1a2e,#16213e)", borderBottom:"1px solid rgba(139,92,246,0.2)", padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(20px)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            {/* Logo animé */}
+            <div style={{ width:40, height:40, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#6d28d9,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:"0 0 20px rgba(139,92,246,0.5)", animation:"jarvisPulse 3s ease-in-out infinite" }}>🤖</div>
             <div>
-              <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>JARVIS</div>
-              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, letterSpacing: 1 }}>
-                EXPERT STAR CITIZEN · swipe → pour fermer
-                {userName && <span style={{ marginLeft: 8, color: userColor || "#00d4ff" }}>· Connecté : {userName}</span>}
-              </div>
+              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:17, fontWeight:800, letterSpacing:2 }}>JARVIS</div>
+              <div style={{ color:"rgba(139,92,246,0.8)", fontFamily:"'Rajdhani',sans-serif", fontSize:12, letterSpacing:1 }}>Expert Star Citizen · swipe → pour fermer</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            {history.length > 0 && <button onClick={() => { if (window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background: "transparent", border: "1px solid #ff446644", color: "#ff4466", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontFamily: "'Rajdhani',sans-serif", fontSize: 12 }}>🗑 Effacer</button>}
-            <button onClick={onClose} style={{ background: "transparent", border: "1px solid #ffaa3355", color: "#ffaa33", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700 }}>✕ FERMER</button>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            {userName && <div style={{ background:"rgba(139,92,246,0.15)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:20, padding:"4px 12px", color:userColor||"#8b5cf6", fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:700 }}>{userName}</div>}
+            {history.length > 0 && <button onClick={() => { if(window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"6px 10px", cursor:"pointer", fontSize:12 }}>🗑</button>}
+            <button onClick={onClose} style={{ background:"rgba(139,92,246,0.15)", border:"1px solid rgba(139,92,246,0.3)", color:"#a78bfa", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>✕</button>
           </div>
         </div>
 
-        {/* Messages */}
-        <div style={{ position: "relative", zIndex: 1, flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+        {/* ── MESSAGES ── */}
+        <div style={{ flex:1, overflowY:"auto", padding:"20px 16px", display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Écran vide */}
           {history.length === 0 && (
-            <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 56, marginBottom: 16, filter: "drop-shadow(0 0 16px #ffaa33)" }}>🤖</div>
-              <div style={{ color: "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Bonjour, je suis Jarvis</div>
-              <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 14, maxWidth: 400, margin: "0 auto", lineHeight: 1.6 }}>
-                Posez-moi vos questions sur Star Citizen : vaisseaux, prix, minage, missions, lore, patchs, mécaniques de jeu... Je sourcerai mes réponses quand c'est possible.
-              </div>
+            <div style={{ margin:"auto", textAlign:"center", padding:"40px 20px", maxWidth:480 }}>
+              <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, margin:"0 auto 20px", boxShadow:"0 0 40px rgba(139,92,246,0.4)" }}>🤖</div>
+              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Bonjour, je suis Jarvis</div>
+              <div style={{ color:"rgba(255,255,255,0.55)", fontFamily:"'Rajdhani',sans-serif", fontSize:15, lineHeight:1.7 }}>Expert Star Citizen. Posez-moi vos questions sur les vaisseaux, le minage, le commerce, les missions, les patchs ou le lore.</div>
               {!apiKey && (
-                <div style={{ marginTop: 20, background: "#ff446611", border: "1px solid #ff446644", borderRadius: 10, padding: "12px 16px", color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, maxWidth: 400, margin: "20px auto 0" }}>
-                  ⚠️ Clé API Gemini non configurée. Va dans <strong>Réglages</strong> pour l'ajouter (gratuite via Google AI Studio).
+                <div style={{ marginTop:24, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"12px 16px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:13 }}>
+                  ⚠️ Clé API Gemini non configurée — va dans <strong>Réglages</strong>
                 </div>
               )}
-            </div>
-          )}
-          {history.map(m => (
-            <div key={m.id} style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: m.role === "user" ? "flex-end" : "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                {m.role !== "user" && <span style={{ fontSize: 16 }}>🤖</span>}
-                <span style={{ color: m.role === "user" ? "#00d4ff" : "#ffaa33", fontFamily: "'Orbitron',sans-serif", fontSize: 12, fontWeight: 700 }}>{m.role === "user" ? "VOUS" : "JARVIS"}</span>
-              </div>
-              <div style={{
-                maxWidth: "85%",
-                background: m.role === "user" ? "linear-gradient(135deg,#00d4ff1a,#0a162888)" : "linear-gradient(135deg,#ffaa331a,#1a0f0588)",
-                border: `1px solid ${m.role === "user" ? "#00d4ff33" : "#ffaa3333"}`,
-                borderRadius: m.role === "user" ? "12px 0 12px 12px" : "0 12px 12px 12px",
-                padding: "10px 14px",
-                backdropFilter: "blur(4px)",
-              }}>
-                <div style={{ color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</div>
-              </div>
-              {m.sources && m.sources.length > 0 && (
-                <div style={{ maxWidth: "85%", marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 11, letterSpacing: 1 }}>📎 SOURCES</div>
-                  {m.sources.map((s, si) => (
-                    <a key={si} href={s.uri} target="_blank" rel="noopener noreferrer" style={{ color: "#ffaa33", fontFamily: "'Rajdhani',sans-serif", fontSize: 12, textDecoration: "none", opacity: 0.85, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      🔗 {s.title || s.uri}
-                    </a>
+              {/* Suggestions rapides */}
+              {apiKey && (
+                <div style={{ marginTop:24, display:"flex", flexDirection:"column", gap:8 }}>
+                  {["Quel est le meilleur vaisseau pour miner ?","Prix actuel du Quantainium ?","Comment fonctionne le trading en Pyro ?","Quelles sont les nouveautés du dernier patch ?"].map((q,i)=>(
+                    <button key={i} onClick={()=>{ if(textRef.current){ textRef.current.value=q; send(); }}} style={{ background:"rgba(139,92,246,0.08)", border:"1px solid rgba(139,92,246,0.2)", borderRadius:12, padding:"10px 16px", color:"rgba(255,255,255,0.75)", fontFamily:"'Rajdhani',sans-serif", fontSize:14, cursor:"pointer", textAlign:"left", transition:"all .2s" }}
+                      onMouseEnter={e=>{ e.target.style.background="rgba(139,92,246,0.18)"; e.target.style.borderColor="rgba(139,92,246,0.4)"; }}
+                      onMouseLeave={e=>{ e.target.style.background="rgba(139,92,246,0.08)"; e.target.style.borderColor="rgba(139,92,246,0.2)"; }}>
+                      {q}
+                    </button>
                   ))}
                 </div>
               )}
             </div>
+          )}
+
+          {/* Messages */}
+          {history.map(m => (
+            <div key={m.id} style={{ display:"flex", flexDirection:"column", alignItems:m.role==="user"?"flex-end":"flex-start", gap:6 }}>
+              {/* Bulle */}
+              <div style={{
+                maxWidth:"82%",
+                background: m.role==="user" ? "linear-gradient(135deg,#6d28d9,#4f46e5)" : "rgba(255,255,255,0.04)",
+                border: m.role==="user" ? "none" : "1px solid rgba(255,255,255,0.08)",
+                borderRadius: m.role==="user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                padding:"14px 18px",
+                boxShadow: m.role==="user" ? "0 4px 20px rgba(109,40,217,0.35)" : "none",
+              }}>
+                {m.role==="model" && (
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                    <div style={{ width:24, height:24, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>✦</div>
+                    <span style={{ color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:13, fontWeight:700, letterSpacing:1 }}>JARVIS</span>
+                  </div>
+                )}
+                <div style={{ color: m.role==="user" ? "#fff" : "rgba(255,255,255,0.9)", fontFamily:"'Rajdhani',sans-serif", fontSize:16, lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{m.text}</div>
+              </div>
+              {/* Sources */}
+              {m.sources && m.sources.length > 0 && (
+                <div style={{ maxWidth:"82%", display:"flex", flexDirection:"column", gap:4, paddingLeft:4 }}>
+                  <div style={{ color:"rgba(255,255,255,0.3)", fontFamily:"'Rajdhani',sans-serif", fontSize:11, letterSpacing:1 }}>SOURCES</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {m.sources.map((s,i) => (
+                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" style={{ background:"rgba(139,92,246,0.1)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:20, padding:"4px 12px", color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:12, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:4 }}>
+                        🔗 {s.title ? s.title.slice(0,30)+(s.title.length>30?"…":"") : "Source"}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
+
+          {/* Typing indicator */}
           {loading && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <span style={{ fontSize: 16 }}>🤖</span>
-              <div style={{ display: "flex", gap: 4 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffaa33", animation: `badgePop 1s ease-in-out infinite`, animationDelay: `${i * 0.15}s` }} />
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:24, height:24, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13 }}>✦</div>
+              <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"4px 18px 18px 18px", padding:"14px 18px", display:"flex", gap:6, alignItems:"center" }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:"#8b5cf6", animation:"jarvisDot 1.2s ease-in-out infinite", animationDelay:`${i*0.2}s` }}/>
                 ))}
               </div>
-              <span style={{ color: "#8899bb", fontFamily: "'Rajdhani',sans-serif", fontSize: 13 }}>Jarvis réfléchit...</span>
             </div>
           )}
+
+          {/* Erreur */}
           {error && (
-            <div style={{ background: "#ff446611", border: "1px solid #ff446644", borderRadius: 10, padding: "10px 14px", color: "#ff4466", fontFamily: "'Rajdhani',sans-serif", fontSize: 13, marginBottom: 16 }}>
-              ⚠️ {error}
-            </div>
+            <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"12px 16px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:14 }}>⚠️ {error}</div>
           )}
-          <div ref={endRef} />
+
+          <div ref={endRef}/>
         </div>
 
-        {/* Input */}
-        <div style={{ position: "relative", zIndex: 1, background: "rgba(8,5,2,0.97)", borderTop: "1px solid #ffaa3333", padding: "12px 16px", paddingBottom: 12 + kbOffset, backdropFilter: "blur(16px)" }}>
-          <div style={{ display: "flex", gap: 8 }}>
+        {/* ── INPUT style Gemini ── */}
+        <div style={{ flexShrink:0, padding:"12px 16px", paddingBottom:12+kbOffset, background:"rgba(13,13,26,0.95)", borderTop:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(20px)" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"flex-end", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:24, padding:"10px 14px 10px 18px", transition:"border-color .2s" }}
+            onFocus={e=>{e.currentTarget.style.borderColor="rgba(139,92,246,0.6)";}}
+            onBlur={e=>{e.currentTarget.style.borderColor="rgba(139,92,246,0.25)";}}>
             <input
               ref={textRef}
               defaultValue=""
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              style={{ flex: 1, background: "#1a0f05", border: "1px solid #ffaa3344", borderRadius: 10, padding: "11px 14px", color: "#e8f4ff", fontFamily: "'Rajdhani',sans-serif", fontSize: 15, outline: "none" }}
-              placeholder={apiKey ? "Demandez à Jarvis…" : "Configurez d'abord la clé API dans Réglages"}
+              onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
+              style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"rgba(255,255,255,0.9)", fontFamily:"'Rajdhani',sans-serif", fontSize:16, lineHeight:1.5, resize:"none" }}
+              placeholder={apiKey ? "Posez votre question à Jarvis…" : "Configurez la clé API dans Réglages"}
               disabled={!apiKey}
             />
-            <button onClick={send} disabled={loading || !apiKey} style={{ background: (!loading && apiKey) ? "linear-gradient(135deg,#ffaa3333,#1a0f05)" : "#1a0f05", border: `1px solid ${(!loading && apiKey) ? "#ffaa33" : "#2a2010"}`, color: (!loading && apiKey) ? "#ffaa33" : "#4a5a6a", borderRadius: 10, padding: "11px 18px", cursor: (!loading && apiKey) ? "pointer" : "default", fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, transition: "all .2s", boxShadow: (!loading && apiKey) ? "0 0 12px #ffaa3344" : "none" }}>
-              {loading ? "..." : "ENVOYER"}
+            <button onClick={send} disabled={loading||!apiKey} style={{ width:40, height:40, borderRadius:"50%", flexShrink:0, background:(!loading&&apiKey)?"linear-gradient(135deg,#8b5cf6,#4f46e5)":"rgba(255,255,255,0.06)", border:"none", color:"#fff", cursor:(!loading&&apiKey)?"pointer":"default", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:(!loading&&apiKey)?"0 0 16px rgba(139,92,246,0.5)":"none" }}>
+              {loading ? "…" : "↑"}
             </button>
           </div>
+          <div style={{ color:"rgba(255,255,255,0.2)", fontFamily:"'Rajdhani',sans-serif", fontSize:11, textAlign:"center", marginTop:8 }}>Jarvis peut faire des erreurs · Vérifiez les sources importantes</div>
         </div>
       </div>
+
+      {/* CSS animations */}
+      <style>{`
+        @keyframes jarvisPulse { 0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.5)} 50%{box-shadow:0 0 35px rgba(139,92,246,0.8),0 0 60px rgba(139,92,246,0.3)} }
+        @keyframes jarvisDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+      `}</style>
     </div>
   );
 }
+
 
 // ─── JARVIS FLOATING BUBBLE ─────────────────────────────────────────────────
 function JarvisBubble({ onClick }) {
@@ -2183,328 +2151,6 @@ function JarvisBubble({ onClick }) {
       title="Ouvrir Jarvis"
     >
       <span style={{ filter: "drop-shadow(0 0 6px #ffaa33)", pointerEvents: "none" }}>🤖</span>
-    </div>
-  );
-}
-
-
-
-// ─── DETTE TILE + INTERFACE ────────────────────────────────────────────────
-function DetteTile({ dettes, profiles, isDesktop, onClick }) {
-  const [hov, setHov] = useState(false);
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-  const pending = (dettes||[]).filter(d=>d.status==="pending").length;
-  const hasAny = (dettes||[]).length > 0;
-  const col = pending > 0 ? "#ef4444" : hasAny ? "#22c55e" : "#ef4444";
-  const icon = pending > 0 ? "🔴" : hasAny ? "🟢" : "🔴";
-  const subtitle = pending > 0 ? `${pending} en attente` : hasAny ? "Tout réglé ✓" : "Créance entre joueurs";
-
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio||1;
-    let w,h,t=0;
-    function resize(){ w=canvas.offsetWidth; h=canvas.offsetHeight; canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); }
-    resize();
-    function frame(){
-      t+=0.02; ctx.clearRect(0,0,w,h);
-      const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
-      const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-      const isPending=canvas.dataset.pending==="1";
-      const rc=isPending?"239,68,68":"34,197,94";
-      bg.addColorStop(0,`rgba(${rc},0.15)`); bg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
-      for(let i=0;i<8;i++){
-        const a=t*0.4+i*Math.PI/4;
-        const r1=R*0.42, r2=R*0.62;
-        const x1=cx+Math.cos(a)*r1,y1=cy+Math.sin(a)*r1;
-        const x2=cx+Math.cos(a+0.4)*r2,y2=cy+Math.sin(a+0.4)*r2;
-        ctx.strokeStyle=`rgba(${rc},${0.3+0.4*Math.abs(Math.sin(t+i))})`; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-      }
-      const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.22);
-      sg.addColorStop(0,`rgba(${isPending?"254,202,202":"187,247,208"},.98)`); sg.addColorStop(.4,`rgba(${rc},.9)`); sg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
-      rafRef.current=requestAnimationFrame(frame);
-    }
-    frame();
-    return()=>cancelAnimationFrame(rafRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[]);
-
-  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:pending>0?"#1a0505cc":"#001a08cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:` 0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
-
-  return isDesktop ? (
-    <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:10,fontWeight:900,borderRadius:10,padding:"2px 7px",zIndex:2}}>{pending}</div>}
-      <div style={{position:"relative",zIndex:1,pointerEvents:"none",paddingTop:6}}>
-        <div style={{fontSize:32,marginBottom:6,filter:`drop-shadow(0 0 10px ${col})`}}>{icon}</div>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:4}}>DETTE</div>
-        <div style={{color:"#e8f4ff",fontSize:"clamp(32px,3vw,48px)",fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 18px ${col}99`,margin:"4px 0",lineHeight:1}}>{pending>0?pending:(dettes||[]).length}</div>
-        <div style={{color:"#8899bb",fontSize:13,fontFamily:"'Rajdhani',sans-serif",marginTop:4}}>{subtitle}</div>
-      </div>
-    </div>
-  ) : (
-    <div style={{...base,padding:"16px 18px",display:"flex",alignItems:"center",gap:16,transform:hov?"scale(1.01)":"scale(1)"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      {pending>0 && <div style={{position:"absolute",top:8,right:8,background:col,color:"#fff",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:900,borderRadius:"50%",width:22,height:22,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 10px ${col}`,zIndex:2}}>{pending}</div>}
-      <canvas ref={canvasRef} data-pending={pending>0?"1":"0"} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:2}}>DETTE</div>
-        <div style={{color:"#e8f4ff",fontSize:38,fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 14px ${col}99`,lineHeight:1}}>{pending>0?pending:(dettes||[]).length}</div>
-        <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginTop:3}}>{subtitle}</div>
-      </div>
-    </div>
-  );
-}
-
-function DetteInterface({ profiles, dettes, setDettes, currentUserId, onClose }) {
-  const [form, setForm] = useState({creditor:currentUserId||"p1",debtor:"",amount:"",label:""});
-  const [tab, setTab] = useState("list");
-  const S = {
-    overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
-    panel:{width:"100%",maxWidth:560,background:"linear-gradient(160deg,#0d0608,#0a0404)",border:"1px solid #ef444444",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto",position:"relative"},
-    title:{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900,letterSpacing:3,marginBottom:16},
-    input:{width:"100%",background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,padding:"10px 14px",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10},
-    btn:{width:"100%",padding:"12px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,transition:"all .2s"},
-    tab:{padding:"8px 18px",borderRadius:20,border:"1px solid #ef444455",cursor:"pointer",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,transition:"all .2s"},
-  };
-
-  const otherPlayer = profiles.find(p=>p.id!==currentUserId);
-  if(!form.debtor && otherPlayer) setForm(f=>({...f,debtor:otherPlayer.id}));
-
-  function addDette(){
-    if(!form.amount||!form.debtor||!form.creditor||isNaN(+form.amount)||+form.amount<=0) return;
-    const cred=profiles.find(p=>p.id===form.creditor);
-    const deb=profiles.find(p=>p.id===form.debtor);
-    const nd={id:Date.now(),creditor:form.creditor,creditorName:cred?.name||form.creditor,debtor:form.debtor,debtorName:deb?.name||form.debtor,amount:Math.abs(Math.round(+form.amount)),label:form.label.trim()||"Dette",status:"pending",date:new Date().toLocaleDateString("fr-FR"),createdBy:currentUserId};
-    setDettes([nd,...(dettes||[])]);
-    setForm(f=>({...f,amount:"",label:""}));
-    setTab("list");
-  }
-
-  function validateDette(d){
-    setDettes((dettes||[]).map(x=>x.id===d.id?{...x,status:"validated",validatedDate:new Date().toLocaleDateString("fr-FR")}:x));
-  }
-
-  function deleteDette(id){ setDettes((dettes||[]).filter(d=>d.id!==id)); }
-
-  const pending=(dettes||[]).filter(d=>d.status==="pending");
-  const validated=(dettes||[]).filter(d=>d.status==="validated");
-
-  return (
-    <div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={S.panel}>
-        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"transparent",border:"1px solid #ef444455",color:"#ef4444",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✕</button>
-        <div style={S.title}>🔴 DETTES</div>
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {["list","add"].map(t2=>(
-            <button key={t2} onClick={()=>setTab(t2)} style={{...S.tab,background:tab===t2?"#ef444422":"transparent",borderColor:tab===t2?"#ef4444":"#ef444455",color:tab===t2?"#ef4444":"#8899bb"}}>{t2==="add"?"+ Nouvelle dette":"Liste"}</button>
-          ))}
-        </div>
-        {tab==="add" && (
-          <div>
-            <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginBottom:6}}>CRÉANCIER (celui qui prête)</div>
-            <select value={form.creditor} onChange={e=>setForm(f=>({...f,creditor:e.target.value}))} style={S.input}>
-              {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,marginBottom:6}}>DÉBITEUR (celui qui doit)</div>
-            <select value={form.debtor} onChange={e=>setForm(f=>({...f,debtor:e.target.value}))} style={S.input}>
-              {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <input style={S.input} type="number" placeholder="Montant aUEC" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>
-            <input style={S.input} placeholder="Description (optionnel)" value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))}/>
-            <button onClick={addDette} style={{...S.btn,background:"linear-gradient(135deg,#ef4444,#991b1b)",color:"#fff"}}>Créer la dette</button>
-          </div>
-        )}
-        {tab==="list" && (
-          <div>
-            {pending.length>0 && <div style={{color:"#fbbf24",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,marginBottom:8}}>EN ATTENTE DE VALIDATION</div>}
-            {pending.map(d=>{
-              const canValidate=d.createdBy!==currentUserId;
-              return(
-                <div key={d.id} style={{background:"rgba(239,68,68,0.06)",border:"1px solid #ef444433",borderRadius:12,padding:14,marginBottom:10}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
-                    <div>
-                      <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:700}}>{d.label}</div>
-                      <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>{d.debtorName} → doit {new Intl.NumberFormat("fr-FR").format(d.amount)} aUEC à {d.creditorName}</div>
-                      <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>{d.date}</div>
-                    </div>
-                    <div style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:900,whiteSpace:"nowrap"}}>
-                      -{new Intl.NumberFormat("fr-FR").format(d.amount)} aUEC
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:8}}>
-                    {canValidate && <button onClick={()=>validateDette(d)} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#22c55e,#166534)",color:"#fff",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:11,fontWeight:700}}>✅ VALIDER + CRÉDITER</button>}
-                    {!canValidate && <div style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid #ef444422",color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:12,textAlign:"center"}}>En attente de validation par {d.debtorName}</div>}
-                    <button onClick={()=>deleteDette(d.id)} style={{padding:"8px 12px",borderRadius:8,border:"1px solid #ef444444",background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:14}}>🗑</button>
-                  </div>
-                </div>
-              );
-            })}
-            {validated.length>0 && <div style={{color:"#22c55e",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,margin:"12px 0 8px"}}>VALIDÉES</div>}
-            {validated.map(d=>(
-              <div key={d.id} style={{background:"rgba(34,197,94,0.05)",border:"1px solid #22c55e33",borderRadius:12,padding:12,marginBottom:8,opacity:0.7}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14}}>{d.label}</div>
-                    <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>{d.debtorName} → {d.creditorName} · {d.validatedDate}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{color:"#22c55e",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:900}}>✓ {new Intl.NumberFormat("fr-FR").format(d.amount)}</span>
-                    <button onClick={()=>deleteDette(d.id)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #ef444444",background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:12}}>🗑</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {(dettes||[]).length===0 && <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:14,textAlign:"center",padding:"30px 0"}}>Aucune dette enregistrée</div>}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── AMENDE TILE + INTERFACE ────────────────────────────────────────────────
-function AmendeTile({ amendes, isDesktop, onClick }) {
-  const [hov, setHov] = useState(false);
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-  const total=(amendes||[]).reduce((s,a)=>s+a.total,0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio||1;
-    let w,h,t=0;
-    function resize(){ w=canvas.offsetWidth; h=canvas.offsetHeight; canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); }
-    resize();
-    const sparks=Array.from({length:10},()=>({a:Math.random()*Math.PI*2,sp:0.01+Math.random()*0.02,r:0.45+Math.random()*0.4,sz:1.5+Math.random()*2.5}));
-    function frame(){
-      t+=0.02; ctx.clearRect(0,0,w,h);
-      const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
-      const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-      bg.addColorStop(0,"rgba(251,191,36,0.15)"); bg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
-      sparks.forEach(s=>{
-        s.a+=s.sp; const x=cx+Math.cos(s.a)*R*s.r,y=cy+Math.sin(s.a)*R*s.r*0.5;
-        const al=0.3+0.6*Math.abs(Math.sin(t+s.a));
-        ctx.fillStyle=`rgba(251,191,36,${al})`; ctx.beginPath(); ctx.arc(x,y,s.sz*al,0,Math.PI*2); ctx.fill();
-      });
-      const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.22);
-      sg.addColorStop(0,"rgba(254,240,138,.98)"); sg.addColorStop(.4,"rgba(251,191,36,.9)"); sg.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.beginPath(); ctx.arc(cx,cy,R*0.22,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
-      rafRef.current=requestAnimationFrame(frame);
-    }
-    frame();
-    return()=>cancelAnimationFrame(rafRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[]);
-
-  const col="#fbbf24";
-  const base={position:"relative",overflow:"hidden",cursor:"pointer",background:"#1a1200cc",borderRadius:12,border:`1px solid ${hov?col+"99":col+"44"}`,boxShadow:hov?`0 0 28px ${col}55`:`0 0 10px ${col}22`,transform:hov?"scale(1.03) translateY(-2px)":"scale(1)",transition:"all .25s",backdropFilter:"blur(8px)"};
-
-  return isDesktop ? (
-    <div style={{...base,padding:"20px 14px",textAlign:"center"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
-      <div style={{position:"relative",zIndex:1,pointerEvents:"none",paddingTop:6}}>
-        <div style={{fontSize:32,marginBottom:6,filter:`drop-shadow(0 0 10px ${col})`}}>⚠️</div>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",letterSpacing:2,fontWeight:900,marginBottom:4}}>AMENDE</div>
-        <div style={{color:"#e8f4ff",fontSize:"clamp(26px,2.5vw,40px)",fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 18px ${col}99`,margin:"4px 0",lineHeight:1}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)}`:"0"}</div>
-        <div style={{color:"#8899bb",fontSize:13,fontFamily:"'Rajdhani',sans-serif",marginTop:4}}>{total>0?"aUEC déduits":"Pénalités joueurs"}</div>
-      </div>
-    </div>
-  ) : (
-    <div style={{...base,padding:"16px 18px",display:"flex",alignItems:"center",gap:16,transform:hov?"scale(1.01)":"scale(1)"}} onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      <canvas ref={canvasRef} style={{width:56,height:56,borderRadius:10,flexShrink:0}}/>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{color:col,fontSize:15,fontFamily:"'Orbitron',sans-serif",fontWeight:900,letterSpacing:1,marginBottom:2}}>AMENDE</div>
-        <div style={{color:"#e8f4ff",fontSize:34,fontWeight:900,fontFamily:"'Orbitron',sans-serif",textShadow:`0 0 14px ${col}99`,lineHeight:1}}>{total>0?`-${new Intl.NumberFormat("fr-FR").format(total)}`:"0"}</div>
-        <div style={{color:"#8899bb",fontSize:12,fontFamily:"'Rajdhani',sans-serif",marginTop:3}}>{total>0?"aUEC déduits":"Pénalités joueurs"}</div>
-      </div>
-    </div>
-  );
-}
-
-function AmendeInterface({ profiles, amendes, setAmendes, setProfiles, onClose }) {
-  const [who, setWho] = useState(profiles[0]?.id||"p1");
-  const [qty, setQty] = useState("");
-  const [val, setVal] = useState("");
-  const [saving, setSaving] = useState(false);
-  const S = {
-    overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)"},
-    panel:{width:"100%",maxWidth:560,background:"linear-gradient(160deg,#0d0b00,#0a0800)",border:"1px solid #fbbf2444",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto",position:"relative"},
-    input:{width:"100%",background:"rgba(251,191,36,0.07)",border:"1px solid rgba(251,191,36,0.2)",borderRadius:10,padding:"10px 14px",color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:10},
-  };
-
-  function submitAmende(){
-    const q=parseInt(qty), v=parseInt(val);
-    if(isNaN(q)||isNaN(v)||q<=0||v<=0) return;
-    const total=q*v;
-    const p=profiles.find(x=>x.id===who);
-    setSaving(true);
-    const na={id:Date.now(),playerId:who,playerName:p?.name||who,qty:q,val:v,total,date:new Date().toLocaleDateString("fr-FR")};
-    setAmendes([na,...(amendes||[])]);
-    setProfiles(profiles.map(x=>x.id===who?{...x,aUEC:Math.max(0,x.aUEC-total)}:x));
-    setQty(""); setVal(""); setSaving(false);
-  }
-
-  function deleteAmende(id){
-    const am=(amendes||[]).find(a=>a.id===id); if(!am) return;
-    setAmendes((amendes||[]).filter(a=>a.id!==id));
-    setProfiles(profiles.map(p=>p.id===am.playerId?{...p,aUEC:p.aUEC+am.total}:p));
-  }
-
-  const total=(amendes||[]).reduce((s,a)=>s+a.total,0);
-
-  return (
-    <div style={S.overlay} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={S.panel}>
-        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"transparent",border:"1px solid #fbbf2455",color:"#fbbf24",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✕</button>
-        <div style={{color:"#fbbf24",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900,letterSpacing:3,marginBottom:4}}>⚠️ AMENDES</div>
-        {total>0 && <div style={{color:"#ef4444",fontFamily:"'Rajdhani',sans-serif",fontSize:13,marginBottom:16}}>Total déduit : -{new Intl.NumberFormat("fr-FR").format(total)} aUEC</div>}
-
-        <div style={{background:"rgba(251,191,36,0.06)",border:"1px solid #fbbf2433",borderRadius:14,padding:16,marginBottom:16}}>
-          <div style={{color:"#fbbf24",fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,marginBottom:12}}>AJOUTER UNE AMENDE</div>
-          <select value={who} onChange={e=>setWho(e.target.value)} style={S.input}>
-            {profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div>
-              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginBottom:4}}>NOMBRE D'AMENDES</div>
-              <input style={S.input} type="number" min="1" placeholder="ex: 3" value={qty} onChange={e=>setQty(e.target.value)}/>
-            </div>
-            <div>
-              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginBottom:4}}>VALEUR PAR AMENDE (aUEC)</div>
-              <input style={S.input} type="number" min="1" placeholder="ex: 5000" value={val} onChange={e=>setVal(e.target.value)}/>
-            </div>
-          </div>
-          {qty&&val&&!isNaN(+qty)&&!isNaN(+val)&&+qty>0&&+val>0 && (
-            <div style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:14,fontWeight:700,textAlign:"center",margin:"8px 0"}}>
-              = -{new Intl.NumberFormat("fr-FR").format(+qty*+val)} aUEC sur {profiles.find(p=>p.id===who)?.name}
-            </div>
-          )}
-          <button onClick={submitAmende} disabled={saving||!qty||!val} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700,background:"linear-gradient(135deg,#fbbf24,#92400e)",color:"#000",transition:"all .2s"}}>
-            ⚠️ APPLIQUER L'AMENDE
-          </button>
-        </div>
-
-        <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,letterSpacing:1,marginBottom:8}}>HISTORIQUE</div>
-        {(amendes||[]).length===0 && <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:14,textAlign:"center",padding:"20px 0"}}>Aucune amende enregistrée</div>}
-        {(amendes||[]).map(a=>(
-          <div key={a.id} style={{background:"rgba(251,191,36,0.05)",border:"1px solid #fbbf2422",borderRadius:10,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:14,fontWeight:700}}>{a.playerName}</div>
-              <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>{a.qty} × {new Intl.NumberFormat("fr-FR").format(a.val)} aUEC · {a.date}</div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{color:"#ef4444",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:900}}>-{new Intl.NumberFormat("fr-FR").format(a.total)}</span>
-              <button onClick={()=>deleteAmende(a.id)} style={{padding:"4px 8px",borderRadius:6,border:"1px solid #fbbf2444",background:"transparent",color:"#fbbf24",cursor:"pointer",fontSize:12}}>🗑</button>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -2945,25 +2591,26 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
               placeholder="Message..."
               style={{
                 width:"100%",background:"rgba(167,139,250,0.07)",
-                border:"1px solid rgba(167,139,250,0.3)",
+                border:`1px solid ${text?"rgba(167,139,250,0.4)":"rgba(167,139,250,0.15)"}`,
                 borderRadius:22,padding:"11px 18px",color:"#d4e8ff",
                 fontFamily:"'Rajdhani',sans-serif",fontSize:15,outline:"none",
-                boxSizing:"border-box",
+                boxSizing:"border-box",boxShadow:text?"0 0 12px rgba(167,139,250,0.15)":"none",
                 transition:"all .2s",
               }}
             />
           </div>
           <button
             onClick={send}
-            disabled={sending}
+            disabled={!text.trim()||sending}
             style={{
               width:44,height:44,borderRadius:"50%",flexShrink:0,
-              background:"linear-gradient(135deg,#a78bfa,#7c4fd4)",
-              border:"1px solid #a78bfa",
-              color:"#fff",cursor:sending?"default":"pointer",
+              background:text.trim()?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.1)",
+              border:`1px solid ${text.trim()?"#a78bfa":"rgba(167,139,250,0.2)"}`,
+              color:"#fff",cursor:text.trim()?"pointer":"default",
               fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",
-              boxShadow:"0 0 16px #a78bfa66",
+              boxShadow:text.trim()?"0 0 16px #a78bfa66":"none",
               transition:"all .2s",
+              transform:text.trim()?"scale(1.05)":"scale(1)",
             }}
           >{sending?"…":"↑"}</button>
         </div>
@@ -3245,16 +2892,7 @@ function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHisto
   },[]);
 
   const whoP = profiles.find(p=>p.id===who);
-  function evalExpr(expr) {
-    try {
-      const clean = String(expr).replace(/[^0-9+\-*/.() ]/g,"").trim();
-      if (!clean) return 0;
-      // eslint-disable-next-line no-new-func
-      const r = Function('"use strict";return ('+clean+')')();
-      return (isFinite(r) && r > 0) ? Math.round(r) : 0;
-    } catch { return 0; }
-  }
-  const num = evalExpr(amount);
+  const num = parseFloat(amount)||0;
   const canSave = num>0 && label.trim() && whoP && whoP.aUEC>=num;
 
   function doDepense(){
@@ -3318,22 +2956,7 @@ function DepensesTile({ profiles, setProfiles, isDesktop, history = [], setHisto
               <label style={S.label}>Description</label>
               <input value={label} onChange={e=>setLabel(e.target.value)} style={S.input} placeholder="Ex: Carburant, Réparation, Armes…"/>
               <label style={S.label}>Montant (aUEC)</label>
-              <input
-                type="text"
-                value={amount}
-                onChange={e=>setAmount(e.target.value)}
-                onKeyDown={e=>{
-                  if(e.key==="Enter"){
-                    const r=evalExpr(amount);
-                    if(r>0){setAmount(String(r)); if(canSave) doDepense();}
-                  }
-                }}
-                style={{...S.input,fontFamily:"'Orbitron',sans-serif"}}
-                placeholder="Ex: 25000 ou 200*3+500"
-              />
-              <div style={{color:"#4a5a7a",fontFamily:"'Rajdhani',sans-serif",fontSize:11,marginTop:-6,marginBottom:4}}>
-                Supporte + − × ÷ — Entrée pour calculer ou valider
-              </div>
+              <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} style={S.input} placeholder="Ex: 25 000" min="1"/>
               {num>0 && (
                 <div style={{background:"#07111f",border:"1px solid #ff6b3522",borderRadius:10,padding:"12px 16px",marginTop:8}}>
                   <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -4073,17 +3696,16 @@ function ProfileCard({ profile, onEdit, onHangar, isDesktop }) {
 }
 
 // ─── MISSION ITEM ─────────────────────────────────────────────────────────────
-function MissionItem({ mission, profiles, onDelete, onValidate, onFail, isDesktop }) {
+function MissionItem({ mission, profiles, onDelete, onValidate, isDesktop }) {
   const [exp,setExp]=useState(false);
   const share=Math.floor(mission.amount/2);
   const owner=profiles.find(p=>p.id===mission.assignee);
   const isPending = !mission.status || mission.status === "pending";
-  const isFailed  = mission.status === "failed";
   return (
-    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14,border:`1px solid ${isPending?"#ffcc0044":isFailed?"#ff446644":"#00ff9d44"}`,position:"relative"}} onClick={()=>setExp(!exp)}>
+    <div style={{...S.missionItem,padding:isDesktop?"16px 20px":14,border:`1px solid ${isPending?"#ffcc0044":"#1a2a4488"}`,position:"relative"}} onClick={()=>setExp(!exp)}>
       {/* Badge statut */}
-      <div style={{position:"absolute",top:8,right:8,background:isPending?"#ffcc0022":isFailed?"#ff446622":"#00ff9d22",border:`1px solid ${isPending?"#ffcc0066":isFailed?"#ff446666":"#00ff9d66"}`,borderRadius:20,padding:"2px 9px",fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:isPending?"#ffcc00":isFailed?"#ff4466":"#00ff9d",letterSpacing:1}}>
-        {isPending ? "⏳ EN ATTENTE" : isFailed ? "❌ ÉCHOUÉE" : "✅ VALIDÉE"}
+      <div style={{position:"absolute",top:8,right:8,background:isPending?"#ffcc0022":"#00ff9d22",border:`1px solid ${isPending?"#ffcc0066":"#00ff9d66"}`,borderRadius:20,padding:"2px 9px",fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:isPending?"#ffcc00":"#00ff9d",letterSpacing:1}}>
+        {isPending ? "⏳ EN ATTENTE" : "✅ VALIDÉE"}
       </div>
       <div style={{display:"flex",alignItems:"center",gap:isDesktop?14:10,paddingRight:100}}>
         <div style={{fontSize:isDesktop?22:18}}>{mission.split?"🤝":mission.assignee==="p1"?"🔵":"🟠"}</div>
@@ -4092,7 +3714,7 @@ function MissionItem({ mission, profiles, onDelete, onValidate, onFail, isDeskto
           <div style={{color:"#8899bb",fontSize:isDesktop?13:10,fontFamily:"'Rajdhani',sans-serif"}}>{mission.date}</div>
         </div>
         <div style={{textAlign:"right",flexShrink:0}}>
-          <div style={{color:isPending?"#ffcc00":isFailed?"#ff4466":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":13,fontWeight:700,textDecoration:isFailed?"line-through":"none"}}>{fmt(mission.amount)} aUEC</div>
+          <div style={{color:isPending?"#ffcc00":"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?"clamp(14px,1.3vw,22px)":13,fontWeight:700}}>{fmt(mission.amount)} aUEC</div>
           {mission.split&&<div style={{color:"#ffcc00",fontSize:isDesktop?15:10,fontFamily:"'Rajdhani',sans-serif"}}>PARTAGÉE</div>}
         </div>
       </div>
@@ -4118,11 +3740,6 @@ function MissionItem({ mission, profiles, onDelete, onValidate, onFail, isDeskto
             {isPending && onValidate && (
               <button onClick={e=>{e.stopPropagation();onValidate(mission.id);}} style={{background:"linear-gradient(135deg,#00ff9d22,#0a1628)",border:"1px solid #00ff9d88",color:"#00ff9d",borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?17:11,fontWeight:700,boxShadow:"0 0 10px #00ff9d33",flex:1}}>
                 ✅ VALIDER + DISTRIBUER {fmt(mission.amount)} aUEC
-              </button>
-            )}
-            {isPending && onFail && (
-              <button onClick={e=>{e.stopPropagation();onFail(mission.id);}} style={{background:"linear-gradient(135deg,#ff446622,#0a1628)",border:"1px solid #ff446688",color:"#ff4466",borderRadius:8,padding:"8px 14px",cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:isDesktop?13:11,fontWeight:700,flexShrink:0}}>
-                ❌ ÉCHEC
               </button>
             )}
             <button onClick={e=>{e.stopPropagation();onDelete(mission.id);}} style={{...S.dangerBtn,fontSize:isDesktop?13:11,padding:"8px 14px"}}>🗑 Supprimer</button>
@@ -4212,27 +3829,27 @@ function ObjectivesTab({ objectives, setObjectives, profiles, setProfiles }) {
               onClick={()=>{ if(obj.type==="common") setDetailObj(obj); }}
               style={{...S.objectiveCard, borderColor:obj.type==="common"?"#ffcc0055":(owner?.color+"55"||"#00d4ff55"), cursor:obj.type==="common"?"pointer":"default" }}>
               <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                <div style={{fontSize:32,flexShrink:0}}>{obj.icon}</div>
+                <div style={{fontSize:26,flexShrink:0}}>{obj.icon}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
-                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:18,fontWeight:700}}>{obj.name}</div>
+                    <div style={{color:"#e8f4ff",fontFamily:"'Rajdhani',sans-serif",fontSize:15,fontWeight:600}}>{obj.name}</div>
                     <div style={{display:"flex",gap:4,alignItems:"center"}}>
                       {obj.type==="common"
-                        ? <span style={{...S.badgeCommon,fontSize:12,padding:"4px 10px"}}>COMMUN 👆</span>
-                        : <span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55",fontSize:12,padding:"4px 10px"}}>{owner?.name}</span>
+                        ? <span style={S.badgeCommon}>COMMUN 👆</span>
+                        : <span style={{...S.badgePersonal,color:owner?.color,borderColor:owner?.color+"55"}}>{owner?.name}</span>
                       }
                     </div>
                   </div>
                   {obj.cost>0&&(
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:4}}>
-                      <div style={{color:"#ffcc00",fontSize:14,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
+                      <div style={{color:"#ffcc00",fontSize:11,fontFamily:"'Orbitron',sans-serif"}}>{fmt(currentMoney)} / {fmt(obj.cost)} aUEC</div>
                       {pct>=100
-                        ? <span style={{color:"#00ff9d",fontSize:14,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
-                        : <span style={{color:barColor,fontSize:16,fontFamily:"'Orbitron',sans-serif",fontWeight:900}}>{pct}%</span>
+                        ? <span style={{color:"#00ff9d",fontSize:11,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>✅ ATTEINT !</span>
+                        : <span style={{color:barColor,fontSize:13,fontFamily:"'Orbitron',sans-serif",fontWeight:700}}>{pct}%</span>
                       }
                     </div>
                   )}
-                  <div style={{...S.progressBar,height:10,borderRadius:8,position:"relative",overflow:"hidden"}}>
+                  <div style={{...S.progressBar,height:8,borderRadius:6,position:"relative",overflow:"hidden"}}>
                     <div style={{...S.progressFill,width:`${pct}%`,background:`linear-gradient(90deg,${barColor}88,${barColor})`,borderRadius:6,boxShadow:`0 0 10px ${barColor}88`,transition:"width 1s ease"}}/>
                     <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 50%,transparent)",animation:"shimmer 2s infinite"}}/>
                   </div>
@@ -5252,23 +4869,23 @@ function ConcessionTab({ profiles, fleets, setFleets }) {
             }}>
               <ConcessionShip3D color={color} index={i} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ color, fontFamily:"'Orbitron',sans-serif", fontSize:18, fontWeight:700, marginBottom:6 }}>{ship.name}</div>
-                {ship.maker && <div style={{ color:"#8899bb", fontSize:13, fontFamily:"'Rajdhani',sans-serif", marginBottom:8 }}>{ship.maker}</div>}
+                <div style={{ color, fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700, marginBottom:4 }}>{ship.name}</div>
+                {ship.maker && <div style={{ color:"#8899bb", fontSize:11, fontFamily:"'Rajdhani',sans-serif", marginBottom:6 }}>{ship.maker}</div>}
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                  <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:`1px solid ${profile.color}33` }}>
-                    <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>PILOTE</div>
-                    <div style={{ color:profile.color, fontFamily:"'Rajdhani',sans-serif", fontSize:15, fontWeight:700 }}>{profile.name}</div>
+                  <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:`1px solid ${profile.color}33` }}>
+                    <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PILOTE</div>
+                    <div style={{ color:profile.color, fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:600 }}>{profile.name}</div>
                   </div>
                   {ship.capacity > 0 && (
-                    <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:"1px solid #00d4ff22" }}>
-                      <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>CARGO</div>
-                      <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{ship.capacity} SCU</div>
+                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #00d4ff22" }}>
+                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>CARGO</div>
+                      <div style={{ color:"#00d4ff", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{ship.capacity} SCU</div>
                     </div>
                   )}
                   {ship.price > 0 && (
-                    <div style={{ background:"#0a1628", borderRadius:8, padding:"6px 14px", border:"1px solid #ffcc0022" }}>
-                      <div style={{ color:"#8899bb", fontSize:11, letterSpacing:1 }}>PRIX</div>
-                      <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:15, fontWeight:700 }}>{fmt(ship.price)} aUEC</div>
+                    <div style={{ background:"#0a1628", borderRadius:6, padding:"4px 10px", border:"1px solid #ffcc0022" }}>
+                      <div style={{ color:"#8899bb", fontSize:9, letterSpacing:1 }}>PRIX</div>
+                      <div style={{ color:"#ffcc00", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>{fmt(ship.price)} aUEC</div>
                     </div>
                   )}
                 </div>
@@ -5783,17 +5400,17 @@ export default function App() {
   const [tab,setTab]=useState("dashboard");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
   const [storedUserId, setStoredUserId] = useState(() => {
-    try { const u = sessionStorage.getItem("sc_user"); return u || null; } catch { return null; }
+    try { const u = localStorage.getItem("sc_user"); return u ? JSON.parse(u)?.id || null : null; } catch { return null; }
   });
 
   function handleLogin(profile) {
     const fresh = profiles.find(p => p.id === profile.id) || profile;
     setStoredUserId(fresh.id);
-    try { sessionStorage.setItem("sc_user", fresh.id); } catch {}
+    try { localStorage.setItem("sc_user", JSON.stringify({id: fresh.id})); } catch {}
   }
   function handleLogout() {
     setStoredUserId(null);
-    try { sessionStorage.removeItem("sc_user"); } catch {}
+    try { localStorage.removeItem("sc_user"); } catch {}
   }
 
   useEffect(() => {
@@ -5811,8 +5428,6 @@ export default function App() {
   const [chatMsgs,  setChatMsgs,  ,            saveChatMsgs  ] = useFirestore("chat",        []);
   const [depHistory,setDepHistory,,            saveDepHistory] = useFirestore("depenses",     []);
   const [hospitalData,setHospitalData,,        saveHospital  ] = useFirestore("hospital",      {});
-  const [dettes,      setDettes,    ,            saveDettes    ] = useFirestore("dettes",        []);
-  const [amendes,     setAmendes,   ,            saveAmendes   ] = useFirestore("amendes",       []);
   const [jarvisHistory,setJarvisHistory,,      saveJarvisHistory] = useFirestore(`jarvis_chat_${storedUserId||"anon"}`, []);
   const [virHistory,  setVirHistory,  ,        saveVirHistory] = useFirestore("virements",      []);
   const prevChatLen = useRef(0);
@@ -5875,23 +5490,6 @@ export default function App() {
 
   const loaded = profLoaded && missLoaded && objLoaded && fleetLoaded && settLoaded;
 
-  // Crédite le créancier quand une dette est validée
-  const prevDetteRef = useRef([]);
-  useEffect(() => {
-    const prev = prevDetteRef.current;
-    const justValidated = (dettes||[]).filter(d=>d.status==="validated" && !prev.find(p=>p.id===d.id&&p.status==="validated"));
-    if(justValidated.length > 0) {
-      const newProfs = profiles.map(p => {
-        const credit = justValidated.filter(d=>d.creditor===p.id).reduce((s,d)=>s+d.amount,0);
-        const debit  = justValidated.filter(d=>d.debtor===p.id).reduce((s,d)=>s+d.amount,0);
-        return credit||debit ? {...p, aUEC: p.aUEC + credit - debit} : p;
-      });
-      if(newProfs.some((p,i)=>p.aUEC!==profiles[i].aUEC)){setProfiles(newProfs);saveProfiles(newProfs);}
-    }
-    prevDetteRef.current = dettes||[];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dettes]);
-
   // Écoute validation trade depuis CalcTab
   useEffect(() => {
     function onTradeValidated() {
@@ -5918,8 +5516,6 @@ export default function App() {
   const [calcModal,      setCalcModal]      = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
   const [jarvisOpen,     setJarvisOpen]     = useState(false);
-  const [detteOpen,      setDetteOpen]      = useState(false);
-  const [amendeOpen,     setAmendeOpen]     = useState(false);
 
   function openChat() {
     setChatOpen(true);
@@ -5935,7 +5531,6 @@ export default function App() {
 
   const totalEarned = missions.filter(m=>m.status==="validated").reduce((a,m)=>a+m.amount,0);
   const validatedMissions = missions.filter(m=>m.status==="validated");
-  const failedMissions    = missions.filter(m=>m.status==="failed");
   const pendingMissions   = missions.filter(m=>!m.status||m.status==="pending");
   const p1=profiles.find(p=>p.id==="p1");
   const p2=profiles.find(p=>p.id==="p2");
@@ -5956,12 +5551,6 @@ export default function App() {
     const newProfs=profiles.map(p=>{ if(m.split) return{...p,aUEC:p.aUEC+half}; if(p.id===m.assignee) return{...p,aUEC:p.aUEC+m.amount}; return p; });
     setProfiles(newProfs); saveProfiles(newProfs);
     const updated=missions.map(x=>x.id===id?{...x,status:"validated"}:x);
-    setMissions(updated); saveMissions(updated);
-  }
-
-  function failMission(id){
-    const m=missions.find(x=>x.id===id); if(!m||m.status==="failed") return;
-    const updated=missions.map(x=>x.id===id?{...x,status:"failed"}:x);
     setMissions(updated); saveMissions(updated);
   }
 
@@ -6013,21 +5602,20 @@ export default function App() {
   }
 
   // Résoudre le profil complet depuis Firestore à chaque chargement
-  // Résout le profil complet depuis Firestore
   const validatedUser = storedUserId && profiles.length > 0
     ? profiles.find(p => p.id === storedUserId) || null
     : null;
 
-  // Pas d'userId stocké → login immédiatement (sans attendre Firestore)
-  if (!storedUserId) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
-
-  // userId stocké mais profils pas encore chargés → chargement
-  if (!profLoaded || !validatedUser) return (
+  // Attendre que les profils soient chargés AVANT d'afficher le login
+  if (!profLoaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <CosmicBackground/>
       <div style={{position:"relative",zIndex:1,color:"#00d4ff",fontFamily:"'Orbitron',sans-serif",fontSize:14,letterSpacing:3,animation:"neonFlicker 2s linear infinite"}}>CHARGEMENT...</div>
     </div>
   );
+
+  // Écran de connexion si pas identifié (ou identifiant invalide)
+  if (!validatedUser) return <LoginScreen profiles={profiles} onLogin={handleLogin}/>;
 
   if(!loaded) return (
     <div style={{background:"#03070f",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -6235,8 +5823,6 @@ export default function App() {
                   <VirementTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={virHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(virHistory):h;setVirHistory(nh);saveVirHistory(nh);}}/>
                   <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
-                  <DetteTile dettes={dettes} profiles={profiles} isDesktop={isDesktop} onClick={()=>setDetteOpen(true)}/>
-                  <AmendeTile amendes={amendes} isDesktop={isDesktop} onClick={()=>setAmendeOpen(true)}/>
                 </div>
               </>
             ) : (
@@ -6261,8 +5847,6 @@ export default function App() {
                 <div style={{marginBottom:20}}>
                   <DepensesTile profiles={profiles} setProfiles={(v)=>{const nv=typeof v==="function"?v(profiles):v;setProfiles(nv);saveProfiles(nv);}} isDesktop={isDesktop} history={depHistory} setHistory={(h)=>{const nh=typeof h==="function"?h(depHistory):h;setDepHistory(nh);saveDepHistory(nh);}}/>
                 <HospitalTile profiles={profiles} hospitalData={hospitalData} setHospitalData={(d)=>{setHospitalData(d);saveHospital(d);}} isDesktop={isDesktop}/>
-                  <DetteTile dettes={dettes} profiles={profiles} isDesktop={isDesktop} onClick={()=>setDetteOpen(true)}/>
-                  <AmendeTile amendes={amendes} isDesktop={isDesktop} onClick={()=>setAmendeOpen(true)}/>
                 </div>
               </>
             )}
@@ -6277,7 +5861,7 @@ export default function App() {
                 <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>Cliquez sur une mission pour valider et distribuer l'argent</div>
               </div>
             </div>}
-            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} onFail={failMission} isDesktop={isDesktop}/>)}
+            {missions.slice(0,5).map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} isDesktop={isDesktop}/>)}
             {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:30,fontFamily:"'Rajdhani',sans-serif",fontSize:isDesktop?20:13}}>Aucune mission — commencez à jouer !</div>}
             {missions.length>5&&<button onClick={()=>setMissionsModal(true)} style={{...S.ghostBtn,width:"100%",marginTop:8}}>Voir toutes les missions ({missions.length}) →</button>}
           </div>
@@ -6295,10 +5879,6 @@ export default function App() {
       {chatOpen && <ChatInterface profiles={profiles} messages={chatMsgs} setMessages={(m)=>{setChatMsgs(m);saveChatMsgs(m);}} onMarkRead={markChatRead} onClose={()=>setChatOpen(false)} discordWebhook={settings?.discordWebhook} giphyApiKey={settings?.giphyApiKey} defaultAuthor={validatedUser?.id}/>}
 
       {jarvisOpen && <JarvisInterface apiKey={settings?.geminiApiKey} history={jarvisHistory} setHistory={(h)=>{setJarvisHistory(h);saveJarvisHistory(h);}} onClose={()=>setJarvisOpen(false)} userName={validatedUser?.name} userColor={validatedUser?.color}/>}
-
-      {detteOpen && <DetteInterface profiles={profiles} dettes={dettes} setDettes={(v)=>{setDettes(v);saveDettes(v);}} currentUserId={storedUserId} onClose={()=>setDetteOpen(false)}/>}
-
-      {amendeOpen && <AmendeInterface profiles={profiles} amendes={amendes} setAmendes={(v)=>{setAmendes(v);saveAmendes(v);}} setProfiles={(v)=>{setProfiles(v);saveProfiles(v);}} onClose={()=>setAmendeOpen(false)}/>}
 
       {/* Bulle flottante Jarvis — visible partout, déplaçable */}
       {tab!=="dashboard" && !jarvisOpen && <JarvisBubble onClick={()=>setJarvisOpen(true)}/>}
@@ -6318,29 +5898,7 @@ export default function App() {
           <button onClick={()=>setAddMissionModal(true)} style={{...S.primaryBtn,marginBottom:12}}>+ Nouvelle mission</button>
           {missions.length===0&&<div style={{color:"#8899bb",textAlign:"center",padding:20,fontFamily:"'Rajdhani',sans-serif"}}>Aucune mission enregistrée</div>}
           <div style={{maxHeight:"60vh",overflowY:"auto"}}>
-            {missions.length>0 && (
-              <div style={{display:"flex",gap:10,marginBottom:12,padding:"10px 14px",background:"#07111f",borderRadius:10,border:"1px solid #1a2a44",flexWrap:"wrap"}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{validatedMissions.length}</span>
-                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>réussies</span>
-                </div>
-                <div style={{color:"#1a2a44"}}>|</div>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{color:"#ff4466",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{failedMissions.length}</span>
-                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>échouées</span>
-                </div>
-                <div style={{color:"#1a2a44"}}>|</div>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{color:"#ffcc00",fontFamily:"'Orbitron',sans-serif",fontSize:16,fontWeight:900}}>{pendingMissions.length}</span>
-                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12}}>en attente</span>
-                </div>
-                {missions.length>0 && <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:700}}>{Math.round(validatedMissions.length/missions.length*100)}%</span>
-                  <span style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:11}}>taux de réussite</span>
-                </div>}
-              </div>
-            )}
-            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission} onFail={failMission}/>)}
+            {missions.map(m=><MissionItem key={m.id} mission={m} profiles={profiles} onDelete={deleteMission} onValidate={validateMission}/>)}
           </div>
         </Modal>
       )}
