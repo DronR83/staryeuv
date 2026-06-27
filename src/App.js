@@ -2591,26 +2591,25 @@ function ChatInterface({ profiles, messages, setMessages, onMarkRead, onClose, d
               placeholder="Message..."
               style={{
                 width:"100%",background:"rgba(167,139,250,0.07)",
-                border:`1px solid ${text?"rgba(167,139,250,0.4)":"rgba(167,139,250,0.15)"}`,
+                border:"1px solid rgba(167,139,250,0.25)",
                 borderRadius:22,padding:"11px 18px",color:"#d4e8ff",
                 fontFamily:"'Rajdhani',sans-serif",fontSize:15,outline:"none",
-                boxSizing:"border-box",boxShadow:text?"0 0 12px rgba(167,139,250,0.15)":"none",
+                boxSizing:"border-box",
                 transition:"all .2s",
               }}
             />
           </div>
           <button
             onClick={send}
-            disabled={!text.trim()||sending}
+            disabled={sending}
             style={{
               width:44,height:44,borderRadius:"50%",flexShrink:0,
-              background:text.trim()?"linear-gradient(135deg,#a78bfa,#7c4fd4)":"rgba(167,139,250,0.1)",
-              border:`1px solid ${text.trim()?"#a78bfa":"rgba(167,139,250,0.2)"}`,
-              color:"#fff",cursor:text.trim()?"pointer":"default",
+              background:"linear-gradient(135deg,#a78bfa,#7c4fd4)",
+              border:"1px solid #a78bfa",
+              color:"#fff",cursor:sending?"default":"pointer",
               fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",
-              boxShadow:text.trim()?"0 0 16px #a78bfa66":"none",
+              boxShadow:"0 0 16px #a78bfa66",
               transition:"all .2s",
-              transform:text.trim()?"scale(1.05)":"scale(1)",
             }}
           >{sending?"…":"↑"}</button>
         </div>
