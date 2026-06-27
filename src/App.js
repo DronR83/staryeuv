@@ -1898,51 +1898,54 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
       {/* Backdrop swipe */}
       <div ref={backdropRef} style={{ position:"absolute", inset:0, background:"#0a0b1a", opacity:0, transform:"scale(0.94)", pointerEvents:"none", willChange:"transform,opacity" }}>
         <div ref={hintRef} style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", opacity:0 }}>
-          <div style={{ color:"#8b5cf6", fontFamily:"'Orbitron',sans-serif", fontSize:16, letterSpacing:4 }}>← RETOUR</div>
+          <div style={{ color:"#8b5cf6", fontFamily:"'Orbitron',sans-serif", fontSize:18, letterSpacing:4 }}>← RETOUR</div>
         </div>
       </div>
 
       {/* Panel principal */}
-      <div ref={panelRef} {...swipeHandlers} style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", background:"#0d0d1a", willChange:"transform" }}>
+      <div ref={panelRef} {...swipeHandlers} style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", background:"radial-gradient(ellipse at top,#16162e,#0a0a16 60%)", willChange:"transform", overflow:"hidden" }}>
 
-        {/* ── HEADER style Gemini ── */}
-        <div style={{ flexShrink:0, background:"linear-gradient(135deg,#1a1a2e,#16213e)", borderBottom:"1px solid rgba(139,92,246,0.2)", padding:"14px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(20px)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            {/* Logo animé */}
-            <div style={{ width:40, height:40, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#6d28d9,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, boxShadow:"0 0 20px rgba(139,92,246,0.5)", animation:"jarvisPulse 3s ease-in-out infinite" }}>🤖</div>
+        {/* Halos lumineux d'ambiance */}
+        <div style={{ position:"absolute", top:"-15%", left:"-10%", width:"50%", height:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.22),transparent 70%)", filter:"blur(40px)", pointerEvents:"none", animation:"jarvisHalo1 8s ease-in-out infinite" }}/>
+        <div style={{ position:"absolute", bottom:"-10%", right:"-10%", width:"55%", height:"55%", background:"radial-gradient(circle,rgba(79,70,229,0.2),transparent 70%)", filter:"blur(50px)", pointerEvents:"none", animation:"jarvisHalo2 10s ease-in-out infinite" }}/>
+        <div style={{ position:"absolute", top:"40%", left:"30%", width:"40%", height:"40%", background:"radial-gradient(circle,rgba(167,139,250,0.12),transparent 70%)", filter:"blur(60px)", pointerEvents:"none", animation:"jarvisHalo1 12s ease-in-out infinite reverse" }}/>
+
+        {/* ── HEADER ── */}
+        <div style={{ position:"relative", zIndex:2, flexShrink:0, background:"linear-gradient(135deg,rgba(26,26,46,0.85),rgba(22,33,62,0.85))", borderBottom:"1px solid rgba(139,92,246,0.25)", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(24px)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <div style={{ width:46, height:46, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#6d28d9,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, boxShadow:"0 0 24px rgba(139,92,246,0.6)", animation:"jarvisPulse 3s ease-in-out infinite" }}>🤖</div>
             <div>
-              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:17, fontWeight:800, letterSpacing:2 }}>JARVIS</div>
-              <div style={{ color:"rgba(139,92,246,0.8)", fontFamily:"'Rajdhani',sans-serif", fontSize:12, letterSpacing:1 }}>Expert Star Citizen · swipe → pour fermer</div>
+              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:20, fontWeight:800, letterSpacing:2 }}>JARVIS</div>
+              <div style={{ color:"rgba(167,139,250,0.9)", fontFamily:"'Rajdhani',sans-serif", fontSize:13, letterSpacing:1 }}>Expert Star Citizen · swipe → pour fermer</div>
             </div>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {userName && <div style={{ background:"rgba(139,92,246,0.15)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:20, padding:"4px 12px", color:userColor||"#8b5cf6", fontFamily:"'Rajdhani',sans-serif", fontSize:12, fontWeight:700 }}>{userName}</div>}
-            {history.length > 0 && <button onClick={() => { if(window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"6px 10px", cursor:"pointer", fontSize:12 }}>🗑</button>}
-            <button onClick={onClose} style={{ background:"rgba(139,92,246,0.15)", border:"1px solid rgba(139,92,246,0.3)", color:"#a78bfa", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:12, fontWeight:700 }}>✕</button>
+            {userName && <div style={{ background:"rgba(139,92,246,0.18)", border:"1px solid rgba(139,92,246,0.35)", borderRadius:20, padding:"5px 14px", color:userColor||"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:14, fontWeight:700 }}>{userName}</div>}
+            {history.length > 0 && <button onClick={() => { if(window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background:"rgba(239,68,68,0.12)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"7px 11px", cursor:"pointer", fontSize:14 }}>🗑</button>}
+            <button onClick={onClose} style={{ background:"rgba(139,92,246,0.18)", border:"1px solid rgba(139,92,246,0.35)", color:"#a78bfa", borderRadius:8, padding:"7px 16px", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>✕</button>
           </div>
         </div>
 
         {/* ── MESSAGES ── */}
-        <div style={{ flex:1, overflowY:"auto", padding:"20px 16px", display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ position:"relative", zIndex:2, flex:1, overflowY:"auto", padding:"24px 18px", display:"flex", flexDirection:"column", gap:18 }}>
 
           {/* Écran vide */}
           {history.length === 0 && (
-            <div style={{ margin:"auto", textAlign:"center", padding:"40px 20px", maxWidth:480 }}>
-              <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, margin:"0 auto 20px", boxShadow:"0 0 40px rgba(139,92,246,0.4)" }}>🤖</div>
-              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Bonjour, je suis Jarvis</div>
-              <div style={{ color:"rgba(255,255,255,0.55)", fontFamily:"'Rajdhani',sans-serif", fontSize:15, lineHeight:1.7 }}>Expert Star Citizen. Posez-moi vos questions sur les vaisseaux, le minage, le commerce, les missions, les patchs ou le lore.</div>
+            <div style={{ margin:"auto", textAlign:"center", padding:"40px 20px", maxWidth:520 }}>
+              <div style={{ width:88, height:88, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:44, margin:"0 auto 24px", boxShadow:"0 0 60px rgba(139,92,246,0.5)", animation:"jarvisPulse 3s ease-in-out infinite" }}>🤖</div>
+              <div style={{ color:"#fff", fontFamily:"'Orbitron',sans-serif", fontSize:28, fontWeight:800, marginBottom:14, textShadow:"0 0 30px rgba(139,92,246,0.5)" }}>Bonjour, je suis Jarvis</div>
+              <div style={{ color:"rgba(255,255,255,0.65)", fontFamily:"'Rajdhani',sans-serif", fontSize:18, lineHeight:1.7 }}>Expert Star Citizen. Posez-moi vos questions sur les vaisseaux, le minage, le commerce, les missions, les patchs ou le lore.</div>
               {!apiKey && (
-                <div style={{ marginTop:24, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"12px 16px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:13 }}>
+                <div style={{ marginTop:24, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"14px 18px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:15 }}>
                   ⚠️ Clé API Gemini non configurée — va dans <strong>Réglages</strong>
                 </div>
               )}
-              {/* Suggestions rapides */}
               {apiKey && (
-                <div style={{ marginTop:24, display:"flex", flexDirection:"column", gap:8 }}>
+                <div style={{ marginTop:28, display:"flex", flexDirection:"column", gap:10 }}>
                   {["Quel est le meilleur vaisseau pour miner ?","Prix actuel du Quantainium ?","Comment fonctionne le trading en Pyro ?","Quelles sont les nouveautés du dernier patch ?"].map((q,i)=>(
-                    <button key={i} onClick={()=>{ if(textRef.current){ textRef.current.value=q; send(); }}} style={{ background:"rgba(139,92,246,0.08)", border:"1px solid rgba(139,92,246,0.2)", borderRadius:12, padding:"10px 16px", color:"rgba(255,255,255,0.75)", fontFamily:"'Rajdhani',sans-serif", fontSize:14, cursor:"pointer", textAlign:"left", transition:"all .2s" }}
-                      onMouseEnter={e=>{ e.target.style.background="rgba(139,92,246,0.18)"; e.target.style.borderColor="rgba(139,92,246,0.4)"; }}
-                      onMouseLeave={e=>{ e.target.style.background="rgba(139,92,246,0.08)"; e.target.style.borderColor="rgba(139,92,246,0.2)"; }}>
+                    <button key={i} onClick={()=>{ if(textRef.current){ textRef.current.value=q; send(); }}} style={{ background:"rgba(139,92,246,0.1)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:14, padding:"14px 18px", color:"rgba(255,255,255,0.85)", fontFamily:"'Rajdhani',sans-serif", fontSize:16, cursor:"pointer", textAlign:"left", transition:"all .2s" }}
+                      onMouseEnter={e=>{ e.target.style.background="rgba(139,92,246,0.22)"; e.target.style.borderColor="rgba(139,92,246,0.5)"; e.target.style.boxShadow="0 0 20px rgba(139,92,246,0.3)"; }}
+                      onMouseLeave={e=>{ e.target.style.background="rgba(139,92,246,0.1)"; e.target.style.borderColor="rgba(139,92,246,0.25)"; e.target.style.boxShadow="none"; }}>
                       {q}
                     </button>
                   ))}
@@ -1954,30 +1957,28 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
           {/* Messages */}
           {history.map(m => (
             <div key={m.id} style={{ display:"flex", flexDirection:"column", alignItems:m.role==="user"?"flex-end":"flex-start", gap:6 }}>
-              {/* Bulle */}
               <div style={{
-                maxWidth:"82%",
-                background: m.role==="user" ? "linear-gradient(135deg,#6d28d9,#4f46e5)" : "rgba(255,255,255,0.04)",
-                border: m.role==="user" ? "none" : "1px solid rgba(255,255,255,0.08)",
-                borderRadius: m.role==="user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
-                padding:"14px 18px",
-                boxShadow: m.role==="user" ? "0 4px 20px rgba(109,40,217,0.35)" : "none",
+                maxWidth:"84%",
+                background: m.role==="user" ? "linear-gradient(135deg,#6d28d9,#4f46e5)" : "rgba(255,255,255,0.05)",
+                border: m.role==="user" ? "none" : "1px solid rgba(167,139,250,0.15)",
+                borderRadius: m.role==="user" ? "20px 20px 5px 20px" : "5px 20px 20px 20px",
+                padding:"16px 20px",
+                boxShadow: m.role==="user" ? "0 6px 28px rgba(109,40,217,0.4)" : "0 0 20px rgba(139,92,246,0.08)",
               }}>
                 {m.role==="model" && (
-                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-                    <div style={{ width:24, height:24, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, flexShrink:0 }}>✦</div>
-                    <span style={{ color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:13, fontWeight:700, letterSpacing:1 }}>JARVIS</span>
+                  <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:12 }}>
+                    <div style={{ width:28, height:28, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0, boxShadow:"0 0 14px rgba(139,92,246,0.5)" }}>✦</div>
+                    <span style={{ color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:15, fontWeight:700, letterSpacing:1 }}>JARVIS</span>
                   </div>
                 )}
-                <div style={{ color: m.role==="user" ? "#fff" : "rgba(255,255,255,0.9)", fontFamily:"'Rajdhani',sans-serif", fontSize:16, lineHeight:1.65, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{m.text}</div>
+                <div style={{ color: m.role==="user" ? "#fff" : "rgba(255,255,255,0.92)", fontFamily:"'Rajdhani',sans-serif", fontSize:18, lineHeight:1.7, whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{m.text}</div>
               </div>
-              {/* Sources */}
               {m.sources && m.sources.length > 0 && (
-                <div style={{ maxWidth:"82%", display:"flex", flexDirection:"column", gap:4, paddingLeft:4 }}>
-                  <div style={{ color:"rgba(255,255,255,0.3)", fontFamily:"'Rajdhani',sans-serif", fontSize:11, letterSpacing:1 }}>SOURCES</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                <div style={{ maxWidth:"84%", display:"flex", flexDirection:"column", gap:5, paddingLeft:4 }}>
+                  <div style={{ color:"rgba(255,255,255,0.35)", fontFamily:"'Rajdhani',sans-serif", fontSize:12, letterSpacing:1 }}>SOURCES</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:7 }}>
                     {m.sources.map((s,i) => (
-                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" style={{ background:"rgba(139,92,246,0.1)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:20, padding:"4px 12px", color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:12, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:4 }}>
+                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" style={{ background:"rgba(139,92,246,0.12)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:20, padding:"5px 14px", color:"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:13, textDecoration:"none", display:"inline-flex", alignItems:"center", gap:5 }}>
                         🔗 {s.title ? s.title.slice(0,30)+(s.title.length>30?"…":"") : "Source"}
                       </a>
                     ))}
@@ -1987,55 +1988,54 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
             </div>
           ))}
 
-          {/* Typing indicator */}
+          {/* Typing */}
           {loading && (
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-              <div style={{ width:24, height:24, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13 }}>✦</div>
-              <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"4px 18px 18px 18px", padding:"14px 18px", display:"flex", gap:6, alignItems:"center" }}>
+              <div style={{ width:28, height:28, borderRadius:"50%", background:"linear-gradient(135deg,#8b5cf6,#4f46e5)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, boxShadow:"0 0 14px rgba(139,92,246,0.5)" }}>✦</div>
+              <div style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(167,139,250,0.15)", borderRadius:"5px 20px 20px 20px", padding:"16px 20px", display:"flex", gap:7, alignItems:"center" }}>
                 {[0,1,2].map(i => (
-                  <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:"#8b5cf6", animation:"jarvisDot 1.2s ease-in-out infinite", animationDelay:`${i*0.2}s` }}/>
+                  <div key={i} style={{ width:9, height:9, borderRadius:"50%", background:"#8b5cf6", boxShadow:"0 0 10px #8b5cf6", animation:"jarvisDot 1.2s ease-in-out infinite", animationDelay:`${i*0.2}s` }}/>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Erreur */}
           {error && (
-            <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"12px 16px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:14 }}>⚠️ {error}</div>
+            <div style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:12, padding:"14px 18px", color:"#f87171", fontFamily:"'Rajdhani',sans-serif", fontSize:16 }}>⚠️ {error}</div>
           )}
 
           <div ref={endRef}/>
         </div>
 
-        {/* ── INPUT style Gemini ── */}
-        <div style={{ flexShrink:0, padding:"12px 16px", paddingBottom:12+kbOffset, background:"rgba(13,13,26,0.95)", borderTop:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(20px)" }}>
-          <div style={{ display:"flex", gap:10, alignItems:"flex-end", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:24, padding:"10px 14px 10px 18px", transition:"border-color .2s" }}
-            onFocus={e=>{e.currentTarget.style.borderColor="rgba(139,92,246,0.6)";}}
-            onBlur={e=>{e.currentTarget.style.borderColor="rgba(139,92,246,0.25)";}}>
+        {/* ── INPUT ── */}
+        <div style={{ position:"relative", zIndex:2, flexShrink:0, padding:"14px 18px", paddingBottom:14+kbOffset, background:"rgba(10,10,22,0.92)", borderTop:"1px solid rgba(139,92,246,0.15)", backdropFilter:"blur(24px)" }}>
+          <div style={{ display:"flex", gap:12, alignItems:"flex-end", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(139,92,246,0.3)", borderRadius:26, padding:"12px 16px 12px 20px", boxShadow:"0 0 24px rgba(139,92,246,0.12)" }}>
             <input
               ref={textRef}
               defaultValue=""
               onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
-              style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"rgba(255,255,255,0.9)", fontFamily:"'Rajdhani',sans-serif", fontSize:16, lineHeight:1.5, resize:"none" }}
+              style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"rgba(255,255,255,0.92)", fontFamily:"'Rajdhani',sans-serif", fontSize:18, lineHeight:1.5 }}
               placeholder={apiKey ? "Posez votre question à Jarvis…" : "Configurez la clé API dans Réglages"}
               disabled={!apiKey}
             />
-            <button onClick={send} disabled={loading||!apiKey} style={{ width:40, height:40, borderRadius:"50%", flexShrink:0, background:(!loading&&apiKey)?"linear-gradient(135deg,#8b5cf6,#4f46e5)":"rgba(255,255,255,0.06)", border:"none", color:"#fff", cursor:(!loading&&apiKey)?"pointer":"default", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:(!loading&&apiKey)?"0 0 16px rgba(139,92,246,0.5)":"none" }}>
+            <button onClick={send} disabled={loading||!apiKey} style={{ width:44, height:44, borderRadius:"50%", flexShrink:0, background:(!loading&&apiKey)?"linear-gradient(135deg,#8b5cf6,#4f46e5)":"rgba(255,255,255,0.06)", border:"none", color:"#fff", cursor:(!loading&&apiKey)?"pointer":"default", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:(!loading&&apiKey)?"0 0 20px rgba(139,92,246,0.6)":"none" }}>
               {loading ? "…" : "↑"}
             </button>
           </div>
-          <div style={{ color:"rgba(255,255,255,0.2)", fontFamily:"'Rajdhani',sans-serif", fontSize:11, textAlign:"center", marginTop:8 }}>Jarvis peut faire des erreurs · Vérifiez les sources importantes</div>
+          <div style={{ color:"rgba(255,255,255,0.25)", fontFamily:"'Rajdhani',sans-serif", fontSize:12, textAlign:"center", marginTop:9 }}>Jarvis peut faire des erreurs · Vérifiez les sources importantes</div>
         </div>
       </div>
 
-      {/* CSS animations */}
       <style>{`
-        @keyframes jarvisPulse { 0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.5)} 50%{box-shadow:0 0 35px rgba(139,92,246,0.8),0 0 60px rgba(139,92,246,0.3)} }
+        @keyframes jarvisPulse { 0%,100%{box-shadow:0 0 24px rgba(139,92,246,0.5)} 50%{box-shadow:0 0 44px rgba(139,92,246,0.85),0 0 70px rgba(139,92,246,0.35)} }
         @keyframes jarvisDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+        @keyframes jarvisHalo1 { 0%,100%{transform:translate(0,0) scale(1);opacity:0.7} 50%{transform:translate(20px,30px) scale(1.15);opacity:1} }
+        @keyframes jarvisHalo2 { 0%,100%{transform:translate(0,0) scale(1);opacity:0.6} 50%{transform:translate(-25px,-20px) scale(1.2);opacity:0.9} }
       `}</style>
     </div>
   );
 }
+
 
 
 // ─── JARVIS FLOATING BUBBLE ─────────────────────────────────────────────────
