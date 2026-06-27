@@ -1858,9 +1858,59 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
   const textRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [listening, setListening] = useState(false);
+  const [speakEnabled, setSpeakEnabled] = useState(false);
+  const recognitionRef = useRef(null);
   const endRef = useRef(null);
   const kbOffset = useKeyboardOffset();
   const { panelRef, backdropRef, hintRef, handlers: swipeHandlers } = useSwipeClose(onClose);
+
+  const speechSupported = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  // Lecture audio de la dernière réponse de Jarvis
+  useEffect(() => {
+    if (!speakEnabled) return;
+    const last = history[history.length - 1];
+    if (last && last.role === "model" && last.text && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(last.text.replace(/[*#`_>]/g, ""));
+      u.lang = "fr-FR";
+      u.rate = 1.05;
+      const voices = window.speechSynthesis.getVoices();
+      const frVoice = voices.find(v => v.lang.startsWith("fr"));
+      if (frVoice) u.voice = frVoice;
+      window.speechSynthesis.speak(u);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history, speakEnabled]);
+
+  // Stoppe la lecture quand on ferme
+  useEffect(() => () => { if (window.speechSynthesis) window.speechSynthesis.cancel(); }, []);
+
+  function toggleListen() {
+    if (!speechSupported) { setError("La reconnaissance vocale n'est pas supportée par ce navigateur."); return; }
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = "fr-FR";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      let txt = "";
+      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      if (textRef.current) textRef.current.value = txt;
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    setListening(true);
+    setError(null);
+    rec.start();
+  }
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history, loading]);
 
@@ -1920,6 +1970,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
             </div>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <button onClick={()=>{ setSpeakEnabled(s=>{ if(s && window.speechSynthesis) window.speechSynthesis.cancel(); return !s; }); }} title={speakEnabled?"Couper la voix":"Activer la lecture vocale"} style={{ background:speakEnabled?"rgba(139,92,246,0.3)":"rgba(139,92,246,0.1)", border:`1px solid ${speakEnabled?"#a78bfa":"rgba(139,92,246,0.3)"}`, color:speakEnabled?"#fff":"#a78bfa", borderRadius:8, padding:"7px 11px", cursor:"pointer", fontSize:15 }}>{speakEnabled?"🔊":"🔇"}</button>
             {userName && <div style={{ background:"rgba(139,92,246,0.18)", border:"1px solid rgba(139,92,246,0.35)", borderRadius:20, padding:"5px 14px", color:userColor||"#a78bfa", fontFamily:"'Rajdhani',sans-serif", fontSize:14, fontWeight:700 }}>{userName}</div>}
             {history.length > 0 && <button onClick={() => { if(window.confirm("Effacer la conversation ?")) setHistory([]); }} style={{ background:"rgba(239,68,68,0.12)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"7px 11px", cursor:"pointer", fontSize:14 }}>🗑</button>}
             <button onClick={onClose} style={{ background:"rgba(139,92,246,0.18)", border:"1px solid rgba(139,92,246,0.35)", color:"#a78bfa", borderRadius:8, padding:"7px 16px", cursor:"pointer", fontFamily:"'Orbitron',sans-serif", fontSize:14, fontWeight:700 }}>✕</button>
@@ -2018,7 +2069,12 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
               placeholder={apiKey ? "Posez votre question à Jarvis…" : "Configurez la clé API dans Réglages"}
               disabled={!apiKey}
             />
-            <button onClick={send} disabled={loading||!apiKey} style={{ width:44, height:44, borderRadius:"50%", flexShrink:0, background:(!loading&&apiKey)?"linear-gradient(135deg,#8b5cf6,#4f46e5)":"rgba(255,255,255,0.06)", border:"none", color:"#fff", cursor:(!loading&&apiKey)?"pointer":"default", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:(!loading&&apiKey)?"0 0 20px rgba(139,92,246,0.6)":"none" }}>
+            {speechSupported && (
+              <button onClick={toggleListen} disabled={!apiKey} title={listening?"Arrêter":"Parler"} style={{ width:44, height:44, borderRadius:"50%", flexShrink:0, background:listening?"linear-gradient(135deg,#ef4444,#b91c1c)":"rgba(139,92,246,0.15)", border:`1px solid ${listening?"#ef4444":"rgba(139,92,246,0.4)"}`, color:listening?"#fff":"#a78bfa", cursor:apiKey?"pointer":"default", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:listening?"0 0 20px rgba(239,68,68,0.6)":"none", animation:listening?"jarvisMicPulse 1s ease-in-out infinite":"none" }}>
+                {listening ? "⏹" : "🎤"}
+              </button>
+            )}
+            <button onClick={()=>{ if(listening){recognitionRef.current?.stop();setListening(false);} send(); }} disabled={loading||!apiKey} style={{ width:44, height:44, borderRadius:"50%", flexShrink:0, background:(!loading&&apiKey)?"linear-gradient(135deg,#8b5cf6,#4f46e5)":"rgba(255,255,255,0.06)", border:"none", color:"#fff", cursor:(!loading&&apiKey)?"pointer":"default", fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s", boxShadow:(!loading&&apiKey)?"0 0 20px rgba(139,92,246,0.6)":"none" }}>
               {loading ? "…" : "↑"}
             </button>
           </div>
@@ -2031,6 +2087,7 @@ function JarvisInterface({ apiKey, history, setHistory, onClose, userName, userC
         @keyframes jarvisDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
         @keyframes jarvisHalo1 { 0%,100%{transform:translate(0,0) scale(1);opacity:0.7} 50%{transform:translate(20px,30px) scale(1.15);opacity:1} }
         @keyframes jarvisHalo2 { 0%,100%{transform:translate(0,0) scale(1);opacity:0.6} 50%{transform:translate(-25px,-20px) scale(1.2);opacity:0.9} }
+        @keyframes jarvisMicPulse { 0%,100%{box-shadow:0 0 20px rgba(239,68,68,0.6)} 50%{box-shadow:0 0 32px rgba(239,68,68,0.9),0 0 50px rgba(239,68,68,0.4)} }
       `}</style>
     </div>
   );
