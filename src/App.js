@@ -5062,6 +5062,15 @@ function SettingsTab({ settings, setSettings, profiles, setProfiles }) {
         }
       </div>
 
+      {/* Section Sécurité */}
+      <div style={{marginTop:16,background:"#0a1a12cc",border:"1px solid #00ff9d33",borderRadius:10,padding:16,display:"flex",alignItems:"center",gap:14}}>
+        <div style={{fontSize:28,filter:"drop-shadow(0 0 8px #00ff9d)"}}>🔒</div>
+        <div>
+          <div style={{color:"#00ff9d",fontFamily:"'Orbitron',sans-serif",fontSize:13,fontWeight:800,letterSpacing:1,marginBottom:3}}>DONNÉES PROTÉGÉES</div>
+          <div style={{color:"#8899bb",fontFamily:"'Rajdhani',sans-serif",fontSize:12,lineHeight:1.5}}>Authentification sécurisée activée · Accès à la base de données restreint à cette application uniquement</div>
+        </div>
+      </div>
+
       <div style={{marginTop:24}}>
         <div style={S.sectionTitle}>👤 AVATARS PROFILS</div>
         {profiles.map(p=>(
@@ -5363,6 +5372,10 @@ function LoginScreen({ profiles, onLogin }) {
         <div style={{ fontFamily: "'Orbitron',sans-serif", fontSize: isMob ? 26 : "clamp(28px,4vw,56px)", fontWeight: 900, color: "#caf4ff", animation: "neonFlicker 4s linear infinite", letterSpacing: isMob ? 4 : "clamp(4px,1vw,10px)", marginBottom: 6 }}>STAR YeUv</div>
         <div style={{ color: "#4a6a8a", fontFamily: "'Rajdhani',sans-serif", fontSize: isMob ? 11 : "clamp(12px,1.5vw,18px)", letterSpacing: isMob ? 2 : "clamp(3px,0.8vw,8px)" }}>COMPANION APP · IDENTIFICATION</div>
         <div style={{ width: isMob ? 60 : "clamp(60px,8vw,120px)", height: 1, background: "linear-gradient(90deg,transparent,#00d4ff,transparent)", margin: "10px auto" }} />
+        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:"rgba(0,255,157,0.08)", border:"1px solid rgba(0,255,157,0.3)", borderRadius:20, padding:"4px 12px", marginTop:4 }}>
+          <span style={{ fontSize:12 }}>🔒</span>
+          <span style={{ color:"#00ff9d", fontFamily:"'Rajdhani',sans-serif", fontSize:11, letterSpacing:1, fontWeight:700 }}>CONNEXION SÉCURISÉE</span>
+        </div>
       </div>
 
       {/* Cartes joueurs */}
