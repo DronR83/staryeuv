@@ -1,0 +1,40 @@
+{
+  "name": "Star YeUv — Companion App",
+  "short_name": "Star YeUv",
+  "description": "Compagnon Star Citizen : missions, hangars, objectifs, chat et assistant IA Jarvis.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#03070f",
+  "theme_color": "#03070f",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["games", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
