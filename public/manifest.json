@@ -4,13 +4,17 @@
   "description": "Compagnon Star Citizen : missions, hangars, objectifs, chat et assistant IA Jarvis.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#03070f",
   "theme_color": "#03070f",
   "lang": "fr",
   "dir": "ltr",
-  "categories": ["games", "utilities", "productivity"],
+  "categories": [
+    "games",
+    "utilities",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -36,5 +40,10 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
   ]
 }
